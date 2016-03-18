@@ -132,10 +132,9 @@ const value_representation::str & value_representation::to_array(str & in) const
 
 	in[0] = u.bytes[1] + 'A';
 	in[1] = u.bytes[0] + 'A';
-return in;
+	return in;
 
 }
- 
 
 } // end namespace detail
 } // end namespace dicm
