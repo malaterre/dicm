@@ -2,8 +2,7 @@
 #include <cstdlib>
 #include <iostream>
 
-namespace dd = dicm::details;
-typedef dd::value_representation vr_t;
+#include "gtest/gtest.h"
 
 static const char vrs[][3] = {
     "AE", "AS", "AT", "CS", "DA", "DS", "DT", "FL", "FD", "IS", "LO",
@@ -11,13 +10,15 @@ static const char vrs[][3] = {
     "TM", "UC", "UI", "UL", "UN", "UR", "US", "UT", "ZZ",
 };
 
+using namespace dicm;
+#if 0
 int main() {
   vr_t vr = vr_t::type::UT;
   std::cout << sizeof vr << std::endl;
   vr_t::str s;
   for (auto&& i : vrs) {
     vr.set(i);
-    std::cout << i << " =" << /*vr.b <<*/ " " << vr.val << std::endl;
+    std::cout << i << " =" << /*vr.b <<*/ " " << vr << std::endl;
     //                vr.print( std::cout );
     vr.to_array(s);
     std::cout << '(' << s[0] << s[1] << ')' << std::endl;
@@ -32,4 +33,27 @@ int main() {
   vr_t b;
   if (a == b) std::cout << "equal" << std::endl;
   return EXIT_SUCCESS;
+}
+#endif
+
+
+TEST(value_representation, size)
+{
+  vr_t vr = { vr_t::UT };
+  EXPECT_EQ(2, sizeof vr );
+}
+
+TEST(value_representation, ispod)
+{
+  EXPECT_TRUE( std::is_pod<vr_t>::value );
+}
+
+TEST(value_representation, cstor) {
+  vr_t::str s;
+  for (auto&& i : vrs) {
+    vr_t vr = vr_t::make_from_string(i);
+    std::cout << i << " =" << /*vr.b <<*/ " " << vr << std::endl;
+    vr.to_array(s);
+    std::cout << '(' << s[0] << s[1] << ')' << std::endl;
+  }
 }
