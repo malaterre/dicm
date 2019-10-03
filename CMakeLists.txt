@@ -29,5 +29,7 @@ add_subdirectory (/usr/src/gtest gtest-build)
 
 add_executable(tvr testvr.cxx)
 target_link_libraries(tvr dicm gtest gtest_main)
+add_executable(tuid testuid.cxx)
+target_link_libraries(tuid dicm gtest gtest_main)
 enable_testing()
-add_test(tvr tvr)
+add_test(tuid tuid)
