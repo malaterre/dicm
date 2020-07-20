@@ -11,7 +11,6 @@ namespace dicm {
 namespace details {
 
 const uid_string::str &uid_string::to_array(str &in) const {
-  strncpy(in, ret.buf, in);
   return in;
 }
 
