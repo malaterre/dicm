@@ -4,12 +4,6 @@
 #include <stddef.h>  /* size_t */
 #include <stdint.h>  /* uint16_t */
 
-// struct _parser {
-//  char filepreamble[128];
-//  char prefix[4];
-//  struct _dataelement filemetaelement;
-//  struct _dataelement dataelement;
-//};
 typedef uint32_t tag_t;
 typedef uint16_t vr_t;
 typedef uint32_t vl_t;

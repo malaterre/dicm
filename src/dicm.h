@@ -23,7 +23,6 @@ struct _dataelement;
 int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
                                  struct _dataelement *de);
 
-// typedef struct _dicm dicm_t;
 typedef struct _dicm_sreader dicm_sreader_t;
 
 typedef struct _src src_t;
