@@ -1,5 +1,7 @@
 #include "parser.h"
+
 #include "dicm-private.h"
+#include "dicm.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -88,7 +90,7 @@ int read_explicit1(struct _dataelement *de, const char *buf, size_t len) {
   return 0;
 }
 
-bool read_explicit2(struct _dataelement *de, const char *buf, size_t len) {
+int read_explicit2(struct _dataelement *de, const char *buf, size_t len) {
   uvl_t vl;
 
   // padding and/or 16bits VL

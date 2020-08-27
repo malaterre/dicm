@@ -1,18 +1,30 @@
 #include "dicm.h"
+#include "dicm-private.h"
 #include "parser.h"
 
 #include <assert.h> /* assert */
 #include <string.h> /* memset */
 
-int dicm_sreader_init(struct _dicm_sreader *sreader, struct _src *src) {
+/** stream reader */
+struct _dicm_sreader {
+  struct _src *src;
+  struct _dataelement dataelement;
+  enum state current_state;
+  char buffer[4096];  // FIXME remove me
+  size_t bufsizemax;  // 4096;
+  int bufpos;
+};
+
+struct _dicm_sreader*
+dicm_sreader_init(struct _src *src) {
+  struct _dicm_sreader *sreader = malloc(sizeof *sreader);
   sreader->src = src;
   sreader->current_state = kStartInstance;
   memset(sreader->buffer, 0, sizeof sreader->buffer);
-  ;
   sreader->bufsizemax = sizeof sreader->buffer;
   sreader->bufpos = -1;
   sreader->dataelement.tag = 0;
-  return 0;
+  return sreader;
 }
 
 int dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
@@ -106,4 +118,7 @@ int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
   return kSuccess;
 }
 
-int dicm_sreader_fini(struct _dicm_sreader *sreader) { return 0; }
+int dicm_sreader_fini(struct _dicm_sreader *sreader) {
+ free(sreader);
+ return 0; 
+}

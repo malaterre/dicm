@@ -150,8 +150,6 @@ struct _dataelement {
   vl_t vl;
 };
 
-typedef struct _dataelement dataelement_t;
-
 struct _src;
 bool read_explicit(struct _src *src, struct _dataelement *de);
 
@@ -162,7 +160,7 @@ static inline size_t get_explicit2_len(struct _dataelement *de) {
   return 2;
 }
 
-bool read_explicit1(struct _dataelement *de, const char *buf, size_t len);
-bool read_explicit2(struct _dataelement *de, const char *buf, size_t len);
+int read_explicit1(struct _dataelement *de, const char *buf, size_t len);
+int read_explicit2(struct _dataelement *de, const char *buf, size_t len);
 
 void print_dataelement(struct _dataelement *de);
