@@ -36,10 +36,9 @@ int main() {
 }
 #endif
 
-
 TEST(value_representation, size)
 {
-  vr_t vr = { vr_t::UT };
+  vr_t vr{ (std::uint16_t)vr_t::UT };
   EXPECT_EQ(2, sizeof vr );
 }
 
