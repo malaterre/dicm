@@ -37,31 +37,31 @@ struct _dst_ops {
 };
 
 enum state {
- kStartInstance = 0,
- // http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html#table_7.1-1
- kFilePreamble,
- kPrefix,
- kFileMetaElement,
- kDataElement,
- kEndInstance
+  kStartInstance = 0,
+  // http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html#table_7.1-1
+  kFilePreamble,
+  kPrefix,
+  kFileMetaElement,
+  kDataElement,
+  kEndInstance
 };
-
 
 /** stream reader */
 struct _dicm_sreader {
   struct _src *src;
   struct _dataelement dataelement;
   enum state current_state;
-  char buffer[4096]; // FIXME remove me
-  size_t bufsizemax; // 4096;
+  char buffer[4096];  // FIXME remove me
+  size_t bufsizemax;  // 4096;
   int bufpos;
-//    int (*init)(struct _dicm_sreader *self, struct _src *src);
-//    int (*fini)(struct _dicm_sreader *self, struct _src *src);
-//
-//    int (*next)(struct _dicm_sreader *self) /* throws XMLStreamException */;
-//    int (*has_next)(struct _dicm_sreader *self) /* throws XMLStreamException */;
+  //    int (*init)(struct _dicm_sreader *self, struct _src *src);
+  //    int (*fini)(struct _dicm_sreader *self, struct _src *src);
+  //
+  //    int (*next)(struct _dicm_sreader *self) /* throws XMLStreamException */;
+  //    int (*has_next)(struct _dicm_sreader *self) /* throws XMLStreamException
+  //    */;
 
-//    public String getText();
-//    public String getLocalName();
-//    public String getNamespaceURI();
+  //    public String getText();
+  //    public String getLocalName();
+  //    public String getNamespaceURI();
 };
