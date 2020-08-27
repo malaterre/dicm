@@ -54,14 +54,4 @@ struct _dicm_sreader {
   char buffer[4096];  // FIXME remove me
   size_t bufsizemax;  // 4096;
   int bufpos;
-  //    int (*init)(struct _dicm_sreader *self, struct _src *src);
-  //    int (*fini)(struct _dicm_sreader *self, struct _src *src);
-  //
-  //    int (*next)(struct _dicm_sreader *self) /* throws XMLStreamException */;
-  //    int (*has_next)(struct _dicm_sreader *self) /* throws XMLStreamException
-  //    */;
-
-  //    public String getText();
-  //    public String getLocalName();
-  //    public String getNamespaceURI();
 };
