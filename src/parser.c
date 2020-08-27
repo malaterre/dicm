@@ -162,7 +162,7 @@ bool read_explicit2( struct _dataelement * de, const char * buf, size_t len )
   // Value Length
   if( isvr32( de->vr ) )
     {
-  assert( len == 4 );
+  assert( len == 6 );
     /* padding must be set to zero */
     if( vl16.vl16 != 0 ) return false;
 

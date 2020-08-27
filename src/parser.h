@@ -162,7 +162,7 @@ static inline size_t get_explicit2_len( struct _dataelement * de )
 {
   if( isvr32( de->vr ) )
   {
-    return 4;
+    return 4 + 2; // yes 4 + 2
   }
   return 2;
 }

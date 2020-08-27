@@ -51,7 +51,6 @@ int dicm_sreader_next(struct _dicm_sreader *sreader)
         break;
 
         case kPrefix:
-        //bufsize = sizeof(struct _dataelement);
         src->ops->read(src, buf, 4 + 2);
         read_explicit1( de, buf, 4 + 2);
         {
@@ -59,15 +58,43 @@ int dicm_sreader_next(struct _dicm_sreader *sreader)
         src->ops->read(src, buf, llen);
         read_explicit2( de, buf, llen);
         }
-        sreader->current_state = kFileMetaElement;
+        src->ops->seek(src, de->vl);
+        if( get_group(de->tag) == 0x2 )
+          sreader->current_state = kFileMetaElement;
+        else
+          assert(0);
         break;
 
         case kFileMetaElement:
-        sreader->current_state = kDataElement;
+        src->ops->read(src, buf, 4 + 2);
+        read_explicit1( de, buf, 4 + 2);
+        {
+        size_t llen = get_explicit2_len( de );
+        src->ops->read(src, buf, llen);
+        read_explicit2( de, buf, llen);
+        }
+        src->ops->seek(src, de->vl);
+        if( get_group(de->tag) == 0x2 )
+          sreader->current_state = kFileMetaElement;
+        else if( get_group(de->tag) >= 0x8 )
+          sreader->current_state = kDataElement;
         break;
 
         case kDataElement:
-        sreader->current_state = kEndInstance;
+        {
+        size_t d = src->ops->read(src, buf, 4 + 2);
+        if( d == (size_t)-1 ) {
+          sreader->current_state = kEndInstance;
+        } else {
+          read_explicit1( de, buf, 4 + 2);
+          size_t llen = get_explicit2_len( de );
+          src->ops->read(src, buf, llen);
+          read_explicit2( de, buf, llen);
+          src->ops->seek(src, de->vl);
+          if( get_group(de->tag) >= 0x8 )
+            sreader->current_state = kDataElement;
+          }
+        }
         break;
 
         case kEndInstance:
@@ -79,7 +106,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader)
 
 int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader, struct _dataelement *de)
 {
-  if( sreader->current_state != kFileMetaElement ) return kError;
+  if( sreader->current_state != kFileMetaElement && sreader->current_state != kDataElement ) return kError;
   memcpy(de, &sreader->dataelement, sizeof(struct _dataelement));
   return kSuccess;
 }

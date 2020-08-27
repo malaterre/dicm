@@ -129,8 +129,13 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[])
         case kFileMetaElement:
         dicm_sreader_get_dataelement(&sreader, &de);
         print_dataelement(&de);
-
        break;
+
+        case kDataElement:
+        dicm_sreader_get_dataelement(&sreader, &de);
+        print_dataelement(&de);
+       break;
+
 
         case kEndInstance:
         /* Do something different and set current_state */
