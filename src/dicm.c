@@ -51,10 +51,14 @@ int dicm_sreader_next(struct _dicm_sreader *sreader)
         break;
 
         case kPrefix:
-        bufsize = sizeof(struct _dataelement);
-        src->ops->read(src, buf, bufsize);
-        read_explicit1( src, de );
-        read_explicit2( src, de );
+        //bufsize = sizeof(struct _dataelement);
+        src->ops->read(src, buf, 4 + 2);
+        read_explicit1( de, buf, 4 + 2);
+        {
+        size_t llen = get_explicit2_len( de );
+        src->ops->read(src, buf, llen);
+        read_explicit2( de, buf, llen);
+        }
         sreader->current_state = kFileMetaElement;
         break;
 
@@ -76,6 +80,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader)
 int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader, struct _dataelement *de)
 {
   if( sreader->current_state != kFileMetaElement ) return kError;
+  memcpy(de, &sreader->dataelement, sizeof(struct _dataelement));
   return kSuccess;
 }
 
