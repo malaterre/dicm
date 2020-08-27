@@ -6,12 +6,13 @@
 #include <string.h>
 
 static inline bool isvr_valid(const uvr_t uvr) {
-  if (uvr.str[0] < 'A' || uvr.str[0] > 'Z') return false;
-  if (uvr.str[1] < 'A' || uvr.str[1] > 'Z') return false;
+  if (uvr.str[0] < 'A' || uvr.str[0] > 'Z' || /* uppercase A-Z only */
+      uvr.str[1] < 'A' || uvr.str[1] > 'Z')
+    return false;
   return true;
 }
 
-static inline bool tag_equal_to(const struct _dataelement *de, tag_t tag) {
+static inline bool tag_is_equal(const struct _dataelement *de, tag_t tag) {
   return de->tag == tag;
 }
 
@@ -33,7 +34,7 @@ static inline bool is_end_sq(const struct _dataelement *de) {
 }
 static inline bool is_encapsulated_pixel_data(const struct _dataelement *de) {
   static const tag_t pixel_data = MAKE_TAG(0x7fe0, 0x0010);
-  const bool is_pixel_data = tag_equal_to(de, pixel_data);
+  const bool is_pixel_data = tag_is_equal(de, pixel_data);
   if (is_pixel_data) {
     // Make sure Pixel Data is Encapsulated (Sequence of Fragments):
     if (de->vl == (uint32_t)-1 && (de->vr == kOB || de->vr == kOW)) {
@@ -63,51 +64,7 @@ static inline uint32_t compute_undef_len(const struct _dataelement *de,
   return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + len;
 }
 
-bool read_explicit(struct _src *src, struct _dataelement *de) {
-  utag_t t;
-  uvr_t vr;
-  uvl_t vl;
-
-  // Tag
-  // size_t n = fread( t.tags, sizeof *t.tags, 2, stream );
-  size_t n = src->ops->read(src, t.tags, sizeof *t.tags * 2);
-  if (n != 4) return false;
-  SWAP_TAG(t);
-  if (!tag_is_lower(de, t.tag)) return false;
-
-  // Value Representation
-  // n = fread( vr.str, sizeof *vr.str, 2, stream );
-  n = src->ops->read(src, vr.str, sizeof *vr.str * 2);
-  /* a lot of VR are not valid (eg: non-ASCII), however the standard may add
-   * them in a future edition, so only exclude the impossible ones */
-  if (n != 2 || !isvr_valid(vr)) return false;
-
-  // padding and/or 16bits VL
-  uvl16_t vl16;
-  // n = fread( vl16.bytes, sizeof *vl16.bytes, 2, stream );
-  n = src->ops->read(src, vl16.bytes, sizeof *vl16.bytes * 2);
-  if (n != 2) return false;
-
-  // Value Length
-  if (isvr32(vr.vr)) {
-    /* padding must be set to zero */
-    if (vl16.vl16 != 0) return false;
-
-    // n = fread( vl.bytes, 1, 4, stream );
-    n = src->ops->read(src, vl.bytes, 1 * 4);
-    if (n != 4) return false;
-    SWAP_VL(vl.vl);
-  } else {
-    SWAP_VL16(vl16.vl16);
-    vl.vl = vl16.vl16;
-  }
-  de->tag = t.tag;
-  de->vr = vr.vr;
-  de->vl = vl.vl;
-  return true;
-}
-
-bool read_explicit1(struct _dataelement *de, const char *buf, size_t len) {
+int read_explicit1(struct _dataelement *de, const char *buf, size_t len) {
   utag_t t;
   uvr_t vr;
 
@@ -117,18 +74,18 @@ bool read_explicit1(struct _dataelement *de, const char *buf, size_t len) {
   memcpy(t.tags, buf, sizeof *t.tags * 2);
   // if( n != 4 ) return false;
   SWAP_TAG(t);
-  if (!tag_is_lower(de, t.tag)) return false;
+  if (!tag_is_lower(de, t.tag)) return kOutOfOrder;
 
   // Value Representation
   // n = fread( vr.str, sizeof *vr.str, 2, stream );
   memcpy(vr.str, buf + 4, sizeof *vr.str * 2);
   /* a lot of VR are not valid (eg: non-ASCII), however the standard may add
    * them in a future edition, so only exclude the impossible ones */
-  if (/*n != 2 ||*/ !isvr_valid(vr)) return false;
+  if (/*n != 2 ||*/ !isvr_valid(vr)) return kInvalidVR;
 
   de->tag = t.tag;
   de->vr = vr.vr;
-  return true;
+  return 0;
 }
 
 bool read_explicit2(struct _dataelement *de, const char *buf, size_t len) {
@@ -160,13 +117,6 @@ bool read_explicit2(struct _dataelement *de, const char *buf, size_t len) {
 }
 
 void print_dataelement(struct _dataelement *de) {
-  //  utag_t t;
-  //  uvr_t vr;
-  //  uvl_t vl;
-  //  t.tag = de->tag;
-  //  vr.vr = de->vr;
-  //  vl.vl = de->vl;
-
   printf("%04x,%04x %c%c %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr)[0],
          get_vr(de->vr)[1], de->vl);

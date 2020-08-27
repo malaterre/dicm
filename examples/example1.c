@@ -22,7 +22,7 @@ static int fsrc_close(struct _src *src) {
 static size_t fsrc_read(struct _src *src, void *buf, size_t bsize) {
   assert(bsize != (size_t)-1);
   const size_t read = fread(buf, 1, bsize, src->data);
-  /**  fread() does not distinguish between end-of-file and error, and callers
+  /* fread() does not distinguish between end-of-file and error, and callers
    * must use feof(3) and ferror(3) to determine which occurred. */
   if (read != bsize) {
     if (feof(src->data) != 0) {
@@ -34,14 +34,7 @@ static size_t fsrc_read(struct _src *src, void *buf, size_t bsize) {
   return bsize;
 }
 
-static inline offset_t osign(offset_t x) {
-  return (x > (offset_t)0) - (x < (offset_t)0);
-}
-
-static inline offset_t oabs(offset_t v) { return v * osign(v); }
-
 static int fsrc_seek(struct _src *src, offset_t offset) {
-  // return fseeko(src->data, oabs(offset), osign(offset));
   return fseeko(src->data, offset, SEEK_CUR);
 }
 
@@ -92,10 +85,6 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
   fsrc.ops->open(&fsrc, "input.dcm");
   fdst.ops->open(&fdst, "output.dcm");
 
-  //  sreader.init( &sreader, &fsrc );
-  //  while(sreader.has_next(&sreader)) { }
-  //  sreader.fini( &sreader, &fsrc );
-
   dicm_sreader_init(&sreader, &fsrc);
   struct _dataelement de = {0};
   while (dicm_sreader_hasnext(&sreader)) {
@@ -121,7 +110,6 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
         break;
 
       case kEndInstance:
-        /* Do something different and set current_state */
         break;
     }
   }

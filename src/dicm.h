@@ -3,7 +3,16 @@
 #include "dicm-features.h"
 #include "dicm-private.h"
 
-enum error { kSuccess = 0, kError = -1 };
+enum error {
+  /** Return upon function success */
+  kSuccess = 0,
+  /** Generic error */
+  kError = -1,
+  /** DataElement have been sent in out of order */
+  kOutOfOrder = -2,
+  /** Value Representation if non-ASCII uppercase (A-Z only)*/
+  kInvalidVR = -3
+};
 
 int dicm_sreader_init(struct _dicm_sreader *sreader, struct _src *src);
 int dicm_sreader_hasnext(struct _dicm_sreader *sreader);
