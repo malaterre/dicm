@@ -1,3 +1,6 @@
+#define _FILE_OFFSET_BITS 64
+#define _POSIX_C_SOURCE 200808L
+
 #include "dicm.h"
 
 #include "dicm-private.h"
@@ -76,7 +79,7 @@ static const struct _dst_ops fdst_ops = {
 int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
   src_t fsrc;
   dst_t fdst;
-  dicm_sreader_t sreader;
+  dicm_sreader_t *sreader;
 
   fsrc.ops = &fsrc_ops;
 
@@ -85,10 +88,10 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
   fsrc.ops->open(&fsrc, "input.dcm");
   fdst.ops->open(&fdst, "output.dcm");
 
-  dicm_sreader_init(&sreader, &fsrc);
+  sreader = dicm_sreader_init(&fsrc);
   struct _dataelement de = {0};
-  while (dicm_sreader_hasnext(&sreader)) {
-    int next = dicm_sreader_next(&sreader);
+  while (dicm_sreader_hasnext(sreader)) {
+    int next = dicm_sreader_next(sreader);
     switch (next) {
       case kStartInstance:
         break;
@@ -100,12 +103,12 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
         break;
 
       case kFileMetaElement:
-        dicm_sreader_get_dataelement(&sreader, &de);
+        dicm_sreader_get_dataelement(sreader, &de);
         print_dataelement(&de);
         break;
 
       case kDataElement:
-        dicm_sreader_get_dataelement(&sreader, &de);
+        dicm_sreader_get_dataelement(sreader, &de);
         print_dataelement(&de);
         break;
 
@@ -113,7 +116,7 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
         break;
     }
   }
-  dicm_sreader_fini(&sreader);
+  dicm_sreader_fini(sreader);
 
   fsrc.ops->close(&fsrc);
   fdst.ops->close(&fdst);
