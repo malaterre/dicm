@@ -1,5 +1,7 @@
 #pragma once
 
+#include "dicm-io.h"
+
 #include <stdbool.h> /* bool */
 #include <stddef.h>  /* size_t */
 #include <stdint.h>  /* uint16_t */
@@ -152,8 +154,7 @@ struct _dataelement {
   vl_t vl;
 };
 
-struct _src;
-bool read_explicit(struct _src *src, struct _dataelement *de);
+int read_explicit(struct _src *src, struct _dataelement *de);
 
 static inline size_t get_explicit2_len(struct _dataelement *de) {
   if (isvr32(de->vr)) {
@@ -161,8 +162,5 @@ static inline size_t get_explicit2_len(struct _dataelement *de) {
   }
   return 2;
 }
-
-int read_explicit1(struct _dataelement *de, const char *buf, size_t len);
-int read_explicit2(struct _dataelement *de, const char *buf, size_t len);
 
 void print_dataelement(struct _dataelement *de);

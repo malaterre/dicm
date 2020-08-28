@@ -54,14 +54,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       break;
 
     case kPrefix:
-      src->ops->read(src, buf, 4 + 2);
-      read_explicit1(de, buf, 4 + 2);
-      {
-        size_t llen = get_explicit2_len(de);
-        src->ops->read(src, buf, llen);
-        read_explicit2(de, buf, llen);
-      }
-      src->ops->seek(src, de->vl);
+      read_explicit(src, de);
       if (get_group(de->tag) == 0x2)
         sreader->current_state = kFileMetaElement;
       else
@@ -69,14 +62,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       break;
 
     case kFileMetaElement:
-      src->ops->read(src, buf, 4 + 2);
-      read_explicit1(de, buf, 4 + 2);
-      {
-        size_t llen = get_explicit2_len(de);
-        src->ops->read(src, buf, llen);
-        read_explicit2(de, buf, llen);
-      }
-      src->ops->seek(src, de->vl);
+      read_explicit(src, de);
       if (get_group(de->tag) == 0x2)
         sreader->current_state = kFileMetaElement;
       else if (get_group(de->tag) >= 0x8)
@@ -84,16 +70,10 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       break;
 
     case kDataElement: {
-      size_t d = src->ops->read(src, buf, 4 + 2);
-      if (d == (size_t)-1) {
+      if (read_explicit(src, de) == (size_t)-1) {
         sreader->current_state = kEndInstance;
       } else {
-        read_explicit1(de, buf, 4 + 2);
-        size_t llen = get_explicit2_len(de);
-        src->ops->read(src, buf, llen);
-        read_explicit2(de, buf, llen);
-        src->ops->seek(src, de->vl);
-        if (get_group(de->tag) >= 0x8) sreader->current_state = kDataElement;
+       if (get_group(de->tag) >= 0x8) sreader->current_state = kDataElement;
       }
     } break;
 
