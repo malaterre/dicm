@@ -35,17 +35,24 @@ extern struct _log dlog;
 #include <stdio.h>  /* fopen */
 #include <stdlib.h> /* EXIT_SUCCESS */
 
-static int fsrc_open(struct _src *src, const char *fspec) {
+static bool fsrc_open(struct _src *src, const char *fspec) {
+ if( src == NULL ) return false;
   FILE *file = fopen(fspec, "rb");
   src->data = file;
   if( file == NULL ) {
     log_errno();
-    return -errno;
+    return false;
   }
-  return 0;
+  return true;
 }
 
-static int fsrc_close(struct _src *src) { return fclose(src->data); }
+static bool fsrc_close(struct _src *src) {
+ if( src == NULL || src->data == NULL ) return false;
+ FILE *file = src->data;
+ const bool ret = fclose(file) == 0;
+ src->data = NULL;
+ return ret;
+ }
 
 static size_t fsrc_read(struct _src *src, void *buf, size_t bsize) {
   assert(bsize != (size_t)-1);
@@ -62,21 +69,27 @@ static size_t fsrc_read(struct _src *src, void *buf, size_t bsize) {
   return bsize;
 }
 
-static int fsrc_seek(struct _src *src, offset_t offset) {
-  return fseeko(src->data, offset, SEEK_CUR);
+static bool fsrc_seek(struct _src *src, offset_t offset) {
+  const bool ret = fseeko(src->data, offset, SEEK_CUR) == 0;
+  return ret;
 }
 
-static offset_t fsrc_tell(struct _src *src) { return ftello(src->data); }
+static offset_t fsrc_tell(struct _src *src) { offset_t ret = ftello(src->data);
+  if( ret == (offset_t)-1) {
+    log_errno();
+}
+  return ret;
+ }
 
-static int fdst_open(struct _dst *dst, const char *fspec) {
+static bool fdst_open(struct _dst *dst, const char *fspec) {
   FILE *file = fopen(fspec, "wb");
   dst->data = file;
-  return errno;
+  return true;
 }
 
-static int fdst_close(struct _dst *dst) {
+static bool fdst_close(struct _dst *dst) {
   fclose(dst->data);
-  return errno;
+  return true;
 }
 
 static size_t fdst_write(struct _dst *dst, void *buf, size_t bsize) {
