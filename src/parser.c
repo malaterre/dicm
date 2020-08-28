@@ -131,6 +131,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     read_explicit2(de, buf, llen);
   }
   src->ops->seek(src, de->vl);
+  return 0;
 }
 
 void print_dataelement(struct _dataelement *de) {
