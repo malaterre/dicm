@@ -2,7 +2,6 @@
 
 #include "dicm-features.h"
 #include "dicm-io.h"
-//#include "dicm-private.h"
 
 enum error {
   /** Return upon function success */

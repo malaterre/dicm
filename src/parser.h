@@ -31,9 +31,11 @@ static inline uint_fast16_t get_group(tag_t tag) {
 static inline uint_fast16_t get_element(tag_t tag) {
   return (uint16_t)(tag & (uint16_t)0xffff);
 }
-static inline const char *get_vr(vr_t vr) {
-  uvr_t *uvr = (uvr_t *)&vr;
-  return uvr->str;
+
+static inline uvr_t get_vr(vr_t vr) {
+  uvr_t ret;
+  ret.vr = vr;
+  return ret;
 }
 
 #define MAKE_TAG(group, element) (group << 16 | element)
