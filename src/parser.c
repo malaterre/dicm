@@ -66,7 +66,8 @@ static inline uint32_t compute_undef_len(const struct _dataelement *de,
   return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + len;
 }
 
-static int read_explicit1(struct _dataelement *de, const char *buf, size_t len) {
+static int read_explicit1(struct _dataelement *de, const char *buf,
+                          size_t len) {
   utag_t t;
   uvr_t vr;
 
@@ -90,7 +91,8 @@ static int read_explicit1(struct _dataelement *de, const char *buf, size_t len) 
   return 0;
 }
 
-static int read_explicit2(struct _dataelement *de, const char *buf, size_t len) {
+static int read_explicit2(struct _dataelement *de, const char *buf,
+                          size_t len) {
   uvl_t vl;
 
   // padding and/or 16bits VL
@@ -120,19 +122,18 @@ static int read_explicit2(struct _dataelement *de, const char *buf, size_t len) 
 
 int read_explicit(struct _src *src, struct _dataelement *de) {
   char buf[16];
-  size_t ret =    src->ops->read(src, buf, 4 + 2);
-  if( ret == (size_t)-1 ) return ret;
-      read_explicit1(de, buf, 4 + 2);
-      {
-        size_t llen = get_explicit2_len(de);
-        src->ops->read(src, buf, llen);
-        read_explicit2(de, buf, llen);
-      }
-      src->ops->seek(src, de->vl);
+  size_t ret = src->ops->read(src, buf, 4 + 2);
+  if (ret == (size_t)-1) return ret;
+  read_explicit1(de, buf, 4 + 2);
+  {
+    size_t llen = get_explicit2_len(de);
+    src->ops->read(src, buf, llen);
+    read_explicit2(de, buf, llen);
+  }
+  src->ops->seek(src, de->vl);
 }
 
 void print_dataelement(struct _dataelement *de) {
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr).str
-         , de->vl);
+         (unsigned int)get_element(de->tag), get_vr(de->vr).str, de->vl);
 }
