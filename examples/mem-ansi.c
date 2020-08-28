@@ -13,6 +13,6 @@ void ansi_free(struct _mem *mem, ptr_t ptr)
 }
 
 static const struct _mem_ops ansi_ops = {
-  .alloc = ansi_alloc;
-  .free = ansi_free;
+  .alloc = ansi_alloc,
+  .free = ansi_free,
 };

@@ -4,7 +4,10 @@
 #include "dicm.h"
 
 #include "dicm-private.h"
+#include "dicm-log.h"
 #include "parser.h"
+
+extern struct _log dlog;
 
 #include <assert.h> /* assert */
 #include <errno.h>  /* errno */
@@ -14,7 +17,11 @@
 static int fsrc_open(struct _src *src, const char *fspec) {
   FILE *file = fopen(fspec, "rb");
   src->data = file;
-  return file != NULL;
+  if( file == NULL ) {
+    log_errno();
+    return -errno;
+  }
+  return 0;
 }
 
 static int fsrc_close(struct _src *src) { return fclose(src->data); }
@@ -74,6 +81,8 @@ static const struct _dst_ops fdst_ops = {
 };
 
 int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
+  set_global_logger(&dlog);
+
   src_t fsrc;
   dst_t fdst;
   dicm_sreader_t *sreader;
