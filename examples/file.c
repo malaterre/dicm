@@ -93,7 +93,7 @@ static size_t fdst_write(struct _dst *dst, void *buf, size_t bsize) {
   return bsize;
 }
 
-static const struct _src_ops fsrc_ops = {
+const struct _src_ops fsrc_ops = {
     .open = fsrc_open,
     .close = fsrc_close,
     .read = fsrc_read,
@@ -101,19 +101,19 @@ static const struct _src_ops fsrc_ops = {
     .tell = fsrc_tell,
 };
 
-static const struct _dst_ops fdst_ops = {
+const struct _dst_ops fdst_ops = {
     .open = fdst_open,
     .close = fdst_close,
     .write = fdst_write,
 };
 
-struct _src fsrc = {
-  .ops = &fsrc_ops,
-  .data = NULL
-};
-
-struct _dst fdst = {
-  .ops = &fdst_ops,
-  .data = NULL
-};
+//struct _src fsrc = {
+//  .ops = &fsrc_ops,
+//  .data = NULL
+//};
+//
+//struct _dst fdst = {
+//  .ops = &fdst_ops,
+//  .data = NULL
+//};
 
