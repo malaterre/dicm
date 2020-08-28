@@ -22,7 +22,7 @@
 #include "dicm.h"
 
 #include "dicm-private.h"
-#include "parser.h"
+#include "dicm-parser.h"
 
 #include <assert.h> /* assert */
 #include <stdlib.h> /* malloc/free */
