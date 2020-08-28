@@ -18,3 +18,9 @@ struct _log_ops {
   int (*fini)(struct _log *log);
 };
 
+void log_errno();
+
+//struct _log *get_global_logger();
+void set_global_logger(struct _log *log);
+
+extern struct _log *global_log;
