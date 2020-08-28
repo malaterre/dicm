@@ -2,17 +2,7 @@
 
 #include "dicm-features.h"
 #include "dicm-io.h"
-
-enum error {
-  /** Return upon function success */
-  kSuccess = 0,
-  /** Generic error */
-  kError = -1,
-  /** DataElement have been sent in out of order */
-  kOutOfOrder = -2,
-  /** Value Representation if non-ASCII uppercase (A-Z only)*/
-  kInvalidVR = -3
-};
+#include "dicm-errno.h"
 
 struct _dicm_sreader;
 // int dicm_sreader_init(struct _dicm_sreader *sreader, struct _src *src);
