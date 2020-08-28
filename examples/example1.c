@@ -1,3 +1,24 @@
+/*
+ *  DICM, a library for reading DICOM instances
+ *
+ *  Copyright (c) 2020 Mathieu Malaterre
+ *  All rights reserved.
+ *
+ *  DICM is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as
+ *  published by the Free Software Foundation, version 2.1.
+ *
+ *  DICM is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with DICM . If not, see
+ *  <http://www.gnu.org/licenses/>.
+ *
+ */
+
 #define _FILE_OFFSET_BITS 64
 #define _POSIX_C_SOURCE 200808L
 
@@ -91,7 +112,7 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
 
   fdst.ops = &fdst_ops;
 
-  fsrc.ops->open(&fsrc, "inut.dcm");
+  fsrc.ops->open(&fsrc, "input.dcm");
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&fsrc);
