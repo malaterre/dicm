@@ -26,8 +26,8 @@
 #include "dicm-parser.h"
 
 extern struct _log dlog;
-extern struct _src fsrc;
-extern struct _dst fdst;
+extern const struct _src_ops fsrc_ops;
+extern const struct _dst_ops fdst_ops;
 
 #include <assert.h> /* assert */
 #include <errno.h>  /* errno */
@@ -37,8 +37,14 @@ extern struct _dst fdst;
 int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
   set_global_logger(&dlog);
 
+src_t fsrc;
   dst_t fdst;
   dicm_sreader_t *sreader;
+
+  fsrc.ops = &fsrc_ops;
+
+  fdst.ops = &fdst_ops;
+
 
   fsrc.ops->open(&fsrc, "input.dcm");
   fdst.ops->open(&fdst, "output.dcm");
