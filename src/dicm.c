@@ -70,7 +70,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       break;
 
     case kDataElement: {
-      if (read_explicit(src, de) == (size_t)-1) {
+      if (read_explicit(src, de) == -1) {
         sreader->current_state = kEndInstance;
       } else {
         if (get_group(de->tag) >= 0x8) sreader->current_state = kDataElement;
