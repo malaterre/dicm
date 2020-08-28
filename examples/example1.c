@@ -82,7 +82,7 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
 
   fdst.ops = &fdst_ops;
 
-  fsrc.ops->open(&fsrc, "input.dcm");
+  fsrc.ops->open(&fsrc, "inut.dcm");
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&fsrc);
