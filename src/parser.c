@@ -119,7 +119,7 @@ int read_explicit2(struct _dataelement *de, const char *buf, size_t len) {
 }
 
 void print_dataelement(struct _dataelement *de) {
-  printf("%04x,%04x %c%c %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr)[0],
-         get_vr(de->vr)[1], de->vl);
+  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
+         (unsigned int)get_element(de->tag), get_vr(de->vr).str
+         , de->vl);
 }
