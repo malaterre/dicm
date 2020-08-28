@@ -1,6 +1,6 @@
 set(dicm_SRCS
  dicm.c
- parser.c
+ dicm-parser.c
  dicm-log.c
 )
 

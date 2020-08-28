@@ -19,7 +19,7 @@
  *
  */
 
-#include "parser.h"
+#include "dicm-parser.h"
 
 #include "dicm-private.h"
 #include "dicm.h"

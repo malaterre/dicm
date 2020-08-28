@@ -26,7 +26,7 @@
 
 #include "dicm-private.h"
 #include "dicm-log.h"
-#include "parser.h"
+#include "dicm-parser.h"
 
 extern struct _log dlog;
 
