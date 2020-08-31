@@ -23,6 +23,7 @@
 
 #include "dicm-io.h"
 
+#include "dicm-private.h"
 #include "dicm-log.h"
 
 #include <stdio.h>  /* fopen */

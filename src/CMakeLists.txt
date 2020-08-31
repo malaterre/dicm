@@ -1,7 +1,8 @@
 set(dicm_SRCS
- dicm.c
- dicm-parser.c
+ dicm-de.c
  dicm-log.c
+ dicm-parser.c
+ dicm.c
 )
 
 add_library(dicm

@@ -78,7 +78,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
 
     case kPrefix:
       read_explicit(src, de);
-      if (get_group(de->tag) == 0x2)
+      if (dicm_de_get_group(de) == 0x2)
         sreader->current_state = kFileMetaElement;
       else
         assert(0);
@@ -86,9 +86,9 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
 
     case kFileMetaElement:
       read_explicit(src, de);
-      if (get_group(de->tag) == 0x2)
+      if (dicm_de_get_group(de) == 0x2)
         sreader->current_state = kFileMetaElement;
-      else if (get_group(de->tag) >= 0x8)
+      else if (dicm_de_get_group(de) >= 0x8)
         sreader->current_state = kDataElement;
       break;
 
@@ -96,7 +96,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       if (read_explicit(src, de) == -1) {
         sreader->current_state = kEndInstance;
       } else {
-        if (get_group(de->tag) >= 0x8) sreader->current_state = kDataElement;
+        if (dicm_de_get_group(de) >= 0x8) sreader->current_state = kDataElement;
       }
     } break;
 
@@ -111,9 +111,9 @@ int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
                                  struct _dataelement *de) {
   if (sreader->current_state != kFileMetaElement &&
       sreader->current_state != kDataElement)
-    return kError;
+    return -kDicmInvalidArgument;
   memcpy(de, &sreader->dataelement, sizeof(struct _dataelement));
-  return kSuccess;
+  return 0;
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {

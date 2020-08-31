@@ -24,6 +24,7 @@
 #include "dicm-features.h"
 
 //#include <sys/types.h> /* off_t */
+#include <stdint.h>  /* uint16_t */
 
 enum state {
   kStartInstance = 0,
@@ -34,3 +35,8 @@ enum state {
   kDataElement,
   kEndInstance
 };
+
+#define _DICM_POISON(replacement) error__use_ ## replacement ## _instead
+#define fseek _DICM_POISON(fseeko)
+#define ftell _DICM_POISON(ftello)
+#define strtod _DICM_POISON(_dicm_parse_double)

@@ -24,3 +24,4 @@
 //#include <stdbool.h>
 
 #define __maybe_unused __attribute__((__unused__))
+#define __must_check		__attribute__((__warn_unused_result__))

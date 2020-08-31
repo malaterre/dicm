@@ -18,7 +18,6 @@
  *  <http://www.gnu.org/licenses/>.
  *
  */
-
 #pragma once
 
 #include <stddef.h>
@@ -58,3 +57,6 @@ struct _dst_ops {
    */
   size_t (*write)(struct _dst *dst, void *buf, size_t bsize);
 };
+
+typedef struct _src src_t;
+typedef struct _dst dst_t;
