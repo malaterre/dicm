@@ -28,6 +28,7 @@
 extern struct _log dlog;
 extern const struct _src_ops fsrc_ops;
 extern const struct _dst_ops fdst_ops;
+extern struct _mem ansi;
 
 #include <assert.h> /* assert */
 #include <errno.h>  /* errno */
@@ -42,14 +43,12 @@ src_t fsrc;
   dicm_sreader_t *sreader;
 
   fsrc.ops = &fsrc_ops;
-
   fdst.ops = &fdst_ops;
-
 
   fsrc.ops->open(&fsrc, "input.dcm");
   fdst.ops->open(&fdst, "output.dcm");
 
-  sreader = dicm_sreader_init(&fsrc);
+  sreader = dicm_sreader_init(&ansi, &fsrc);
   struct _dataelement de = {0};
   while (dicm_sreader_hasnext(sreader)) {
     int next = dicm_sreader_next(sreader);

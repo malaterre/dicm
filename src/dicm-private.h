@@ -21,6 +21,8 @@
 
 #pragma once
 
+#include "dicm-features.h"
+
 //#include <sys/types.h> /* off_t */
 
 enum state {
