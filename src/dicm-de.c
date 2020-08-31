@@ -19,33 +19,9 @@
  *
  */
 
-#pragma once
-
-#include "dicm-features.h"
-#include "dicm-mem.h"
-#include "dicm-io.h"
 #include "dicm-de.h"
-#include "dicm-errno.h"
 
-struct _dicm_sreader;
-
-struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src);
-int dicm_sreader_fini(struct _dicm_sreader *sreader);
-
-/**
- * Indicate whether or not there is a next dataelement
- */
-__must_check int dicm_sreader_hasnext(struct _dicm_sreader *sreader);
-
-/**
- * Move to next dataelement
- */
-int dicm_sreader_next(struct _dicm_sreader *sreader);
-
-/**
- * Return current dataelement
- */
-__must_check int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
-                                 struct _dataelement *de);
-
-typedef struct _dicm_sreader dicm_sreader_t;
+uint16_t dicm_de_get_group(struct _dataelement *de)
+{
+  return get_group(de->tag);
+}

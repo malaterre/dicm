@@ -21,15 +21,26 @@
 
 #pragma once
 
-enum error {
-  /** Return upon function success */
-  kSuccess = 0,
-  /** Generic error */
-  kError = -1,
-  /** DataElement have been sent in out of order */
-  kOutOfOrder = -2,
-  /** Value Representation if non-ASCII uppercase (A-Z only)*/
-  kInvalidVR = -3
-};
+#define DICM_MAKE_ENUM_LIST
 
+#ifdef DICM_MAKE_ENUM_LIST
 
+typedef enum {
+
+#define DICM_MESSAGE(code,string)   code ,
+
+#endif /* DICM_MAKE_ENUM_LIST */
+
+DICM_MESSAGE(kDicmInvalidArgument, "Invalid argument passed to the function" )
+DICM_MESSAGE(kDicmOutOfOrder, "DataElement have been sent in out of order" )
+DICM_MESSAGE(kDicmInvalidVR, "Value Representation if non-ASCII uppercase (A-Z only)" )
+
+#ifdef DICM_MAKE_ENUM_LIST
+   
+  DICM_MSG_LASTMSGCODE
+} DICM_MESSAGE_CODE;
+
+#endif /* DICM_MAKE_ENUM_LIST */
+
+#undef DICM_MAKE_ENUM_LIST
+#undef DICM_MESSAGE
