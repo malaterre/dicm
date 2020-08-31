@@ -20,8 +20,8 @@
  */
 #pragma once
 
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef long long offset_t;
 

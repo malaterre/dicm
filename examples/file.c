@@ -23,17 +23,17 @@
 
 #include "dicm-io.h"
 
-#include "dicm-private.h"
 #include "dicm-log.h"
+#include "dicm-private.h"
 
-#include <stdio.h>  /* fopen */
 #include <assert.h> /* assert */
+#include <stdio.h>  /* fopen */
 
 static bool fsrc_open(struct _src *src, const char *fspec) {
- if( src == NULL ) return false;
+  if (src == NULL) return false;
   FILE *file = fopen(fspec, "rb");
   src->data = file;
-  if( file == NULL ) {
+  if (file == NULL) {
     log_errno(debug);
     return false;
   }
@@ -41,12 +41,12 @@ static bool fsrc_open(struct _src *src, const char *fspec) {
 }
 
 static bool fsrc_close(struct _src *src) {
- if( src == NULL || src->data == NULL ) return false;
- FILE *file = src->data;
- const bool ret = fclose(file) == 0;
- src->data = NULL;
- return ret;
- }
+  if (src == NULL || src->data == NULL) return false;
+  FILE *file = src->data;
+  const bool ret = fclose(file) == 0;
+  src->data = NULL;
+  return ret;
+}
 
 static size_t fsrc_read(struct _src *src, void *buf, size_t bsize) {
   assert(bsize != (size_t)-1);
@@ -68,12 +68,13 @@ static bool fsrc_seek(struct _src *src, offset_t offset) {
   return ret;
 }
 
-static offset_t fsrc_tell(struct _src *src) { offset_t ret = ftello(src->data);
-  if( ret == (offset_t)-1) {
+static offset_t fsrc_tell(struct _src *src) {
+  offset_t ret = ftello(src->data);
+  if (ret == (offset_t)-1) {
     log_errno(debug);
-}
+  }
   return ret;
- }
+}
 
 static bool fdst_open(struct _dst *dst, const char *fspec) {
   FILE *file = fopen(fspec, "wb");
@@ -108,13 +109,12 @@ const struct _dst_ops fdst_ops = {
     .write = fdst_write,
 };
 
-//struct _src fsrc = {
+// struct _src fsrc = {
 //  .ops = &fsrc_ops,
 //  .data = NULL
 //};
 //
-//struct _dst fdst = {
+// struct _dst fdst = {
 //  .ops = &fdst_ops,
 //  .data = NULL
 //};
-
