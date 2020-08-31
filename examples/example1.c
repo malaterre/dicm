@@ -21,9 +21,9 @@
 
 #include "dicm.h"
 
-#include "dicm-private.h"
 #include "dicm-log.h"
 #include "dicm-parser.h"
+#include "dicm-private.h"
 
 extern struct _log dlog;
 extern const struct _src_ops fsrc_ops;
@@ -38,7 +38,7 @@ extern struct _mem ansi;
 int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
   set_global_logger(&dlog);
 
-src_t fsrc;
+  src_t fsrc;
   dst_t fdst;
   dicm_sreader_t *sreader;
 
@@ -63,13 +63,11 @@ src_t fsrc;
         break;
 
       case kFileMetaElement:
-        if( de = dicm_sreader_get_dataelement(sreader))
-        print_dataelement(de);
+        if (de = dicm_sreader_get_dataelement(sreader)) print_dataelement(de);
         break;
 
       case kDataElement:
-        if( de = dicm_sreader_get_dataelement(sreader))
-        print_dataelement(de);
+        if (de = dicm_sreader_get_dataelement(sreader)) print_dataelement(de);
         break;
 
       case kEndInstance:

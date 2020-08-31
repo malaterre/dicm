@@ -21,8 +21,8 @@
 
 #include "dicm.h"
 
-#include "dicm-private.h"
 #include "dicm-parser.h"
+#include "dicm-private.h"
 
 #include <assert.h> /* assert */
 #include <stdlib.h> /* malloc/free */
@@ -107,14 +107,14 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
   return sreader->current_state;
 }
 
-struct _dataelement * dicm_sreader_get_dataelement(struct _dicm_sreader *sreader
-                                 ) {
+struct _dataelement *dicm_sreader_get_dataelement(
+    struct _dicm_sreader *sreader) {
   if (sreader->current_state != kFileMetaElement &&
       sreader->current_state != kDataElement)
-    return NULL; //-kDicmInvalidArgument;
+    return NULL;  //-kDicmInvalidArgument;
   return &sreader->dataelement;
-//  memcpy(de, &sreader->dataelement, sizeof(struct _dataelement));
-//  return 0;
+  //  memcpy(de, &sreader->dataelement, sizeof(struct _dataelement));
+  //  return 0;
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {

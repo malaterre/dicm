@@ -28,9 +28,8 @@ struct _mem {
   void *data;
 };
 
-typedef void* ptr_t;
+typedef void *ptr_t;
 struct _mem_ops {
   ptr_t (*alloc)(struct _mem *mem, size_t size);
   void (*free)(struct _mem *mem, ptr_t ptr);
 };
-

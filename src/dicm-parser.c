@@ -54,7 +54,8 @@
 
 // Full list of VRs as of DICOM 2017a
 enum {
-  //kINVALID = 0, /* Item, Item Delimitation Item & Sequence Delimitation Item */
+  // kINVALID = 0, /* Item, Item Delimitation Item & Sequence Delimitation Item
+  // */
   kAE = MAKE_VR('A', 'E'),
   kAS = MAKE_VR('A', 'S'),
   kAT = MAKE_VR('A', 'T'),
@@ -208,9 +209,9 @@ static inline bool is_undef_len(const struct _dataelement *de) {
 static inline uint32_t compute_len(const struct _dataelement *de) {
   assert(!is_undef_len(de));
   if (is_vr16(de->vr)) {
-  return 4 /* tag */ + 4 /* VR/VL */ + de->vl /* VL */;
+    return 4 /* tag */ + 4 /* VR/VL */ + de->vl /* VL */;
   }
-    return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + de->vl /* VL */;
+  return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + de->vl /* VL */;
 }
 static inline uint32_t compute_undef_len(const struct _dataelement *de,
                                          uint32_t len) {

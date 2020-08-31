@@ -58,7 +58,6 @@ static inline uvr_t get_vr_impl(vr_t vr) {
 
 #define get_vr(vr) get_vr_impl(vr).str
 
-
 struct _dataelement {
   tag_t tag;
   vr_t vr;
@@ -69,7 +68,7 @@ struct _dataelement {
   vl_t vl;
 };
 
-//struct _dataelement;
+// struct _dataelement;
 uint16_t dicm_de_get_group(struct _dataelement *de);
 
 typedef struct _dataelement dataelement_t;

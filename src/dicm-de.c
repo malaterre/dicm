@@ -21,7 +21,6 @@
 
 #include "dicm-de.h"
 
-uint16_t dicm_de_get_group(struct _dataelement *de)
-{
+uint16_t dicm_de_get_group(struct _dataelement *de) {
   return get_group(de->tag);
 }

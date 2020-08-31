@@ -27,17 +27,19 @@
 
 typedef enum {
 
-#define DICM_MESSAGE(code,string)   code ,
+#define DICM_MESSAGE(code, string) code,
 
 #endif /* DICM_MAKE_ENUM_LIST */
 
-DICM_MESSAGE(kDicmInvalidArgument, "Invalid argument passed to the function" )
-DICM_MESSAGE(kDicmOutOfOrder, "DataElement have been sent in out of order" )
-DICM_MESSAGE(kDicmInvalidVR, "Value Representation if non-ASCII uppercase (A-Z only)" )
+  DICM_MESSAGE(kDicmInvalidArgument, "Invalid argument passed to the function")
+      DICM_MESSAGE(kDicmOutOfOrder,
+                   "DataElement have been sent in out of order")
+          DICM_MESSAGE(kDicmInvalidVR,
+                       "Value Representation if non-ASCII uppercase (A-Z only)")
 
 #ifdef DICM_MAKE_ENUM_LIST
-   
-  DICM_MSG_LASTMSGCODE
+
+              DICM_MSG_LASTMSGCODE
 } DICM_MESSAGE_CODE;
 
 #endif /* DICM_MAKE_ENUM_LIST */

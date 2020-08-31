@@ -21,11 +21,11 @@
 
 #pragma once
 
-#include "dicm-features.h"
-#include "dicm-mem.h"
-#include "dicm-io.h"
 #include "dicm-de.h"
 #include "dicm-errno.h"
+#include "dicm-features.h"
+#include "dicm-io.h"
+#include "dicm-mem.h"
 
 struct _dicm_sreader;
 
@@ -45,7 +45,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader);
 /**
  * Return current dataelement
  */
-__must_check
-struct _dataelement *dicm_sreader_get_dataelement(struct _dicm_sreader *sreader);
+__must_check struct _dataelement *dicm_sreader_get_dataelement(
+    struct _dicm_sreader *sreader);
 
 typedef struct _dicm_sreader dicm_sreader_t;
