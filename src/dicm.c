@@ -107,13 +107,14 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
   return sreader->current_state;
 }
 
-int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
-                                 struct _dataelement *de) {
+struct _dataelement * dicm_sreader_get_dataelement(struct _dicm_sreader *sreader
+                                 ) {
   if (sreader->current_state != kFileMetaElement &&
       sreader->current_state != kDataElement)
-    return -kDicmInvalidArgument;
-  memcpy(de, &sreader->dataelement, sizeof(struct _dataelement));
-  return 0;
+    return NULL; //-kDicmInvalidArgument;
+  return &sreader->dataelement;
+//  memcpy(de, &sreader->dataelement, sizeof(struct _dataelement));
+//  return 0;
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {
