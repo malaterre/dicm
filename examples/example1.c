@@ -49,7 +49,7 @@ src_t fsrc;
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
-  struct _dataelement de = {0};
+  struct _dataelement *de;
   while (dicm_sreader_hasnext(sreader)) {
     int next = dicm_sreader_next(sreader);
     switch (next) {
@@ -63,13 +63,13 @@ src_t fsrc;
         break;
 
       case kFileMetaElement:
-        dicm_sreader_get_dataelement(sreader, &de);
-        print_dataelement(&de);
+        if( de = dicm_sreader_get_dataelement(sreader))
+        print_dataelement(de);
         break;
 
       case kDataElement:
-        dicm_sreader_get_dataelement(sreader, &de);
-        print_dataelement(&de);
+        if( de = dicm_sreader_get_dataelement(sreader))
+        print_dataelement(de);
         break;
 
       case kEndInstance:

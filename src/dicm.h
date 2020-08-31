@@ -45,7 +45,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader);
 /**
  * Return current dataelement
  */
-__must_check int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
-                                 struct _dataelement *de);
+__must_check
+struct _dataelement *dicm_sreader_get_dataelement(struct _dicm_sreader *sreader);
 
 typedef struct _dicm_sreader dicm_sreader_t;
