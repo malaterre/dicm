@@ -30,6 +30,7 @@
 
 /** stream reader */
 struct _dicm_sreader {
+  struct _mem *mem;
   struct _src *src;
   struct _dataelement dataelement;
   enum state current_state;
@@ -38,8 +39,9 @@ struct _dicm_sreader {
   size_t bufsizemax;          // = sizeof buffer
 };
 
-struct _dicm_sreader *dicm_sreader_init(struct _src *src) {
-  struct _dicm_sreader *sreader = malloc(sizeof *sreader);
+struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
+  struct _dicm_sreader *sreader = mem->ops->alloc(mem, sizeof *sreader);
+  sreader->mem = mem;
   sreader->src = src;
   sreader->current_state = kStartInstance;
   memset(sreader->buffer, 0, sizeof sreader->buffer);
@@ -115,6 +117,6 @@ int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {
-  free(sreader);
+  sreader->mem->ops->free(sreader->mem, sreader);
   return 0;
 }

@@ -22,12 +22,12 @@
 #pragma once
 
 #include "dicm-features.h"
+#include "dicm-mem.h"
 #include "dicm-io.h"
 #include "dicm-errno.h"
 
 struct _dicm_sreader;
-// int dicm_sreader_init(struct _dicm_sreader *sreader, struct _src *src);
-struct _dicm_sreader *dicm_sreader_init(struct _src *src);
+struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src);
 int dicm_sreader_hasnext(struct _dicm_sreader *sreader);
 int dicm_sreader_next(struct _dicm_sreader *sreader);
 int dicm_sreader_fini(struct _dicm_sreader *sreader);
