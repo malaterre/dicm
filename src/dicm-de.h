@@ -69,7 +69,6 @@ struct _dataelement {
   vl_t vl;
 };
 
-
 //struct _dataelement;
 uint16_t dicm_de_get_group(struct _dataelement *de);
 

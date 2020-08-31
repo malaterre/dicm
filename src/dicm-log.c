@@ -28,15 +28,14 @@
 
 struct _log *global_log = NULL;
 
-//struct _log *get_global_logger();
 void set_global_logger(struct _log *log)
 {
   global_log = log;
 }
 
-void log_errno()
+void log_errno(log_level_t llevel)
 {
   char buf[1024];
   strerror_r(errno, buf, sizeof buf);
-  global_log->ops->debug(global_log, buf);
+  global_log->ops->msg(global_log, llevel, buf);
 }

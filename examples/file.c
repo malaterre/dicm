@@ -34,7 +34,7 @@ static bool fsrc_open(struct _src *src, const char *fspec) {
   FILE *file = fopen(fspec, "rb");
   src->data = file;
   if( file == NULL ) {
-    log_errno();
+    log_errno(debug);
     return false;
   }
   return true;
@@ -70,7 +70,7 @@ static bool fsrc_seek(struct _src *src, offset_t offset) {
 
 static offset_t fsrc_tell(struct _src *src) { offset_t ret = ftello(src->data);
   if( ret == (offset_t)-1) {
-    log_errno();
+    log_errno(debug);
 }
   return ret;
  }
