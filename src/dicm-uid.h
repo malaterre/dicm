@@ -28,8 +28,12 @@
 struct _uid;
 bool uid_from_string(struct _uid *out, const char *in);
 
+struct _fast_uid;
+bool fast_uid_from_string(struct _fast_uid *out, const char *in);
+
 struct _packed_uid;
 bool packed_uid_from_string(struct _packed_uid *out, const char *in);
 
 typedef struct _uid uid_t;
-typedef struct _fast_uid uid_fast_t;
+typedef struct _fast_uid fast_uid_t;
+typedef struct _packed_uid packed_uid_t;

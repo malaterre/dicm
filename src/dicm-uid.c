@@ -32,6 +32,11 @@ struct _uid
   str_64_t buf;
 };
 
+struct _fast_uid // FIXME
+{
+  str_64_t buf;
+};
+
 bool uid_from_string(struct _uid *out, const char *in) {
   if(!in) return false;
     const size_t len = strlen(in);
@@ -40,6 +45,10 @@ bool uid_from_string(struct _uid *out, const char *in) {
       return true;
     }
     return false;
+}
+
+bool fast_uid_from_string(struct _fast_uid *out, const char *in) {
+  return uid_from_string((struct _uid*)out, in);
 }
 
 struct _packed_uid

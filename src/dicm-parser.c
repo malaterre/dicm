@@ -295,6 +295,19 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   return 0;
 }
 
+void print_file_preamble(const char *buf)
+{
+  for( int i = 0; i < 128; ++i ) {
+  printf("%02x", buf[i] );
+  }
+  printf("\n" );
+}
+
+void print_prefix(const char *buf)
+{
+  printf("%.4s\n", buf );
+}
+
 void print_dataelement(struct _dataelement *de) {
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);

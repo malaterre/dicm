@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
   struct _dataelement *de;
+  const char * buf;
   while (dicm_sreader_hasnext(sreader)) {
     int next = dicm_sreader_next(sreader);
     switch (next) {
@@ -59,9 +60,11 @@ int main(int argc, char *argv[]) {
         break;
 
       case kFilePreamble:
+        if( (buf  = dicm_sreader_get_file_preamble(sreader))) print_file_preamble(buf);
         break;
 
       case kPrefix:
+        if((buf  = dicm_sreader_get_prefix(sreader))) print_prefix(buf);
         break;
 
       case kFileMetaElement:
