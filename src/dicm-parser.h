@@ -25,4 +25,6 @@
 #include "dicm-io.h"
 
 int read_explicit(struct _src *src, struct _dataelement *de);
+void print_file_preamble(const char *buf);
+void print_prefix(const char *buf);
 void print_dataelement(struct _dataelement *de);
