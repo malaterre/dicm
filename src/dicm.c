@@ -32,11 +32,11 @@
 struct _dicm_sreader {
   struct _mem *mem;
   struct _src *src;
-  struct _dataelement dataelement; // current dataelement
+  struct _dataelement dataelement;  // current dataelement
   enum state current_state;
   char buffer[128 /*4096*/];  // Minimal amount of memory (preamble is the
                               // bigest one ?)
-  size_t bufsize;          //
+  size_t bufsize;             //
 };
 
 struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
@@ -45,7 +45,7 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
   sreader->src = src;
   sreader->current_state = kStartInstance;
   memset(sreader->buffer, 0, sizeof sreader->buffer);
-  sreader->bufsize= 0; //sizeof sreader->buffer;
+  sreader->bufsize = 0;  // sizeof sreader->buffer;
   sreader->dataelement.tag = 0;
   return sreader;
 }
@@ -66,13 +66,13 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       /* Do something with input and set current_state */
       // get new input:
       bufsize = 128;
-  sreader->bufsize= src->ops->read(src, buf, bufsize);
+      sreader->bufsize = src->ops->read(src, buf, bufsize);
       sreader->current_state = kFilePreamble;
       break;
 
     case kFilePreamble:
       bufsize = 4;
-  sreader->bufsize= src->ops->read(src, buf, bufsize);
+      sreader->bufsize = src->ops->read(src, buf, bufsize);
       sreader->current_state = kPrefix;
       break;
 
@@ -99,7 +99,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
         sreader->current_state = kEndInstance;
       } else {
         if (dicm_de_get_group(de) >= 0x8) {
-        sreader->current_state = kDataElement;
+          sreader->current_state = kDataElement;
         }
       }
     } break;
@@ -115,17 +115,13 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
   return sreader->current_state;
 }
 
-const char *dicm_sreader_get_file_preamble(
-    struct _dicm_sreader *sreader) {
-  if (sreader->current_state != kFilePreamble )
-    return NULL;
+const char *dicm_sreader_get_file_preamble(struct _dicm_sreader *sreader) {
+  if (sreader->current_state != kFilePreamble) return NULL;
   return sreader->buffer;
 }
 
-const char *dicm_sreader_get_prefix(
-    struct _dicm_sreader *sreader) {
-  if (sreader->current_state != kPrefix)
-    return NULL;
+const char *dicm_sreader_get_prefix(struct _dicm_sreader *sreader) {
+  if (sreader->current_state != kPrefix) return NULL;
   return sreader->buffer;
 }
 

@@ -25,7 +25,4 @@ uint16_t dicm_de_get_group(struct _dataelement *de) {
   return get_group(de->tag);
 }
 
-vl_t dicm_de_get_vl(struct _dataelement *de) {
-  return de->vl;
-}
-
+vl_t dicm_de_get_vl(struct _dataelement *de) { return de->vl; }
