@@ -90,6 +90,8 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
         sreader->current_state = kFileMetaElement;
       else if (dicm_de_get_group(de) >= 0x8)
         sreader->current_state = kDataElement;
+      else
+        assert(0);
       break;
 
     case kDataElement: {
@@ -111,10 +113,8 @@ struct _dataelement *dicm_sreader_get_dataelement(
     struct _dicm_sreader *sreader) {
   if (sreader->current_state != kFileMetaElement &&
       sreader->current_state != kDataElement)
-    return NULL;  //-kDicmInvalidArgument;
+    return NULL;
   return &sreader->dataelement;
-  //  memcpy(de, &sreader->dataelement, sizeof(struct _dataelement));
-  //  return 0;
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {
