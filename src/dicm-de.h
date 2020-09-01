@@ -21,6 +21,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef uint32_t tag_t;
 typedef uint16_t vr_t;
@@ -73,7 +74,12 @@ enum {
 };
 
 // struct _dataelement;
+tag_t dicm_de_get_tag(struct _dataelement *de);
 uint16_t dicm_de_get_group(struct _dataelement *de);
 vl_t dicm_de_get_vl(struct _dataelement *de);
 
+bool dicm_de_is_start(const struct _dataelement *de);
+bool dicm_de_is_end_item(const struct _dataelement *de);
+bool dicm_de_is_end_sq(const struct _dataelement *de);
+ 
 typedef struct _dataelement dataelement_t;

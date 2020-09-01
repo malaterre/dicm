@@ -98,14 +98,17 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       if (read_explicit(src, de) == -1) {
         sreader->current_state = kEndInstance;
       } else {
-        if (dicm_de_get_group(de) >= 0x8) {
+        if (dicm_de_is_start(de)) {
+          sreader->current_state = kItem;}
+        else if (dicm_de_get_group(de) >= 0x8) {
           sreader->current_state = kDataElement;
         }
       }
     } break;
 
     case kItem:
-      assert(0);
+      read_explicit(src, de);
+      sreader->current_state = kDataElement;
       break;
 
     case kEndInstance:

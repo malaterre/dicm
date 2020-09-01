@@ -54,8 +54,7 @@
 
 // Full list of VRs as of DICOM 2017a
 enum VR {
-  // kINVALID = 0, /* Item, Item Delimitation Item & Sequence Delimitation Item
-  // */
+  kINVALID = 0, /* Item, Item Delimitation Item & Sequence Delimitation Item */
   kAE = MAKE_VR('A', 'E'),
   kAS = MAKE_VR('A', 'S'),
   kAT = MAKE_VR('A', 'T'),
@@ -96,6 +95,21 @@ enum {
   kEndSQ = MAKE_TAG(0xfffe, 0xe0dd),
 };
 
+bool dicm_de_is_start(const struct _dataelement *de)
+{
+  return de->tag == (tag_t)kStart;
+}
+
+bool dicm_de_is_end_item(const struct _dataelement *de)
+{
+  return de->tag == (tag_t)kEndItem;
+}
+
+bool dicm_de_is_end_sq(const struct _dataelement *de)
+{
+  return de->tag == (tag_t)kEndSQ;
+}
+ 
 static inline bool is_vr16(const vr_t vr) {
   switch (vr) {
     case kAE:
@@ -227,12 +241,11 @@ static inline uint32_t compute_undef_len(const struct _dataelement *de,
   return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + len;
 }
 
-static int read_explicit1(struct _dataelement *de, const char *buf,
+static int read_explicit0(struct _dataelement *de, const char *buf,
                           size_t len) {
   utag_t t;
-  uvr_t vr;
 
-  assert(len == 6);
+  assert(len == 4);
   // Tag
   // size_t n = fread( t.tags, sizeof *t.tags, 2, stream );
   memcpy(t.tags, buf, sizeof *t.tags * 2);
@@ -240,14 +253,22 @@ static int read_explicit1(struct _dataelement *de, const char *buf,
   SWAP_TAG(t);
   if (!tag_is_lower(de, t.tag)) return -kDicmOutOfOrder;
 
+  de->tag = t.tag;
+  return 0;
+}
+
+static int read_explicit1(struct _dataelement *de, const char *buf,
+                          size_t len) {
+  uvr_t vr;
+
+  assert(len == 2);
   // Value Representation
   // n = fread( vr.str, sizeof *vr.str, 2, stream );
-  memcpy(vr.str, buf + 4, sizeof *vr.str * 2);
+  memcpy(vr.str, buf + 0, sizeof *vr.str * 2);
   /* a lot of VR are not valid (eg: non-ASCII), however the standard may add
    * them in a future edition, so only exclude the impossible ones */
   if (/*n != 2 ||*/ !isvr_valid(vr)) return -kDicmInvalidVR;
 
-  de->tag = t.tag;
   de->vr = vr.vr;
   return 0;
 }
@@ -256,24 +277,25 @@ static int read_explicit2(struct _dataelement *de, const char *buf,
                           size_t len) {
   uvl_t vl;
 
+  // Value Length
+  if (!is_vr16(de->vr)) {
+    assert(len == 4);
+    /* padding must be set to zero */
+//    if (vl16.vl16 != 0) return false;
+
+    // n = fread( vl.bytes, 1, 4, stream );
+    memcpy(vl.bytes, buf + 0 + 0 + 0, 1 * 4);
+    // if( n != 4 ) return false;
+    SWAP_VL(vl.vl);
+  } else {
+    assert(len == 2);
   // padding and/or 16bits VL
   uvl16_t vl16;
   // n = fread( vl16.bytes, sizeof *vl16.bytes, 2, stream );
   memcpy(vl16.bytes, buf + 0 + 0, sizeof *vl16.bytes * 2);
   // if( n != 2 ) return false;
 
-  // Value Length
-  if (!is_vr16(de->vr)) {
-    assert(len == 6);
-    /* padding must be set to zero */
-    if (vl16.vl16 != 0) return false;
 
-    // n = fread( vl.bytes, 1, 4, stream );
-    memcpy(vl.bytes, buf + 0 + 0 + 2, 1 * 4);
-    // if( n != 4 ) return false;
-    SWAP_VL(vl.vl);
-  } else {
-    assert(len == 2);
     SWAP_VL16(vl16.vl16);
     vl.vl = vl16.vl16;
   }
@@ -285,18 +307,42 @@ static inline size_t get_explicit2_len(struct _dataelement *de) {
   if (is_vr16(de->vr)) {
     return 2;
   }
-  return 4 + 2;  // yes 4 + 2
+  return 4 + 0;
 }
 
 int read_explicit(struct _src *src, struct _dataelement *de) {
   char buf[16];
-  size_t ret = src->ops->read(src, buf, 4 + 2);
+  size_t ret = src->ops->read(src, buf, 4 + 0);
   if (ret == (size_t)-1) return ret;
-  read_explicit1(de, buf, 4 + 2);
+  read_explicit0(de, buf, 4 + 0);
+  if( is_start(de) ) {
+	  de->vr = kINVALID;
+	  de->vl = 0;
+
+	  size_t llen = get_explicit2_len(de);
+	  assert( llen == 4 + 0 );
+	  ret = src->ops->read(src, buf + 4, llen);
+	  if (ret == (size_t)-1) return ret;
+	  read_explicit2(de, buf + 4, llen);
+
+	  return 0;
+  }
+  ret = src->ops->read(src, buf + 4, 0 + 2);
+  if (ret == (size_t)-1) return ret;
+  read_explicit1(de, buf + 4, 2);
+  // VR16 ?
+  if (!is_vr16(de->vr)) {
+  uvl16_t vl16;
+  ret = src->ops->read(src, vl16.bytes, 2);
+    /* padding must be set to zero */
+    if (vl16.vl16 != 0) return -kDicmPaddingNotZero;
+  }
+
   size_t llen = get_explicit2_len(de);
-  src->ops->read(src, buf, llen);
-  read_explicit2(de, buf, llen);
-  if (de->vl != (uint32_t)-1) src->ops->seek(src, de->vl);
+  ret = src->ops->read(src, buf + 6, llen);
+  if (ret == (size_t)-1) return ret;
+  read_explicit2(de, buf + 6, llen);
+  if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
   return 0;
 }
 
