@@ -68,7 +68,12 @@ struct _dataelement {
   vl_t vl;
 };
 
+enum {
+  kUndefinedLength = (vl_t)-1,
+};
+
 // struct _dataelement;
 uint16_t dicm_de_get_group(struct _dataelement *de);
+vl_t dicm_de_get_vl(struct _dataelement *de);
 
 typedef struct _dataelement dataelement_t;

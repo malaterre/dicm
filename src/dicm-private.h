@@ -33,6 +33,9 @@ enum state {
   kPrefix,
   kFileMetaElement,
   kDataElement,
+  kItem, // (FFFE,E000)
+  kItemDelimitationItem, // (FFFE,E00D)
+  kSequenceDelimitationItem, // (FFFE,E0DD)
   kEndInstance
 };
 

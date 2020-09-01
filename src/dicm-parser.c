@@ -53,7 +53,7 @@
 #endif
 
 // Full list of VRs as of DICOM 2017a
-enum {
+enum VR {
   // kINVALID = 0, /* Item, Item Delimitation Item & Sequence Delimitation Item
   // */
   kAE = MAKE_VR('A', 'E'),
@@ -87,6 +87,13 @@ enum {
   kUR = MAKE_VR('U', 'R'),
   kUS = MAKE_VR('U', 'S'),
   kUT = MAKE_VR('U', 'T'),
+};
+
+enum {
+  kPixelData = MAKE_TAG(0x7fe0, 0x0010),
+  kStart = MAKE_TAG(0xfffe, 0xe000),
+  kEndItem = MAKE_TAG(0xfffe, 0xe00d),
+  kEndSQ = MAKE_TAG(0xfffe, 0xe0dd),
 };
 
 static inline bool is_vr16(const vr_t vr) {
@@ -286,19 +293,18 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   size_t ret = src->ops->read(src, buf, 4 + 2);
   if (ret == (size_t)-1) return ret;
   read_explicit1(de, buf, 4 + 2);
-  {
     size_t llen = get_explicit2_len(de);
     src->ops->read(src, buf, llen);
     read_explicit2(de, buf, llen);
-  }
-  src->ops->seek(src, de->vl);
+  if( de->vl != (uint32_t)-1 )
+    src->ops->seek(src, de->vl);
   return 0;
 }
 
 void print_file_preamble(const char *buf)
 {
   for( int i = 0; i < 128; ++i ) {
-  printf("%02x", buf[i] );
+  printf("%02x", (unsigned char)buf[i] );
   }
   printf("\n" );
 }
