@@ -35,7 +35,9 @@ extern struct _mem ansi;
 #include <stdio.h>  /* fopen */
 #include <stdlib.h> /* EXIT_SUCCESS */
 
-int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
+int main(int argc, char *argv[]) {
+  if( argc < 2 ) return EXIT_FAILURE;
+  const char * filename = argv[1];
   set_global_logger(&dlog);
 
   src_t fsrc;
@@ -45,7 +47,7 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
   fsrc.ops = &fsrc_ops;
   fdst.ops = &fdst_ops;
 
-  fsrc.ops->open(&fsrc, "input.dcm");
+  fsrc.ops->open(&fsrc, filename);
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
@@ -63,11 +65,11 @@ int main(__maybe_unused int argc, __maybe_unused char *argv[]) {
         break;
 
       case kFileMetaElement:
-        if (de = dicm_sreader_get_dataelement(sreader)) print_dataelement(de);
+        if ((de = dicm_sreader_get_dataelement(sreader))) print_dataelement(de);
         break;
 
       case kDataElement:
-        if (de = dicm_sreader_get_dataelement(sreader)) print_dataelement(de);
+        if ((de = dicm_sreader_get_dataelement(sreader))) print_dataelement(de);
         break;
 
       case kEndInstance:
