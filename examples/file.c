@@ -32,6 +32,8 @@
 static bool fsrc_open(struct _src *src, const char *fspec) {
   if (src == NULL) return false;
   FILE *file = fopen(fspec, "rb");
+  // TODO:
+  // https://en.cppreference.com/w/c/io/setvbuf
   src->data = file;
   if (file == NULL) {
     log_errno(debug);

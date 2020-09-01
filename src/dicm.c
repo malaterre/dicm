@@ -98,9 +98,15 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       if (read_explicit(src, de) == -1) {
         sreader->current_state = kEndInstance;
       } else {
-        if (dicm_de_get_group(de) >= 0x8) sreader->current_state = kDataElement;
+        if (dicm_de_get_group(de) >= 0x8) {
+        sreader->current_state = kDataElement;
+        }
       }
     } break;
+
+    case kItem:
+      assert(0);
+      break;
 
     case kEndInstance:
       /* Do something different and set current_state */
