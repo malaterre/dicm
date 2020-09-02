@@ -9,8 +9,10 @@ set(CMAKE_C_EXTENSIONS OFF)
 #message(${dicm_VERSION_MINOR})
 #message(${dicm_VERSION_PATCH})
 
+add_subdirectory(src)
+add_subdirectory(examples)
+
 # need to be at top-level
 enable_testing()
 
-add_subdirectory(src)
-add_subdirectory(examples)
+add_subdirectory(tests)

@@ -27,16 +27,20 @@
 #include <stdint.h> /* uint16_t */
 
 enum state {
-  kStartInstance = 0,
+  //  kStartInstance = 0,
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html#table_7.1-1
-  kFilePreamble,
+  kFilePreamble = 0,
   kPrefix,
   kFileMetaElement,
-  kDataElement,
-  kItem,                      // (FFFE,E000)
-  kItemDelimitationItem,      // (FFFE,E00D)
-  kSequenceDelimitationItem,  // (FFFE,E0DD)
-  kEndInstance
+  kDataElement, // Implicit or Explicit
+  kSequenceOfItems,
+  kSequenceOfFragments,
+  kItem,                                 // (FFFE,E000)
+  kFragment,                             // (FFFE,E000)
+  kItemDelimitationItem,                 // (FFFE,E00D)
+  kSequenceOfItemsDelimitationItem,      // (FFFE,E0DD)
+  kSequenceOfFragmentsDelimitationItem,  // (FFFE,E0DD)
+  kBasicOffsetTable,  // First Item in a Sequence of Fragments
 };
 
 #define _DICM_POISON(replacement) error__use_##replacement##_instead

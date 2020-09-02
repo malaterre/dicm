@@ -1,0 +1,1 @@
+- One way to check that an Implicit DS is using proper group length, is simply to read the file using Explicit TS.
