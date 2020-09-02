@@ -315,11 +315,9 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vr = kINVALID;
     de->vl = 0;
 
-    size_t llen = get_explicit2_len(de);
-    assert(llen == 4 + 0);
-    ret = src->ops->read(src, buf + 4, llen);
+    ret = src->ops->read(src, buf + 4, 4);
     if (ret == (size_t)-1) return ret;
-    read_explicit2(de, buf + 4, llen);
+    read_explicit2(de, buf + 4, 4);
     if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
 
     return 0;
@@ -328,11 +326,9 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vr = kINVALID;
     de->vl = 0;
 
-    size_t llen = get_explicit2_len(de);
-    assert(llen == 4 + 0);
-    ret = src->ops->read(src, buf + 4, llen);
+    ret = src->ops->read(src, buf + 4, 4);
     if (ret == (size_t)-1) return ret;
-    read_explicit2(de, buf + 4, llen);
+    read_explicit2(de, buf + 4, 4);
 
     return 0;
   }
@@ -340,15 +336,13 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vr = kINVALID;
     de->vl = 0;
 
-    size_t llen = get_explicit2_len(de);
-    assert(llen == 4 + 0);
-    ret = src->ops->read(src, buf + 4, llen);
+    ret = src->ops->read(src, buf + 4, 4);
     if (ret == (size_t)-1) return ret;
-    read_explicit2(de, buf + 4, llen);
+    read_explicit2(de, buf + 4, 4);
 
     return 0;
   }
-    ret = src->ops->read(src, buf + 4, 0 + 2);
+  ret = src->ops->read(src, buf + 4, 0 + 2);
   if (ret == (size_t)-1) return ret;
   read_explicit1(de, buf + 4, 2);
   // VR16 ?
