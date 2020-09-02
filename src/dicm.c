@@ -58,8 +58,8 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   char *buf = sreader->buffer;
   int current_state = sreader->current_state;
-  struct _dataelement cur = {0}; // = &sreader->dataelement;
-  struct _dataelement *de = &cur; //&sreader->dataelement;
+  struct _dataelement cur = {0};   // = &sreader->dataelement;
+  struct _dataelement *de = &cur;  //&sreader->dataelement;
 
   size_t bufsize;
   switch (current_state) {
@@ -108,12 +108,14 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
           sreader->current_state = kSequenceDelimitationItem;
-         } else if (dicm_de_get_group(de) >= 0x8) {
+        } else if (dicm_de_get_group(de) >= 0x8) {
           memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
+        } else {
+          assert(0);
         }
       }
-    break;
+      break;
 
     case kItem:
       de->tag = 0;
@@ -133,9 +135,11 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
           sreader->current_state = kSequenceDelimitationItem;
-         } else if (dicm_de_get_group(de) >= 0x8) {
+        } else if (dicm_de_get_group(de) >= 0x8) {
           memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
+        } else {
+          assert(0);
         }
       }
       break;
@@ -151,13 +155,14 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
           sreader->current_state = kSequenceDelimitationItem;
-         } else if (dicm_de_get_group(de) >= 0x8) {
+        } else if (dicm_de_get_group(de) >= 0x8) {
           memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
+        } else {
+          assert(0);
         }
       }
       break;
-
 
     case kEndInstance:
       /* Do something different and set current_state */
