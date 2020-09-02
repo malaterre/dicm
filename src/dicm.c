@@ -58,7 +58,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   char *buf = sreader->buffer;
   int current_state = sreader->current_state;
-  struct _dataelement cur; // = &sreader->dataelement;
+  struct _dataelement cur = {0}; // = &sreader->dataelement;
   struct _dataelement *de = &cur; //&sreader->dataelement;
 
   size_t bufsize;
@@ -79,6 +79,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
 
     case kPrefix:
       read_explicit(src, de);
+      memcpy(&sreader->dataelement, de, sizeof *de);
       if (dicm_de_get_group(de) == 0x2)
         sreader->current_state = kFileMetaElement;
       else
