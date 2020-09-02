@@ -238,22 +238,6 @@ static inline uint32_t compute_undef_len(const struct _dataelement *de,
   return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + len;
 }
 
-static int read_explicit0(struct _dataelement *de, const char *buf,
-                          size_t len) {
-  utag_t t;
-
-  assert(len == 4);
-  // Tag
-  // size_t n = fread( t.tags, sizeof *t.tags, 2, stream );
-  memcpy(t.tags, buf, sizeof *t.tags * 2);
-  // if( n != 4 ) return false;
-  SWAP_TAG(t);
-  if (!tag_is_lower(de, t.tag)) return -kDicmOutOfOrder;
-
-  de->tag = t.tag;
-  return 0;
-}
-
 static int read_explicit1(struct _dataelement *de, const char *buf,
                           size_t len) {
   uvr_t vr;
@@ -310,8 +294,17 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   char buf[16];
   size_t ret = src->ops->read(src, buf, 4 + 0);
   if (ret == (size_t)-1) return ret;
-  read_explicit0(de, buf, 4 + 0);
-  if (is_start(de)) {
+  // read_explicit0(de, buf, 4 + 0);
+  utag_t t;
+
+  // Tag
+  // size_t n = fread( t.tags, sizeof *t.tags, 2, stream );
+  memcpy(t.tags, buf, sizeof *t.tags * 2);
+  // if( n != 4 ) return false;
+  SWAP_TAG(t);
+
+  if (t.tag == (tag_t)kStart /*is_start(de)*/) {
+    de->tag = t.tag;
     de->vr = kINVALID;
     de->vl = 0;
 
@@ -322,7 +315,8 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
     return 0;
   }
-  if (is_end_item(de)) {
+  if (t.tag == (tag_t)kEndItem /*is_end_item(de)*/) {
+    de->tag = t.tag;
     de->vr = kINVALID;
     de->vl = 0;
 
@@ -332,7 +326,8 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
     return 0;
   }
-  if (is_end_sq(de)) {
+  if (t.tag == (tag_t)kEndSQ /*is_end_sq(de)*/) {
+    de->tag = t.tag;
     de->vr = kINVALID;
     de->vl = 0;
 
@@ -342,6 +337,10 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
     return 0;
   }
+  if (!tag_is_lower(de, t.tag)) { assert(0); return -kDicmOutOfOrder; }
+
+  de->tag = t.tag;
+
   ret = src->ops->read(src, buf + 4, 0 + 2);
   if (ret == (size_t)-1) return ret;
   read_explicit1(de, buf + 4, 2);
