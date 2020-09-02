@@ -352,7 +352,9 @@ void print_file_preamble(const char *buf) {
 
 void print_prefix(const char *buf) { printf("%.4s\n", buf); }
 
-void print_dataelement(struct _dataelement *de) {
+void print_item() { printf(">>\n"); }
+
+void print_dataelement(const struct _dataelement *de) {
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
 }
