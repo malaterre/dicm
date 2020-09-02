@@ -294,13 +294,10 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   char buf[16];
   size_t ret = src->ops->read(src, buf, 4 + 0);
   if (ret == (size_t)-1) return ret;
-  // read_explicit0(de, buf, 4 + 0);
   utag_t t;
 
   // Tag
-  // size_t n = fread( t.tags, sizeof *t.tags, 2, stream );
-  memcpy(t.tags, buf, sizeof *t.tags * 2);
-  // if( n != 4 ) return false;
+  memcpy(t.tags, buf, sizeof t.tags);
   SWAP_TAG(t);
 
   if (t.tag == (tag_t)kStart /*is_start(de)*/) {
