@@ -58,7 +58,8 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   char *buf = sreader->buffer;
   int current_state = sreader->current_state;
-  struct _dataelement *de = &sreader->dataelement;
+  struct _dataelement cur; // = &sreader->dataelement;
+  struct _dataelement *de = &cur; //&sreader->dataelement;
 
   size_t bufsize;
   switch (current_state) {
@@ -86,10 +87,14 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
 
     case kFileMetaElement:
       read_explicit(src, de);
-      if (dicm_de_get_group(de) == 0x2)
+      if (dicm_de_get_group(de) == 0x2) {
+          memcpy(&sreader->dataelement, de, sizeof *de);
         sreader->current_state = kFileMetaElement;
-      else if (dicm_de_get_group(de) >= 0x8)
+}
+      else if (dicm_de_get_group(de) >= 0x8) {
+          memcpy(&sreader->dataelement, de, sizeof *de);
         sreader->current_state = kDataElement;
+}
       else
         assert(0);
       break;
@@ -101,13 +106,16 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
         if (dicm_de_is_start(de)) {
           sreader->current_state = kItem;}
         else if (dicm_de_get_group(de) >= 0x8) {
+          memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
         }
       }
     } break;
 
     case kItem:
+      de->tag = 0;
       read_explicit(src, de);
+      memcpy(&sreader->dataelement, de, sizeof *de);
       sreader->current_state = kDataElement;
       break;
 

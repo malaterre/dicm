@@ -95,21 +95,18 @@ enum {
   kEndSQ = MAKE_TAG(0xfffe, 0xe0dd),
 };
 
-bool dicm_de_is_start(const struct _dataelement *de)
-{
+bool dicm_de_is_start(const struct _dataelement *de) {
   return de->tag == (tag_t)kStart;
 }
 
-bool dicm_de_is_end_item(const struct _dataelement *de)
-{
+bool dicm_de_is_end_item(const struct _dataelement *de) {
   return de->tag == (tag_t)kEndItem;
 }
 
-bool dicm_de_is_end_sq(const struct _dataelement *de)
-{
+bool dicm_de_is_end_sq(const struct _dataelement *de) {
   return de->tag == (tag_t)kEndSQ;
 }
- 
+
 static inline bool is_vr16(const vr_t vr) {
   switch (vr) {
     case kAE:
@@ -281,7 +278,7 @@ static int read_explicit2(struct _dataelement *de, const char *buf,
   if (!is_vr16(de->vr)) {
     assert(len == 4);
     /* padding must be set to zero */
-//    if (vl16.vl16 != 0) return false;
+    //    if (vl16.vl16 != 0) return false;
 
     // n = fread( vl.bytes, 1, 4, stream );
     memcpy(vl.bytes, buf + 0 + 0 + 0, 1 * 4);
@@ -289,12 +286,11 @@ static int read_explicit2(struct _dataelement *de, const char *buf,
     SWAP_VL(vl.vl);
   } else {
     assert(len == 2);
-  // padding and/or 16bits VL
-  uvl16_t vl16;
-  // n = fread( vl16.bytes, sizeof *vl16.bytes, 2, stream );
-  memcpy(vl16.bytes, buf + 0 + 0, sizeof *vl16.bytes * 2);
-  // if( n != 2 ) return false;
-
+    // padding and/or 16bits VL
+    uvl16_t vl16;
+    // n = fread( vl16.bytes, sizeof *vl16.bytes, 2, stream );
+    memcpy(vl16.bytes, buf + 0 + 0, sizeof *vl16.bytes * 2);
+    // if( n != 2 ) return false;
 
     SWAP_VL16(vl16.vl16);
     vl.vl = vl16.vl16;
@@ -315,25 +311,26 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   size_t ret = src->ops->read(src, buf, 4 + 0);
   if (ret == (size_t)-1) return ret;
   read_explicit0(de, buf, 4 + 0);
-  if( is_start(de) ) {
-	  de->vr = kINVALID;
-	  de->vl = 0;
+  if (is_start(de)) {
+    de->vr = kINVALID;
+    de->vl = 0;
 
-	  size_t llen = get_explicit2_len(de);
-	  assert( llen == 4 + 0 );
-	  ret = src->ops->read(src, buf + 4, llen);
-	  if (ret == (size_t)-1) return ret;
-	  read_explicit2(de, buf + 4, llen);
+    size_t llen = get_explicit2_len(de);
+    assert(llen == 4 + 0);
+    ret = src->ops->read(src, buf + 4, llen);
+    if (ret == (size_t)-1) return ret;
+    read_explicit2(de, buf + 4, llen);
+    if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
 
-	  return 0;
+    return 0;
   }
   ret = src->ops->read(src, buf + 4, 0 + 2);
   if (ret == (size_t)-1) return ret;
   read_explicit1(de, buf + 4, 2);
   // VR16 ?
   if (!is_vr16(de->vr)) {
-  uvl16_t vl16;
-  ret = src->ops->read(src, vl16.bytes, 2);
+    uvl16_t vl16;
+    ret = src->ops->read(src, vl16.bytes, 2);
     /* padding must be set to zero */
     if (vl16.vl16 != 0) return -kDicmPaddingNotZero;
   }

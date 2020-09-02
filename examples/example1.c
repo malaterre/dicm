@@ -75,6 +75,10 @@ int main(int argc, char *argv[]) {
         if ((de = dicm_sreader_get_dataelement(sreader))) print_dataelement(de);
         break;
 
+    case kItem:
+assert(0);
+        break;
+
       case kEndInstance:
         break;
     }
