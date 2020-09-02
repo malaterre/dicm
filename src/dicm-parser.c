@@ -324,7 +324,31 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
     return 0;
   }
-  ret = src->ops->read(src, buf + 4, 0 + 2);
+  if (is_end_item(de)) {
+    de->vr = kINVALID;
+    de->vl = 0;
+
+    size_t llen = get_explicit2_len(de);
+    assert(llen == 4 + 0);
+    ret = src->ops->read(src, buf + 4, llen);
+    if (ret == (size_t)-1) return ret;
+    read_explicit2(de, buf + 4, llen);
+
+    return 0;
+  }
+  if (is_end_sq(de)) {
+    de->vr = kINVALID;
+    de->vl = 0;
+
+    size_t llen = get_explicit2_len(de);
+    assert(llen == 4 + 0);
+    ret = src->ops->read(src, buf + 4, llen);
+    if (ret == (size_t)-1) return ret;
+    read_explicit2(de, buf + 4, llen);
+
+    return 0;
+  }
+    ret = src->ops->read(src, buf + 4, 0 + 2);
   if (ret == (size_t)-1) return ret;
   read_explicit1(de, buf + 4, 2);
   // VR16 ?
@@ -341,20 +365,4 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   read_explicit2(de, buf + 6, llen);
   if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
   return 0;
-}
-
-void print_file_preamble(const char *buf) {
-  for (int i = 0; i < 128; ++i) {
-    printf("%02x", (unsigned char)buf[i]);
-  }
-  printf("\n");
-}
-
-void print_prefix(const char *buf) { printf("%.4s\n", buf); }
-
-void print_item() { printf(">>\n"); }
-
-void print_dataelement(const struct _dataelement *de) {
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
 }
