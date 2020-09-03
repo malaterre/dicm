@@ -244,11 +244,10 @@ static int read_explicit1(struct _dataelement *de, const char *buf,
 
   assert(len == 2);
   // Value Representation
-  // n = fread( vr.str, sizeof *vr.str, 2, stream );
-  memcpy(vr.str, buf + 0, sizeof *vr.str * 2);
+  memcpy(vr.str, buf + 0, sizeof vr.str);
   /* a lot of VR are not valid (eg: non-ASCII), however the standard may add
    * them in a future edition, so only exclude the impossible ones */
-  if (/*n != 2 ||*/ !isvr_valid(vr)) return -kDicmInvalidVR;
+  if (!isvr_valid(vr)) return -kDicmInvalidVR;
 
   de->vr = vr.vr;
   return 0;
@@ -261,20 +260,13 @@ static int read_explicit2(struct _dataelement *de, const char *buf,
   // Value Length
   if (!is_vr16(de->vr)) {
     assert(len == 4);
-    /* padding must be set to zero */
-    //    if (vl16.vl16 != 0) return false;
-
-    // n = fread( vl.bytes, 1, 4, stream );
     memcpy(vl.bytes, buf + 0 + 0 + 0, 1 * 4);
-    // if( n != 4 ) return false;
     SWAP_VL(vl.vl);
   } else {
     assert(len == 2);
     // padding and/or 16bits VL
     uvl16_t vl16;
-    // n = fread( vl16.bytes, sizeof *vl16.bytes, 2, stream );
     memcpy(vl16.bytes, buf + 0 + 0, sizeof *vl16.bytes * 2);
-    // if( n != 2 ) return false;
 
     SWAP_VL16(vl16.vl16);
     vl.vl = vl16.vl16;
@@ -292,8 +284,10 @@ static inline size_t get_explicit2_len(struct _dataelement *de) {
 
 int read_explicit(struct _src *src, struct _dataelement *de) {
   char buf[16];
-  size_t ret = src->ops->read(src, buf, 4 + 0);
-  if (ret == (size_t)-1) return ret;
+  size_t ret = src->ops->read(src, buf, 4);
+  if (ret < 4) {
+    return -kNotEnoughData;
+  }
   utag_t t;
 
   // Tag
@@ -306,7 +300,9 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vl = 0;
 
     ret = src->ops->read(src, buf + 4, 4);
-    if (ret == (size_t)-1) return ret;
+    if (ret < 4) {
+      return -kNotEnoughData;
+    }
     read_explicit2(de, buf + 4, 4);
     if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
 
@@ -318,7 +314,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vl = 0;
 
     ret = src->ops->read(src, buf + 4, 4);
-    if (ret == (size_t)-1) return ret;
+    if (ret < 4) return -kNotEnoughData;
     read_explicit2(de, buf + 4, 4);
 
     return 0;
@@ -329,17 +325,20 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vl = 0;
 
     ret = src->ops->read(src, buf + 4, 4);
-    if (ret == (size_t)-1) return ret;
+    if (ret < 4) return -kNotEnoughData;
     read_explicit2(de, buf + 4, 4);
 
     return 0;
   }
-  if (!tag_is_lower(de, t.tag)) { assert(0); return -kDicmOutOfOrder; }
+  if (!tag_is_lower(de, t.tag)) {
+    assert(0);
+    return -kDicmOutOfOrder;
+  }
 
   de->tag = t.tag;
 
   ret = src->ops->read(src, buf + 4, 0 + 2);
-  if (ret == (size_t)-1) return ret;
+  if (ret < 2) return -kNotEnoughData;
   read_explicit1(de, buf + 4, 2);
   // VR16 ?
   if (!is_vr16(de->vr)) {
@@ -351,7 +350,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
   size_t llen = get_explicit2_len(de);
   ret = src->ops->read(src, buf + 6, llen);
-  if (ret == (size_t)-1) return ret;
+  if (ret < llen) return -kNotEnoughData;
   read_explicit2(de, buf + 6, llen);
   if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
   return 0;

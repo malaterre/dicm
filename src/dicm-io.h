@@ -33,11 +33,18 @@ struct _src {
 struct _src_ops {
   /** Return true on success */
   bool (*open)(struct _src *src, const char *fspec);
-  /** Return 0 on success */
+  /** Return true on success */
   bool (*close)(struct _src *src);
-  /** Return the actual size of buffer read */
+  /** Return the actual size of buffer read.
+   * If an error occurs, or the end of the file is reached, the return value is
+   * a short item count (or zero).
+   */
   size_t (*read)(struct _src *src, void *buf, size_t bsize);
-  /** Return 0 on success */
+  /**
+   * Return true if the source is at end
+   */
+  bool (*at_end)(struct _src *src);
+  /** Seek to current position + offset. Return true on success */
   bool (*seek)(struct _src *src, offset_t offset);
   /** Return offset in file, or -1 upon error */
   offset_t (*tell)(struct _src *src);

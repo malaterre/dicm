@@ -124,6 +124,9 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
 
       case kEndInstance:
         break;
+
+      default:
+        printf("wotsit: %d\n", next);
     }
   }
 }
