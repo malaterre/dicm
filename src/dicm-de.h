@@ -38,6 +38,10 @@ typedef union {
   vr_t vr;
 } uvr_t;
 typedef union {
+  char str[4];
+  struct { vr_t vr; uint16_t reserved; } vr;
+} uvr32_t;
+typedef union {
   char bytes[4];
   vl_t vl;
 } uvl_t;

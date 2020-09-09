@@ -8,3 +8,7 @@ add_executable(dicmtest ${dicmtest})
 #target_include_directories(dicmtest ${dicm_SOURCE_DIR}/src)
 include_directories(${dicm_SOURCE_DIR}/src)
 target_link_libraries(dicmtest dicm)
+
+foreach(name ${TEST_SRCS})
+  add_test(NAME ${name} COMMAND dicmtest ${name})
+endforeach()

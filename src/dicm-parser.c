@@ -283,6 +283,80 @@ static inline size_t get_explicit2_len(struct _dataelement *de) {
 }
 
 int read_explicit(struct _src *src, struct _dataelement *de) {
+  // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
+  typedef union {
+    char str[12];
+    struct {
+      utag_t utag;
+      uvr32_t uvr;
+      uvl_t uvl;
+    } ede;  // explicit data element. 12 bytes
+    struct {
+      utag_t utag;
+      uvr_t uvr;
+      uvl16_t uvl;
+    } ede16;  // explicit data element, VR 16. 8 bytes
+    struct {
+      utag_t utag;
+      uvl_t uvl;
+    } ide;  // implicit data element. 8 bytes
+  } ude_t;
+  assert( sizeof(ude_t) == 12 );
+
+  ude_t ude;
+  size_t ret = src->ops->read(src, ude.str, 8);
+  if (ret < 8) {
+    return -kNotEnoughData;
+  }
+  SWAP_TAG(ude.ede.utag);
+
+  if (ude.ede.utag.tag == (tag_t)kStart /*is_start(de)*/) {
+    de->tag = ude.ide.utag.tag;
+    de->vr = kINVALID;
+    de->vl = ude.ide.uvl.vl;
+
+    if (de->vl != kUndefinedLength) {
+      src->ops->seek(src, de->vl);
+    }
+
+    return 0;
+  } else if (ude.ide.utag.tag == (tag_t)kEndItem /*is_end_item(de)*/
+             || ude.ide.utag.tag == (tag_t)kEndSQ /*is_end_sq(de)*/) {
+    de->tag = ude.ide.utag.tag;
+    de->vr = kINVALID;
+    de->vl = ude.ide.uvl.vl;
+
+    return 0;
+  }
+
+  if (!tag_is_lower(de, ude.ide.utag.tag)) {
+    assert(0);
+    return -kDicmOutOfOrder;
+  }
+
+  // VR16 ?
+  if (is_vr16(ude.ede16.uvr.vr)) {
+    de->tag = ude.ede16.utag.tag;
+    de->vr = ude.ede16.uvr.vr;
+    de->vl = ude.ede16.uvl.vl16;
+  } else {
+    // padding must be set to zero
+    if (ude.ede.uvr.vr.reserved != 0) return -kDicmPaddingNotZero;
+
+    ret = src->ops->read(src, ude.ede.uvl.bytes, 4);
+    if (ret < 4) return -kNotEnoughData;
+
+    de->tag = ude.ede.utag.tag;
+    de->vr = ude.ede.uvr.vr.vr;
+    de->vl = ude.ede.uvl.vl;
+  }
+
+  if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
+
+  return 0;
+}
+
+int read_explicit_old(struct _src *src, struct _dataelement *de) {
   char buf[16];
   size_t ret = src->ops->read(src, buf, 4);
   if (ret < 4) {
