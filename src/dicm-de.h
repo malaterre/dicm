@@ -20,6 +20,8 @@
  */
 #pragma once
 
+#include "dicm-features.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -51,6 +53,7 @@ static inline uint_fast16_t get_element(tag_t tag) {
   return (uint16_t)(tag & (uint16_t)0xffff);
 }
 
+// FIXME remove uvr_t from API
 static inline uvr_t get_vr_impl(vr_t vr) {
   uvr_t ret;
   ret.vr = vr;
