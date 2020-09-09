@@ -305,7 +305,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
   ude_t ude;
   size_t ret = src->ops->read(src, ude.str, 8);
-  if (ret < 8) {
+  if (unlikely(ret < 8)) {
     return -kNotEnoughData;
   }
   SWAP_TAG(ude.ede.utag);
@@ -332,21 +332,21 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
                                                : kSequenceDelimitationItem;
   }
 
-  if (!tag_is_lower(de, ude.ide.utag.tag)) {
+  if (unlikely(!tag_is_lower(de, ude.ide.utag.tag))) {
     return -kDicmOutOfOrder;
   }
 
   // VR16 ?
-  if (is_vr16(ude.ede16.uvr.vr)) {
+  if (unlikely(is_vr16(ude.ede16.uvr.vr))) {
     de->tag = ude.ede16.utag.tag;
     de->vr = ude.ede16.uvr.vr;
     de->vl = ude.ede16.uvl.vl16;
   } else {
     // padding must be set to zero
-    if (ude.ede.uvr.vr.reserved != 0) return -kDicmReservedNotZero;
+    if (unlikely(ude.ede.uvr.vr.reserved != 0)) return -kDicmReservedNotZero;
 
     ret = src->ops->read(src, ude.ede.uvl.bytes, 4);
-    if (ret < 4) return -kNotEnoughData;
+    if (unlikely(ret < 4)) return -kNotEnoughData;
 
     de->tag = ude.ede.utag.tag;
     de->vr = ude.ede.uvr.vr.vr;
@@ -357,7 +357,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
   if (ude.ede.utag.tags[1] == 0x2)
     return kFileMetaElement;
-  else if (ude.ede.utag.tags[1] >= 0x8)
+  else if (likely(ude.ede.utag.tags[1] >= 0x8))
     return kDataElement;
   assert(0);
   return -kInvalidTag;

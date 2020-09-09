@@ -25,3 +25,6 @@
 #define __maybe_unused __attribute__((__unused__))
 #define __must_check __attribute__((__warn_unused_result__))
 #define __packed __attribute__((packed))
+
+#define likely(x)      __builtin_expect(!!(x), 1)
+#define unlikely(x)    __builtin_expect(!!(x), 0)
