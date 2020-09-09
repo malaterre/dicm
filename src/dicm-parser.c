@@ -279,7 +279,7 @@ static inline size_t get_explicit2_len(struct _dataelement *de) {
   if (is_vr16(de->vr)) {
     return 2;
   }
-  return 4 + 0;
+  return 4;
 }
 
 int read_explicit(struct _src *src, struct _dataelement *de) {
