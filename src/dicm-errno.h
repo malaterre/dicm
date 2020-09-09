@@ -36,8 +36,9 @@ typedef enum {
                    "DataElement have been sent in out of order")
           DICM_MESSAGE(kDicmInvalidVR,
                        "Value Representation if non-ASCII uppercase (A-Z only)")
-              DICM_MESSAGE(kDicmPaddingNotZero, "Padding for VR16 should be 0")
+              DICM_MESSAGE(kDicmReservedNotZero, "Reserved for VR32 should be 0")
                   DICM_MESSAGE(kNotEnoughData, "Not enough bytes could be read from source.")
+                  DICM_MESSAGE(kInvalidTag, "Tag is not valid.")
 
 #ifdef DICM_MAKE_ENUM_LIST
 
