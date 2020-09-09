@@ -326,6 +326,8 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
 
+    assert( de->vl == 0 );
+
     return 0;
   }
 
