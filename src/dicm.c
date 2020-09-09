@@ -59,12 +59,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
   char *buf = sreader->buffer;
   int current_state = sreader->current_state;
   int ret;
-#if 0
-  struct _dataelement cur = {0};   // = &sreader->dataelement;
-  struct _dataelement *de = &cur;  //&sreader->dataelement;
-#else
   struct _dataelement *de = &sreader->dataelement;
-#endif
 
   if (src->ops->at_end(src)) {
 // dead code ??
