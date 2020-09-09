@@ -319,20 +319,20 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
       src->ops->seek(src, de->vl);
     }
 
-    return 0;
+    return kItem;
   } else if (ude.ide.utag.tag == (tag_t)kEndItem /*is_end_item(de)*/
              || ude.ide.utag.tag == (tag_t)kEndSQ /*is_end_sq(de)*/) {
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
 
-    assert( de->vl == 0 );
+    assert(de->vl == 0);
 
-    return 0;
+    return ude.ide.utag.tag == (tag_t)kEndItem ? kItemDelimitationItem
+                                               : kSequenceDelimitationItem;
   }
 
   if (!tag_is_lower(de, ude.ide.utag.tag)) {
-    assert(0);
     return -kDicmOutOfOrder;
   }
 
@@ -343,7 +343,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vl = ude.ede16.uvl.vl16;
   } else {
     // padding must be set to zero
-    if (ude.ede.uvr.vr.reserved != 0) return -kDicmPaddingNotZero;
+    if (ude.ede.uvr.vr.reserved != 0) return -kDicmReservedNotZero;
 
     ret = src->ops->read(src, ude.ede.uvl.bytes, 4);
     if (ret < 4) return -kNotEnoughData;
@@ -355,7 +355,12 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
   if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
 
-  return 0;
+  if (ude.ede.utag.tags[1] == 0x2)
+    return kFileMetaElement;
+  else if (ude.ede.utag.tags[1] >= 0x8)
+    return kDataElement;
+  assert(0);
+  return -kInvalidTag;
 }
 
 int read_explicit_old(struct _src *src, struct _dataelement *de) {
@@ -421,7 +426,7 @@ int read_explicit_old(struct _src *src, struct _dataelement *de) {
     uvl16_t vl16;
     ret = src->ops->read(src, vl16.bytes, 2);
     /* padding must be set to zero */
-    if (vl16.vl16 != 0) return -kDicmPaddingNotZero;
+    if (vl16.vl16 != 0) return -kDicmReservedNotZero;
   }
 
   size_t llen = get_explicit2_len(de);
