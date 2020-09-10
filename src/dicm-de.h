@@ -28,25 +28,26 @@
 typedef uint32_t tag_t;
 typedef uint16_t vr_t; // FIXME should it be u32 ?
 typedef uint32_t vl_t;
+typedef char byte_t;
 
 typedef union {
   uint16_t tags[2];
   tag_t tag;
 } utag_t;
 typedef union {
-  char bytes[2];
+  byte_t bytes[2];
   vr_t vr;
 } uvr_t;
 typedef union {
-  char bytes[4];
+  byte_t bytes[4];
   struct { vr_t vr; uint16_t reserved; } vr;
 } uvr32_t;
 typedef union {
-  char bytes[4];
+  byte_t bytes[4];
   vl_t vl;
 } uvl_t;
 typedef union {
-  char bytes[2];
+  byte_t bytes[2];
   uint16_t vl16;
 } uvl16_t;
 
