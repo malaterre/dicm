@@ -257,7 +257,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
       uvl_t uvl;
     } ide;  // implicit data element. 8 bytes
   } ude_t;
-  assert( sizeof(ude_t) == 12 );
+  assert(sizeof(ude_t) == 12);
 
   ude_t ude;
   size_t ret = src->ops->read(src, ude.bytes, 8);
