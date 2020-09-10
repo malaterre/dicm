@@ -238,54 +238,10 @@ static inline uint32_t compute_undef_len(const struct _dataelement *de,
   return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + len;
 }
 
-static int read_explicit1(struct _dataelement *de, const char *buf,
-                          size_t len) {
-  uvr_t vr;
-
-  assert(len == 2);
-  // Value Representation
-  memcpy(vr.bytes, buf + 0, sizeof vr.bytes);
-  /* a lot of VR are not valid (eg: non-ASCII), however the standard may add
-   * them in a future edition, so only exclude the impossible ones */
-  if (!isvr_valid(vr)) return -kDicmInvalidVR;
-
-  de->vr = vr.vr;
-  return 0;
-}
-
-static int read_explicit2(struct _dataelement *de, const char *buf,
-                          size_t len) {
-  uvl_t vl;
-
-  // Value Length
-  if (!is_vr16(de->vr)) {
-    assert(len == 4);
-    memcpy(vl.bytes, buf + 0 + 0 + 0, 1 * 4);
-    SWAP_VL(vl.vl);
-  } else {
-    assert(len == 2);
-    // padding and/or 16bits VL
-    uvl16_t vl16;
-    memcpy(vl16.bytes, buf + 0 + 0, sizeof *vl16.bytes * 2);
-
-    SWAP_VL16(vl16.vl16);
-    vl.vl = vl16.vl16;
-  }
-  de->vl = vl.vl;
-  return true;
-}
-
-static inline size_t get_explicit2_len(struct _dataelement *de) {
-  if (is_vr16(de->vr)) {
-    return 2;
-  }
-  return 4;
-}
-
 int read_explicit(struct _src *src, struct _dataelement *de) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   typedef union {
-    char bytes[12];
+    byte_t bytes[12];
     struct {
       utag_t utag;
       uvr32_t uvr;
@@ -361,78 +317,4 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     return kDataElement;
   assert(0);
   return -kInvalidTag;
-}
-
-int read_explicit_old(struct _src *src, struct _dataelement *de) {
-  char buf[16];
-  size_t ret = src->ops->read(src, buf, 4);
-  if (ret < 4) {
-    return -kNotEnoughData;
-  }
-  utag_t t;
-
-  // Tag
-  memcpy(t.tags, buf, sizeof t.tags);
-  SWAP_TAG(t);
-
-  if (t.tag == (tag_t)kStart /*is_start(de)*/) {
-    de->tag = t.tag;
-    de->vr = kINVALID;
-    de->vl = 0;
-
-    ret = src->ops->read(src, buf + 4, 4);
-    if (ret < 4) {
-      return -kNotEnoughData;
-    }
-    read_explicit2(de, buf + 4, 4);
-    if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
-
-    return 0;
-  }
-  if (t.tag == (tag_t)kEndItem /*is_end_item(de)*/) {
-    de->tag = t.tag;
-    de->vr = kINVALID;
-    de->vl = 0;
-
-    ret = src->ops->read(src, buf + 4, 4);
-    if (ret < 4) return -kNotEnoughData;
-    read_explicit2(de, buf + 4, 4);
-
-    return 0;
-  }
-  if (t.tag == (tag_t)kEndSQ /*is_end_sq(de)*/) {
-    de->tag = t.tag;
-    de->vr = kINVALID;
-    de->vl = 0;
-
-    ret = src->ops->read(src, buf + 4, 4);
-    if (ret < 4) return -kNotEnoughData;
-    read_explicit2(de, buf + 4, 4);
-
-    return 0;
-  }
-  if (!tag_is_lower(de, t.tag)) {
-    assert(0);
-    return -kDicmOutOfOrder;
-  }
-
-  de->tag = t.tag;
-
-  ret = src->ops->read(src, buf + 4, 0 + 2);
-  if (ret < 2) return -kNotEnoughData;
-  read_explicit1(de, buf + 4, 2);
-  // VR16 ?
-  if (!is_vr16(de->vr)) {
-    uvl16_t vl16;
-    ret = src->ops->read(src, vl16.bytes, 2);
-    /* padding must be set to zero */
-    if (vl16.vl16 != 0) return -kDicmReservedNotZero;
-  }
-
-  size_t llen = get_explicit2_len(de);
-  ret = src->ops->read(src, buf + 6, llen);
-  if (ret < llen) return -kNotEnoughData;
-  read_explicit2(de, buf + 6, llen);
-  if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
-  return 0;
 }
