@@ -89,7 +89,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         else
           assert(0);
       }
-  assert( ret == sreader->current_state );
+      assert(ret == sreader->current_state);
       break;
 
     case kFileMetaElement:
@@ -102,7 +102,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         sreader->current_state = kDataElement;
       } else
         assert(0);
-  assert( ret == sreader->current_state );
+      assert(ret == sreader->current_state);
       break;
 
     case kDataElement:
@@ -123,7 +123,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           assert(0);
         }
       }
-  assert( ret == sreader->current_state );
+      assert(ret == sreader->current_state);
       break;
 
     case kItem:
@@ -132,7 +132,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
       if (ret < 0) return ret;
       // memcpy(&sreader->dataelement, de, sizeof *de);
       sreader->current_state = kDataElement;
-  assert( ret == sreader->current_state );
+      assert(ret == sreader->current_state);
       break;
 
     case kItemDelimitationItem:
@@ -154,7 +154,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           assert(0);
         }
       }
-  assert( ret == sreader->current_state );
+      assert(ret == sreader->current_state);
       break;
 
     case kSequenceDelimitationItem:
@@ -176,7 +176,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           assert(0);
         }
       }
-  assert( ret == sreader->current_state );
+      assert(ret == sreader->current_state);
       break;
 
     case kEndInstance:
