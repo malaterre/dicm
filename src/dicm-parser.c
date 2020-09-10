@@ -180,8 +180,8 @@ static inline bool is_vr32(const vr_t vr) {
 }
 
 static inline bool isvr_valid(const uvr_t uvr) {
-  if (uvr.str[0] < 'A' || uvr.str[0] > 'Z' || /* uppercase A-Z only */
-      uvr.str[1] < 'A' || uvr.str[1] > 'Z')
+  if (uvr.bytes[0] < 'A' || uvr.bytes[0] > 'Z' || /* uppercase A-Z only */
+      uvr.bytes[1] < 'A' || uvr.bytes[1] > 'Z')
     return false;
   return true;
 }
@@ -244,7 +244,7 @@ static int read_explicit1(struct _dataelement *de, const char *buf,
 
   assert(len == 2);
   // Value Representation
-  memcpy(vr.str, buf + 0, sizeof vr.str);
+  memcpy(vr.bytes, buf + 0, sizeof vr.bytes);
   /* a lot of VR are not valid (eg: non-ASCII), however the standard may add
    * them in a future edition, so only exclude the impossible ones */
   if (!isvr_valid(vr)) return -kDicmInvalidVR;
@@ -285,7 +285,7 @@ static inline size_t get_explicit2_len(struct _dataelement *de) {
 int read_explicit(struct _src *src, struct _dataelement *de) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   typedef union {
-    char str[12];
+    char bytes[12];
     struct {
       utag_t utag;
       uvr32_t uvr;
@@ -304,7 +304,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   assert( sizeof(ude_t) == 12 );
 
   ude_t ude;
-  size_t ret = src->ops->read(src, ude.str, 8);
+  size_t ret = src->ops->read(src, ude.bytes, 8);
   if (unlikely(ret < 8)) {
     return -kNotEnoughData;
   }
@@ -337,7 +337,7 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   }
 
   // VR16 ?
-  if (unlikely(is_vr16(ude.ede16.uvr.vr))) {
+  if (is_vr16(ude.ede16.uvr.vr)) {
     de->tag = ude.ede16.utag.tag;
     de->vr = ude.ede16.uvr.vr;
     de->vl = ude.ede16.uvl.vl16;

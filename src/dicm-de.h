@@ -26,7 +26,7 @@
 #include <stdbool.h>
 
 typedef uint32_t tag_t;
-typedef uint16_t vr_t;
+typedef uint16_t vr_t; // FIXME should it be u32 ?
 typedef uint32_t vl_t;
 
 typedef union {
@@ -34,11 +34,11 @@ typedef union {
   tag_t tag;
 } utag_t;
 typedef union {
-  char str[2];
+  char bytes[2];
   vr_t vr;
 } uvr_t;
 typedef union {
-  char str[4];
+  char bytes[4];
   struct { vr_t vr; uint16_t reserved; } vr;
 } uvr32_t;
 typedef union {
@@ -64,7 +64,7 @@ static inline uvr_t get_vr_impl(vr_t vr) {
   return ret;
 }
 
-#define get_vr(vr) get_vr_impl(vr).str
+#define get_vr(vr) get_vr_impl(vr).bytes
 
 struct _dataelement {
   tag_t tag;
