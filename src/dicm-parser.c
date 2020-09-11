@@ -242,20 +242,9 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   typedef union {
     byte_t bytes[12];
-    struct {
-      utag_t utag;
-      uvr32_t uvr;
-      uvl_t uvl;
-    } ede;  // explicit data element. 12 bytes
-    struct {
-      utag_t utag;
-      uvr_t uvr;
-      uvl16_t uvl;
-    } ede16;  // explicit data element, VR 16. 8 bytes
-    struct {
-      utag_t utag;
-      uvl_t uvl;
-    } ide;  // implicit data element. 8 bytes
+    ede_t ede;  // explicit data element. 12 bytes
+    ede16_t ede16;  // explicit data element, VR 16. 8 bytes
+    ide_t ide;  // implicit data element. 8 bytes
   } ude_t;
   assert(sizeof(ude_t) == 12);
 
