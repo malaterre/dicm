@@ -121,6 +121,8 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           sreader->current_state = kSequenceDelimitationItem;
         } else if (dicm_de_is_encapsulated_pixel_data(de)) {
           sreader->current_state = kSequenceOfFragments;
+        } else if (dicm_de_is_sq(de)) {
+          sreader->current_state = kSequenceOfItems;
         } else if (dicm_de_get_group(de) >= 0x8) {
           // memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
@@ -198,7 +200,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
       assert(ret == sreader->current_state);
       break;
 
-    case kSequenceOfFragments:
+    case kSequenceOfItems:
       ret = read_explicit(src, de);
       if (ret < 0) {
         sreader->current_state = ret;  // kEndInstance;
@@ -220,7 +222,26 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
       assert(ret == sreader->current_state);
       break;
 
-
+    case kSequenceOfFragments:
+      ret = read_explicit(src, de);
+      if (ret < 0) {
+        sreader->current_state = ret;  // kEndInstance;
+      } else {
+        // memcpy(&sreader->dataelement, de, sizeof *de);
+        if (dicm_de_is_start(de))
+          sreader->current_state = kItem;
+        else if (dicm_de_is_end_item(de)) {
+          sreader->current_state = kItemDelimitationItem;
+        } else if (dicm_de_is_end_sq(de)) {
+          sreader->current_state = kSequenceDelimitationItem;
+        } else if (dicm_de_get_group(de) >= 0x8) {
+          // memcpy(&sreader->dataelement, de, sizeof *de);
+          sreader->current_state = kDataElement;
+        } else {
+          assert(0);
+        }
+      }
+      assert(ret == sreader->current_state);
       break;
 
     case kEndInstance:
@@ -259,6 +280,7 @@ struct _dataelement *dicm_sreader_get_dataelement(
     struct _dicm_sreader *sreader) {
   if (sreader->current_state != kFileMetaElement &&
       sreader->current_state != kDataElement &&
+      sreader->current_state != kSequenceOfItems &&
       sreader->current_state != kSequenceOfFragments)
     return NULL;
   return &sreader->dataelement;

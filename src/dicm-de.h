@@ -98,6 +98,7 @@ bool dicm_de_is_start(const struct _dataelement *de);
 bool dicm_de_is_end_item(const struct _dataelement *de);
 bool dicm_de_is_end_sq(const struct _dataelement *de);
 bool dicm_de_is_encapsulated_pixel_data(const struct _dataelement *de);
+bool dicm_de_is_sq(const struct _dataelement *de);
  
 typedef struct _dataelement dataelement_t;
 typedef struct _filemetaelement filemetaelement_t;

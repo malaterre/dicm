@@ -40,6 +40,7 @@ struct _writer {
   void (*print_prefix)(const char *buf);
   void (*print_filemetaelement)(const struct _filemetaelement *de);
   void (*print_dataelement)(const struct _dataelement *de);
+  void (*print_sequenceofitems)(const struct _dataelement *de);
   void (*print_sequenceoffragments)(const struct _dataelement *de);
   void (*print_item)();
   void (*print_end_item)();
@@ -127,6 +128,12 @@ static void event_end_sq() {
   printf("kSequenceDelimitationItem\n");
 }
 
+static void event_sequenceofitems(const struct _dataelement *de) {
+  if (event_level) printf("%*c", 1 << event_level, ' ');
+  printf("kSequenceOfItems\n");
+  ++event_level;
+}
+
 static void event_sequenceoffragments(const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kSequenceOfFragments\n");
@@ -143,6 +150,7 @@ static const struct _writer event_writer = {
     .print_prefix = event_prefix,
     .print_filemetaelement = event_filemetaelement,
     .print_dataelement = event_dataelement,
+    .print_sequenceofitems= event_sequenceofitems,
     .print_sequenceoffragments = event_sequenceoffragments,
     .print_item = event_item,
     .print_end_item = event_end_item,
@@ -175,6 +183,11 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
       case kDataElement:
         if ((de = dicm_sreader_get_dataelement(sreader)))
           writer->print_dataelement(de);
+        break;
+
+      case kSequenceOfItems:
+        if ((de = dicm_sreader_get_dataelement(sreader)))
+          writer->print_sequenceofitems(de);
         break;
 
       case kSequenceOfFragments:
