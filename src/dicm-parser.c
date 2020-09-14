@@ -211,7 +211,7 @@ static inline bool is_encapsulated_pixel_data(const struct _dataelement *de) {
   const bool is_pixel_data = tag_is_equal(de, pixel_data);
   if (is_pixel_data) {
     // Make sure Pixel Data is Encapsulated (Sequence of Fragments):
-    if (de->vl == (uint32_t)-1 && (de->vr == kOB /*|| de->vr == kOW*/)) {
+    if (de->vl == (uint32_t)-1 && de->vr == kOB) {
       return true;
     }
   }
@@ -222,6 +222,12 @@ bool dicm_de_is_encapsulated_pixel_data(const struct _dataelement *de) {
   return is_encapsulated_pixel_data(de);
 }
 
+bool dicm_de_is_sq(const struct _dataelement *de) {
+  if (de->vl == (uint32_t)-1 && de->vr == kSQ) {
+    return true;
+  }
+  return false;
+}
 
 static inline bool is_undef_len(const struct _dataelement *de) {
   const bool b = de->vl == (uint32_t)-1;
@@ -248,9 +254,9 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   typedef union {
     byte_t bytes[12];
-    ede_t ede;  // explicit data element. 12 bytes
+    ede_t ede;      // explicit data element. 12 bytes
     ede16_t ede16;  // explicit data element, VR 16. 8 bytes
-    ide_t ide;  // implicit data element. 8 bytes
+    ide_t ide;      // implicit data element. 8 bytes
   } ude_t;
   assert(sizeof(ude_t) == 12);
 
@@ -311,8 +317,12 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   else if (ude.ede.utag.tags[0] == 0x0010 && ude.ede.utag.tags[1] == 0x7fe0 &&
            ude.ede.uvr.vr.vr == kOB && ude.ede.uvl.vl == kUndefinedLength)
     return kSequenceOfFragments;
-  else if (likely(ude.ede.utag.tags[1] >= 0x8))
+  else if (ude.ede.uvr.vr.vr == kSQ && ude.ede.uvl.vl == kUndefinedLength)
+    return kSequenceOfItems;
+  else if (likely(ude.ede.utag.tags[1] >= 0x8)) {
+    assert(ude.ede.uvl.vl != kUndefinedLength);
     return kDataElement;
+  }
   assert(0);
   return -kInvalidTag;
 }
