@@ -189,7 +189,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
 int dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
   int ret = dicm_sreader_impl(sreader);
   struct _src *src = sreader->src;
-  printf("ret %d\n", ret);
+  // printf("ret %d\n", ret);
   // return sreader->current_state != kEndInstance;
   return !src->ops->at_end(src);
 }
