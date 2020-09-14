@@ -38,6 +38,7 @@ extern struct _mem ansi;
 struct _writer {
   void (*print_file_preamble)(const char *buf);
   void (*print_prefix)(const char *buf);
+  void (*print_filemetaelement)(const struct _filemetaelement *de);
   void (*print_dataelement)(const struct _dataelement *de);
   void (*print_item)();
   void (*print_end_item)();
@@ -46,40 +47,92 @@ struct _writer {
 
 static unsigned int default_level = 0;
 
-static void print_file_preamble(const char *buf) {
+static void default_file_preamble(const char *buf) {
   for (int i = 0; i < 128; ++i) {
     printf("%02x", (unsigned char)buf[i]);
   }
   printf("\n");
 }
 
-static void print_prefix(const char *buf) { printf("%.4s\n", buf); }
+static void default_prefix(const char *buf) { printf("%.4s\n", buf); }
 
-static void print_item() { ++default_level;
-printf(">>\n"); 
- }
+static void default_filemetaelement(const struct _dataelement *de) {
+  if (default_level) printf("%*c", 1 << default_level, ' ');
+  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
+         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+}
 
-static void print_end_item() {
+static void default_item() {
+  ++default_level;
+  printf(">>\n");
+}
+
+static void default_end_item() {}
+
+static void default_end_sq() {
   assert(default_level > 0);
   --default_level;
 }
 
-static void print_end_sq() {
-}
-
-static void print_dataelement(const struct _dataelement *de) {
+static void default_dataelement(const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
 }
 
 static const struct _writer default_writer = {
-    .print_file_preamble = print_file_preamble,
-    .print_prefix = print_prefix,
-    .print_dataelement = print_dataelement,
-    .print_item = print_item,
-    .print_end_item = print_end_item,
-    .print_end_sq = print_end_sq,
+    .print_file_preamble = default_file_preamble,
+    .print_prefix = default_prefix,
+    .print_filemetaelement = default_filemetaelement,
+    .print_dataelement = default_dataelement,
+    .print_item = default_item,
+    .print_end_item = default_end_item,
+    .print_end_sq = default_end_sq,
+};
+
+static unsigned int event_level = 0;
+
+static void event_file_preamble(const char *buf) {
+  printf("kFilePreamble\n");
+}
+
+static void event_prefix(const char *buf) { printf("kPrefix\n", buf); }
+
+static void event_filemetaelement(const char *buf) {
+  printf("kFileMetaElement\n", buf);
+}
+
+static void event_item() {
+  ++default_level;
+  if (default_level) printf("%*c", 1 << default_level, ' ');
+  printf("kItem\n");
+}
+
+static void event_end_item() {
+  if (default_level) printf("%*c", 1 << default_level, ' ');
+  printf("kItemDelimitationItem\n");
+}
+
+static void event_end_sq() {
+  assert(default_level > 0);
+  if (default_level) printf("%*c", 1 << default_level, ' ');
+  printf("kSequenceDelimitationItem\n");
+  --default_level;
+}
+
+static void event_dataelement(const struct _dataelement *de) {
+  if (default_level) printf("%*c", 1 << default_level, ' ');
+  printf("kDataElement\n");
+}
+
+static const struct _writer event_writer = {
+    .print_file_preamble = event_file_preamble,
+    .print_prefix = event_prefix,
+    .print_filemetaelement = event_filemetaelement,
+    .print_dataelement = event_dataelement,
+    .print_item = event_item,
+    .print_end_item = event_end_item,
+    .print_end_sq = event_end_sq,
 };
 
 void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
@@ -102,7 +155,7 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
 
       case kFileMetaElement:
         if ((de = dicm_sreader_get_dataelement(sreader)))
-          writer->print_dataelement(de);
+          writer->print_filemetaelement(de);
         break;
 
       case kDataElement:
@@ -147,7 +200,8 @@ int main(int argc, char *argv[]) {
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
-  process_writer(&default_writer, sreader);
+  //process_writer(&default_writer, sreader);
+  process_writer(&event_writer, sreader);
   dicm_sreader_fini(sreader);
 
   fsrc.ops->close(&fsrc);

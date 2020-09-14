@@ -77,6 +77,14 @@ struct _dataelement {
   vl_t vl;
 };
 
+// FIXME copy paste of _dataelement
+struct _filemetaelement {
+  tag_t tag;
+  vr_t vr;
+  vl_t vl;
+};
+
+
 enum {
   kUndefinedLength = (vl_t)-1,
 };
@@ -91,3 +99,4 @@ bool dicm_de_is_end_item(const struct _dataelement *de);
 bool dicm_de_is_end_sq(const struct _dataelement *de);
  
 typedef struct _dataelement dataelement_t;
+typedef struct _filemetaelement filemetaelement_t;
