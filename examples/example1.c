@@ -111,7 +111,6 @@ static void event_filemetaelement(const char *buf) {
 }
 
 static void event_item() {
-  ++default_level;
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("kItem\n");
 }
@@ -123,14 +122,15 @@ static void event_end_item() {
 
 static void event_end_sq() {
   assert(default_level > 0);
+  --default_level;
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("kSequenceDelimitationItem\n");
-  --default_level;
 }
 
 static void event_sequenceoffragments(const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("kSequenceOfFragments\n");
+  ++default_level;
 }
 
 static void event_dataelement(const struct _dataelement *de) {
