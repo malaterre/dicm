@@ -33,6 +33,8 @@ enum state {
   kPrefix,
   kFileMetaElement,
   kDataElement,
+  kSequenceOfItems,
+  kSequenceOfFragments,
   kItem,                      // (FFFE,E000)
   kItemDelimitationItem,      // (FFFE,E00D)
   kSequenceDelimitationItem,  // (FFFE,E0DD)

@@ -211,12 +211,18 @@ static inline bool is_encapsulated_pixel_data(const struct _dataelement *de) {
   const bool is_pixel_data = tag_is_equal(de, pixel_data);
   if (is_pixel_data) {
     // Make sure Pixel Data is Encapsulated (Sequence of Fragments):
-    if (de->vl == (uint32_t)-1 && (de->vr == kOB || de->vr == kOW)) {
+    if (de->vl == (uint32_t)-1 && (de->vr == kOB /*|| de->vr == kOW*/)) {
       return true;
     }
   }
   return false;
 }
+
+bool dicm_de_is_encapsulated_pixel_data(const struct _dataelement *de) {
+  return is_encapsulated_pixel_data(de);
+}
+
+
 static inline bool is_undef_len(const struct _dataelement *de) {
   const bool b = de->vl == (uint32_t)-1;
   if (b) {
@@ -302,6 +308,9 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
 
   if (ude.ede.utag.tags[1] == 0x2)
     return kFileMetaElement;
+  else if (ude.ede.utag.tags[0] == 0x0010 && ude.ede.utag.tags[1] == 0x7fe0 &&
+           ude.ede.uvr.vr.vr == kOB && ude.ede.uvl.vl == kUndefinedLength)
+    return kSequenceOfFragments;
   else if (likely(ude.ede.utag.tags[1] >= 0x8))
     return kDataElement;
   assert(0);

@@ -40,6 +40,7 @@ struct _writer {
   void (*print_prefix)(const char *buf);
   void (*print_filemetaelement)(const struct _filemetaelement *de);
   void (*print_dataelement)(const struct _dataelement *de);
+  void (*print_sequenceoffragments)(const struct _dataelement *de);
   void (*print_item)();
   void (*print_end_item)();
   void (*print_end_sq)();
@@ -74,6 +75,12 @@ static void default_end_sq() {
   --default_level;
 }
 
+static void default_sequenceoffragments(const struct _dataelement *de) {
+  if (default_level) printf("%*c", 1 << default_level, ' ');
+  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
+         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+}
+
 static void default_dataelement(const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
@@ -85,6 +92,7 @@ static const struct _writer default_writer = {
     .print_prefix = default_prefix,
     .print_filemetaelement = default_filemetaelement,
     .print_dataelement = default_dataelement,
+    .print_sequenceoffragments = default_sequenceoffragments,
     .print_item = default_item,
     .print_end_item = default_end_item,
     .print_end_sq = default_end_sq,
@@ -120,6 +128,11 @@ static void event_end_sq() {
   --default_level;
 }
 
+static void event_sequenceoffragments(const struct _dataelement *de) {
+  if (default_level) printf("%*c", 1 << default_level, ' ');
+  printf("kSequenceOfFragments\n");
+}
+
 static void event_dataelement(const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("kDataElement\n");
@@ -130,6 +143,7 @@ static const struct _writer event_writer = {
     .print_prefix = event_prefix,
     .print_filemetaelement = event_filemetaelement,
     .print_dataelement = event_dataelement,
+    .print_sequenceoffragments = event_sequenceoffragments,
     .print_item = event_item,
     .print_end_item = event_end_item,
     .print_end_sq = event_end_sq,
@@ -161,6 +175,11 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
       case kDataElement:
         if ((de = dicm_sreader_get_dataelement(sreader)))
           writer->print_dataelement(de);
+        break;
+
+      case kSequenceOfFragments:
+        if ((de = dicm_sreader_get_dataelement(sreader)))
+          writer->print_sequenceoffragments(de);
         break;
 
       case kItem:
