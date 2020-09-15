@@ -224,6 +224,11 @@ bool dicm_de_is_encapsulated_pixel_data(const struct _dataelement *de) {
 
 bool dicm_de_is_sq(const struct _dataelement *de) {
   if (de->vl == (uint32_t)-1 && de->vr == kSQ) {
+// undef sq
+    return true;
+  }
+  else if (de->vr == kSQ) {
+// defined len sq
     return true;
   }
   return false;
@@ -250,7 +255,7 @@ static inline uint32_t compute_undef_len(const struct _dataelement *de,
   return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + len;
 }
 
-int read_explicit(struct _src *src, struct _dataelement *de) {
+int read_explicit(struct _src *src, struct _dataset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   typedef union {
     byte_t bytes[12];
@@ -259,6 +264,16 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     ide_t ide;      // implicit data element. 8 bytes
   } ude_t;
   assert(sizeof(ude_t) == 12);
+  struct _dataelement *de = &ds->de;
+
+  if (ds->deflenitem && ds->deflenitem == ds->curdeflenitem) {
+    // End of Item
+    ds->deflenitem = ds->curdeflenitem = 0;
+    return kItemDelimitationItem;
+  } else if (ds->deflensq && ds->deflensq == ds->curdeflensq) {
+    ds->deflensq = ds->curdeflensq = 0;
+    return kSequenceOfItemsDelimitationItem;
+  }
 
   ude_t ude;
   size_t ret = src->ops->read(src, ude.bytes, 8);
@@ -267,13 +282,21 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
   }
   SWAP_TAG(ude.ede.utag);
 
-  if (ude.ede.utag.tag == (tag_t)kStart /*is_start(de)*/) {
+  if (ude.ide.utag.tag == (tag_t)kStart /*is_start(de)*/) {
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
 
-    if (de->vl != kUndefinedLength) {
+    if (ds->sequenceoffragments >= 0) {
       src->ops->seek(src, de->vl);
+      return ds->sequenceoffragments++ == 0 ? kBasicOffsetTable : kFragment;
+    } else if (de->vl != kUndefinedLength) {
+      assert(ds->deflenitem == 0);
+      ds->deflenitem = ude.ide.uvl.vl;
+      if (ds->deflensq) {
+        // are we processing a defined length SQ ?
+        ds->curdeflensq += 4 + 4;
+      }
     }
 
     return kItem;
@@ -283,10 +306,16 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
 
-    assert(de->vl == 0);
+    //assert(de->vl == 0);
+    if (unlikely(ude.ide.uvl.vl != 0)) return -kDicmReservedNotZero;
 
-    return ude.ide.utag.tag == (tag_t)kEndItem ? kItemDelimitationItem
-                                               : kSequenceDelimitationItem;
+    if (ds->sequenceoffragments >= 0) {
+      ds->sequenceoffragments = -1;
+      return kSequenceOfFragmentsDelimitationItem;
+    }
+    return ude.ide.utag.tag == (tag_t)kEndItem
+               ? kItemDelimitationItem
+               : kSequenceOfItemsDelimitationItem;
   }
 
   if (unlikely(!tag_is_lower(de, ude.ide.utag.tag))) {
@@ -310,17 +339,33 @@ int read_explicit(struct _src *src, struct _dataelement *de) {
     de->vl = ude.ede.uvl.vl;
   }
 
-  if (de->vl != kUndefinedLength) src->ops->seek(src, de->vl);
-
-  if (ude.ede.utag.tags[1] == 0x2)
+  if (ude.ede.utag.tags[1] == 0x2) {
+    assert(de->vl != kUndefinedLength);
+    src->ops->seek(src, de->vl);
     return kFileMetaElement;
-  else if (ude.ede.utag.tags[0] == 0x0010 && ude.ede.utag.tags[1] == 0x7fe0 &&
-           ude.ede.uvr.vr.vr == kOB && ude.ede.uvl.vl == kUndefinedLength)
+  } else if (ude.ede.utag.tags[0] == 0x0010 && ude.ede.utag.tags[1] == 0x7fe0 &&
+             ude.ede.uvr.vr.vr == kOB && ude.ede.uvl.vl == kUndefinedLength) {
+    assert( ds->sequenceoffragments == -1 ) ;
+    ds->sequenceoffragments = 0;
     return kSequenceOfFragments;
-  else if (ude.ede.uvr.vr.vr == kSQ && ude.ede.uvl.vl == kUndefinedLength)
+  } else if (ude.ede.uvr.vr.vr == kSQ && ude.ede.uvl.vl == kUndefinedLength) {
     return kSequenceOfItems;
-  else if (likely(ude.ede.utag.tags[1] >= 0x8)) {
-    assert(ude.ede.uvl.vl != kUndefinedLength);
+  } else if (ude.ede.uvr.vr.vr == kSQ) {
+    // defined length SQ
+    assert( ds->deflensq == 0 );
+    ds->deflensq = ude.ede.uvl.vl;
+    return kSequenceOfItems;
+  } else if (likely(ude.ede.utag.tags[1] >= 0x8)) {
+    assert(de->vl != kUndefinedLength);
+    src->ops->seek(src, de->vl);
+    if (ds->deflenitem) {
+      // are we processing a defined length Item ?
+      ds->curdeflenitem += compute_len(de);
+    }
+    if (ds->deflensq) {
+      // are we processing a defined length SQ ?
+      ds->curdeflensq += compute_len(de);
+    }
     return kDataElement;
   }
   assert(0);

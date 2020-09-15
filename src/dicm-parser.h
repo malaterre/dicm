@@ -40,7 +40,7 @@ struct _ide {
   uvl_t uvl;
 };  // implicit data element. 8 bytes
 
-int read_explicit(struct _src *src, struct _dataelement *de);
+int read_explicit(struct _src *src, struct _dataset *ds);
 
 typedef struct _ede ede_t;
 typedef struct _ede16 ede16_t;

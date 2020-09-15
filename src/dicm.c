@@ -32,7 +32,8 @@
 struct _dicm_sreader {
   struct _mem *mem;
   struct _src *src;
-  struct _dataelement dataelement;  // current dataelement
+  //struct _dataelement dataelement;  // current dataelement
+  struct _dataset dataset;  // current dataset
   enum state current_state;
   char buffer[128 /*4096*/];  // Minimal amount of memory (preamble is the
                               // bigest one ?)
@@ -46,7 +47,12 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
   sreader->current_state = kStartInstance;
   memset(sreader->buffer, 0, sizeof sreader->buffer);
   sreader->bufsize = 0;  // sizeof sreader->buffer;
-  sreader->dataelement.tag = 0;
+  sreader->dataset.de.tag = 0;
+  sreader->dataset.deflensq = 0;
+  sreader->dataset.curdeflensq = 0;
+  sreader->dataset.deflenitem = 0;
+  sreader->dataset.curdeflenitem = 0;
+  sreader->dataset.sequenceoffragments = -1;
   return sreader;
 }
 
@@ -55,7 +61,8 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
   char *buf = sreader->buffer;
   int current_state = sreader->current_state;
   int ret;
-  struct _dataelement *de = &sreader->dataelement;
+  struct _dataset *ds = &sreader->dataset;
+  struct _dataelement *de = &ds->de;
 
   if (src->ops->at_end(src)) {
     // dead code ??
@@ -80,7 +87,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
       break;
 
     case kPrefix:
-      ret = read_explicit(src, de);
+      ret = read_explicit(src, ds);
       if (ret < 0) {
         sreader->current_state = ret;  // kEndInstance;
       } else {
@@ -118,7 +125,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         } else if (dicm_de_is_end_item(de)) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
-          sreader->current_state = kSequenceDelimitationItem;
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
         } else if (dicm_de_is_encapsulated_pixel_data(de)) {
           sreader->current_state = kSequenceOfFragments;
         } else if (dicm_de_is_sq(de)) {
@@ -130,6 +137,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           assert(0);
         }
       }
+      sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
 
@@ -145,7 +153,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         else if (dicm_de_is_end_item(de)) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
-          sreader->current_state = kSequenceDelimitationItem;
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
         } else if (dicm_de_get_group(de) >= 0x8) {
           // memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
@@ -153,8 +161,58 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           assert(0);
         }
       }
+      sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
+
+    case kBasicOffsetTable:
+      de->tag = 0;
+      ret = read_explicit(src, de);
+      if (ret < 0) {
+        sreader->current_state = ret;  // kEndInstance;
+      } else {
+        // memcpy(&sreader->dataelement, de, sizeof *de);
+        if (dicm_de_is_start(de))
+          sreader->current_state = kItem;
+        else if (dicm_de_is_end_item(de)) {
+          sreader->current_state = kItemDelimitationItem;
+        } else if (dicm_de_is_end_sq(de)) {
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
+        } else if (dicm_de_get_group(de) >= 0x8) {
+          // memcpy(&sreader->dataelement, de, sizeof *de);
+          sreader->current_state = kDataElement;
+        } else {
+          assert(0);
+        }
+      }
+      sreader->current_state = ret;
+      assert(ret == sreader->current_state);
+      break;
+
+    case kFragment:
+      de->tag = 0;
+      ret = read_explicit(src, de);
+      if (ret < 0) {
+        sreader->current_state = ret;  // kEndInstance;
+      } else {
+        // memcpy(&sreader->dataelement, de, sizeof *de);
+        if (dicm_de_is_start(de))
+          sreader->current_state = kItem;
+        else if (dicm_de_is_end_item(de)) {
+          sreader->current_state = kItemDelimitationItem;
+        } else if (dicm_de_is_end_sq(de)) {
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
+        } else if (dicm_de_get_group(de) >= 0x8) {
+          // memcpy(&sreader->dataelement, de, sizeof *de);
+          sreader->current_state = kDataElement;
+        } else {
+          assert(0);
+        }
+      }
+      sreader->current_state = ret;
+      assert(ret == sreader->current_state);
+      break;
+
 
     case kItemDelimitationItem:
       de->tag = 0;
@@ -167,18 +225,19 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         } else if (dicm_de_is_end_item(de)) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
-          sreader->current_state = kSequenceDelimitationItem;
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
         } else if (dicm_de_get_group(de) >= 0x8) {
           // memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
         } else {
-          assert(0);
+          //assert(0);
         }
       }
+      sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
 
-    case kSequenceDelimitationItem:
+    case kSequenceOfItemsDelimitationItem:
       de->tag = 0;
       ret = read_explicit(src, de);
       if (ret < 0) {
@@ -189,7 +248,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         } else if (dicm_de_is_end_item(de)) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
-          sreader->current_state = kSequenceDelimitationItem;
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
         } else if (dicm_de_get_group(de) >= 0x8) {
           // memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
@@ -197,6 +256,29 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           assert(0);
         }
       }
+      assert(ret == sreader->current_state);
+      break;
+
+    case kSequenceOfFragmentsDelimitationItem:
+      de->tag = 0;
+      ret = read_explicit(src, de);
+      if (ret < 0) {
+        sreader->current_state = ret;  // kEndInstance;
+      } else {
+        if (dicm_de_is_start(de)) {
+          sreader->current_state = kItem;
+        } else if (dicm_de_is_end_item(de)) {
+          sreader->current_state = kItemDelimitationItem;
+        } else if (dicm_de_is_end_sq(de)) {
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
+        } else if (dicm_de_get_group(de) >= 0x8) {
+          // memcpy(&sreader->dataelement, de, sizeof *de);
+          sreader->current_state = kDataElement;
+        } else {
+          assert(0);
+        }
+      }
+      sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
 
@@ -211,7 +293,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         else if (dicm_de_is_end_item(de)) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
-          sreader->current_state = kSequenceDelimitationItem;
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
         } else if (dicm_de_get_group(de) >= 0x8) {
           // memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
@@ -233,7 +315,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         else if (dicm_de_is_end_item(de)) {
           sreader->current_state = kItemDelimitationItem;
         } else if (dicm_de_is_end_sq(de)) {
-          sreader->current_state = kSequenceDelimitationItem;
+          sreader->current_state = kSequenceOfItemsDelimitationItem;
         } else if (dicm_de_get_group(de) >= 0x8) {
           // memcpy(&sreader->dataelement, de, sizeof *de);
           sreader->current_state = kDataElement;
@@ -241,6 +323,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           assert(0);
         }
       }
+      sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
 
@@ -283,7 +366,7 @@ struct _dataelement *dicm_sreader_get_dataelement(
       sreader->current_state != kSequenceOfItems &&
       sreader->current_state != kSequenceOfFragments)
     return NULL;
-  return &sreader->dataelement;
+  return &sreader->dataset.de;
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {

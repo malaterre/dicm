@@ -84,6 +84,17 @@ struct _filemetaelement {
   vl_t vl;
 };
 
+struct _dataset {
+  struct _dataelement de;
+  // defined length SQ:
+  vl_t deflensq;
+  vl_t curdeflensq;
+  // defined length Item:
+  vl_t deflenitem;
+  vl_t curdeflenitem;
+  int sequenceoffragments;
+};
+
 
 enum {
   kUndefinedLength = (vl_t)-1,
