@@ -50,6 +50,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     reset_defined_length_sequence(ds);
     return kSequenceOfItemsDelimitationItem;
   }
+  const int sequenceoffragments = ds->sequenceoffragments;
 
   ude_t ude;
   size_t ret = src->ops->read(src, ude.bytes, 8);
@@ -65,9 +66,10 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
 
-    if (ds->sequenceoffragments >= 0) {
+    if (sequenceoffragments >= 0) {
       src->ops->seek(src, de->vl);
-      return ds->sequenceoffragments++ == 0 ? kBasicOffsetTable : kFragment;
+      ds->sequenceoffragments++;
+      return sequenceoffragments == 0 ? kBasicOffsetTable : kFragment;
     } else if (de->vl != kUndefinedLength) {
       assert(ds->deflenitem == kUndefinedLength);
       assert(de->vl % 2 == 0);
@@ -87,7 +89,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
     if (unlikely(ude.ide.uvl.vl != 0)) return -kDicmReservedNotZero;
 
-    if (ds->sequenceoffragments >= 0) {
+    if (sequenceoffragments >= 0) {
       ds->sequenceoffragments = -1;
       return kSequenceOfFragmentsDelimitationItem;
     }
