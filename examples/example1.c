@@ -43,8 +43,11 @@ struct _writer {
   void (*print_sequenceofitems)(const struct _dataelement *de);
   void (*print_sequenceoffragments)(const struct _dataelement *de);
   void (*print_item)();
+  void (*print_bot)();
+  void (*print_fragment)();
   void (*print_end_item)();
   void (*print_end_sq)();
+  void (*print_end_frags)();
 };
 
 static unsigned int default_level = 0;
@@ -69,9 +72,24 @@ static void default_item() {
   printf(">>\n");
 }
 
+static void default_bot() {
+  ++default_level;
+  printf(">>\n");
+}
+
+static void default_fragment() {
+  ++default_level;
+  printf(">>\n");
+}
+
 static void default_end_item() {}
 
 static void default_end_sq() {
+  assert(default_level > 0);
+  --default_level;
+}
+
+static void default_end_frags() {
   assert(default_level > 0);
   --default_level;
 }
@@ -95,8 +113,11 @@ static const struct _writer default_writer = {
     .print_dataelement = default_dataelement,
     .print_sequenceoffragments = default_sequenceoffragments,
     .print_item = default_item,
+    .print_bot = default_bot,
+    .print_fragment = default_fragment,
     .print_end_item = default_end_item,
     .print_end_sq = default_end_sq,
+    .print_end_frags = default_end_frags,
 };
 
 static unsigned int event_level = 0;
@@ -116,6 +137,16 @@ static void event_item() {
   printf("kItem\n");
 }
 
+static void event_bot() {
+  if (event_level) printf("%*c", 1 << event_level, ' ');
+  printf("kBasicOffsetTable\n");
+}
+
+static void event_fragment() {
+  if (event_level) printf("%*c", 1 << event_level, ' ');
+  printf("kFragment\n");
+}
+
 static void event_end_item() {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kItemDelimitationItem\n");
@@ -125,7 +156,14 @@ static void event_end_sq() {
   assert(event_level > 0);
   --event_level;
   if (event_level) printf("%*c", 1 << event_level, ' ');
-  printf("kSequenceDelimitationItem\n");
+  printf("kSequenceOfItemsDelimitationItem\n");
+}
+
+static void event_end_frags() {
+  assert(event_level > 0);
+  --event_level;
+  if (event_level) printf("%*c", 1 << event_level, ' ');
+  printf("kSequenceOfFragmentsDelimitationItem\n");
 }
 
 static void event_sequenceofitems(const struct _dataelement *de) {
@@ -153,8 +191,11 @@ static const struct _writer event_writer = {
     .print_sequenceofitems= event_sequenceofitems,
     .print_sequenceoffragments = event_sequenceoffragments,
     .print_item = event_item,
+    .print_bot = event_bot,
+    .print_fragment = event_fragment,
     .print_end_item = event_end_item,
     .print_end_sq = event_end_sq,
+    .print_end_frags = event_end_frags,
 };
 
 void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
@@ -199,12 +240,24 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
         writer->print_item();
         break;
 
+      case kBasicOffsetTable:
+        writer->print_bot();
+        break;
+
+      case kFragment:
+        writer->print_fragment();
+        break;
+
       case kItemDelimitationItem:
         writer->print_end_item();
         break;
 
-      case kSequenceDelimitationItem:
+      case kSequenceOfItemsDelimitationItem:
         writer->print_end_sq();
+        break;
+
+      case kSequenceOfFragmentsDelimitationItem:
+        writer->print_end_frags();
         break;
 
       case kEndInstance:

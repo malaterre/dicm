@@ -36,8 +36,11 @@ enum state {
   kSequenceOfItems,
   kSequenceOfFragments,
   kItem,                      // (FFFE,E000)
+  kFragment,                  // (FFFE,E000)
   kItemDelimitationItem,      // (FFFE,E00D)
-  kSequenceDelimitationItem,  // (FFFE,E0DD)
+  kSequenceOfItemsDelimitationItem,  // (FFFE,E0DD)
+  kSequenceOfFragmentsDelimitationItem,  // (FFFE,E0DD)
+  kBasicOffsetTable, // First Item in a Sequence of Fragments
   kEndInstance
 };
 
