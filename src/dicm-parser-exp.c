@@ -30,7 +30,6 @@
 #include <stdio.h>
 #include <string.h>
 
-
 int read_explicit(struct _src *src, struct _dataset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   typedef union {
@@ -63,7 +62,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 #endif
 
   // if (ude.ide.utag.tag == (tag_t)kStart /*is_start(de)*/) {
-  if ( is_tag_start(ude.ide.utag.tag) ) {
+  if (is_tag_start(ude.ide.utag.tag)) {
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
@@ -81,23 +80,24 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     }
 
     return kItem;
-  } else if (/*ude.ide.utag.tag == (tag_t)kEndItem*/ is_tag_end_item(ude.ide.utag.tag)
-             || /*ude.ide.utag.tag == (tag_t)kEndSQ*/ is_tag_end_sq(ude.ide.utag.tag)) {
+  } else if (/*ude.ide.utag.tag == (tag_t)kEndItem*/ is_tag_end_item(
+                 ude.ide.utag.tag) ||
+             /*ude.ide.utag.tag == (tag_t)kEndSQ*/ is_tag_end_sq(
+                 ude.ide.utag.tag)) {
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
 
-    //assert(de->vl == 0);
+    // assert(de->vl == 0);
     if (unlikely(ude.ide.uvl.vl != 0)) return -kDicmReservedNotZero;
 
     if (ds->sequenceoffragments >= 0) {
       ds->sequenceoffragments = -1;
       return kSequenceOfFragmentsDelimitationItem;
     }
-    //return ude.ide.utag.tag == (tag_t)kEndItem
-    return is_tag_end_item(ude.ide.utag.tag)
-               ? kItemDelimitationItem
-               : kSequenceOfItemsDelimitationItem;
+    // return ude.ide.utag.tag == (tag_t)kEndItem
+    return is_tag_end_item(ude.ide.utag.tag) ? kItemDelimitationItem
+                                             : kSequenceOfItemsDelimitationItem;
   }
 
   if (unlikely(!tag_is_lower(de, ude.ide.utag.tag))) {
@@ -125,16 +125,16 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     assert(de->vl != kUndefinedLength);
     src->ops->seek(src, de->vl);
     return kFileMetaElement;
-  } else if (is_tag_pixeldata(ude.ede.utag.tag) &&
-             ude.ede.uvr.vr.vr == kOB && ude.ede.uvl.vl == kUndefinedLength) {
-    assert( ds->sequenceoffragments == -1 ) ;
+  } else if (is_tag_pixeldata(ude.ede.utag.tag) && ude.ede.uvr.vr.vr == kOB &&
+             ude.ede.uvl.vl == kUndefinedLength) {
+    assert(ds->sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
     return kSequenceOfFragments;
   } else if (ude.ede.uvr.vr.vr == kSQ && ude.ede.uvl.vl == kUndefinedLength) {
     return kSequenceOfItems;
   } else if (ude.ede.uvr.vr.vr == kSQ) {
     // defined length SQ
-    assert( ds->deflensq == kUndefinedLength );
+    assert(ds->deflensq == kUndefinedLength);
     ds->deflensq = ude.ede.uvl.vl;
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede.utag.tag) >= 0x8)) {
