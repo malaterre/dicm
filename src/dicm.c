@@ -360,12 +360,17 @@ const char *dicm_sreader_get_prefix(struct _dicm_sreader *sreader) {
 
 struct _dataelement *dicm_sreader_get_dataelement(
     struct _dicm_sreader *sreader) {
-  if (sreader->current_state != kFileMetaElement &&
-      sreader->current_state != kDataElement &&
+  if (sreader->current_state != kDataElement &&
       sreader->current_state != kSequenceOfItems &&
       sreader->current_state != kSequenceOfFragments)
     return NULL;
   return &sreader->dataset.de;
+}
+
+struct _filemetaelement *dicm_sreader_get_filemetaelement(
+    struct _dicm_sreader *sreader) {
+  if (sreader->current_state != kFileMetaElement) return NULL;
+  return (struct _filemetaelement *)&sreader->dataset.de;  // FIXME
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {
