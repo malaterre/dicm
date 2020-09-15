@@ -52,4 +52,7 @@ const char *dicm_sreader_get_prefix(struct _dicm_sreader *sreader);
 __must_check struct _dataelement *dicm_sreader_get_dataelement(
     struct _dicm_sreader *sreader);
 
+__must_check struct _filemetaelement *dicm_sreader_get_filemetaelement(
+    struct _dicm_sreader *sreader);
+
 typedef struct _dicm_sreader dicm_sreader_t;
