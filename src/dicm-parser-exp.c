@@ -41,12 +41,12 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   assert(sizeof(ude_t) == 12);
   struct _dataelement *de = &ds->de;
 
-  if (/*ds->deflenitem &&*/ ds->deflenitem == ds->curdeflenitem) {
+  if (ds->deflenitem == ds->curdeflenitem) {
     // End of Item
     ds->deflenitem = kUndefinedLength;
     ds->curdeflenitem = 0;
     return kItemDelimitationItem;
-  } else if (/*ds->deflensq &&*/ ds->deflensq == ds->curdeflensq) {
+  } else if (ds->deflensq == ds->curdeflensq) {
     ds->deflensq = kUndefinedLength;
     ds->curdeflensq = 0;
     return kSequenceOfItemsDelimitationItem;
@@ -61,8 +61,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   SWAP_TAG(ude.ede.utag);
 #endif
 
-  // if (ude.ide.utag.tag == (tag_t)kStart /*is_start(de)*/) {
-  if (is_tag_start(ude.ide.utag.tag)) {
+  if (unlikely(is_tag_start(ude.ide.utag.tag))) {
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
@@ -81,8 +80,8 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     }
 
     return kItem;
-  } else if (is_tag_end_item(ude.ide.utag.tag) ||
-             is_tag_end_sq(ude.ide.utag.tag)) {
+  } else if (unlikely(is_tag_end_item(ude.ide.utag.tag)) ||
+             unlikely(is_tag_end_sq(ude.ide.utag.tag))) {
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
