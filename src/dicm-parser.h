@@ -198,8 +198,8 @@ static inline bool tag_is_lower(const struct _dataelement *de, tag_t tag) {
 #ifdef DOSWAP
   return de->tag < tag;
 #else
-  return (tag_get_group(de->tag) | tag_get_element(de->tag)) <
-         (tag_get_group(tag) | tag_get_element(tag));
+  return (tag_get_group(de->tag) << 16 | tag_get_element(de->tag)) <
+         (tag_get_group(tag) << 16 | tag_get_element(tag));
 #endif
 }
 
@@ -244,7 +244,6 @@ static inline bool is_tag_pixeldata(const tag_t tag) {
 #endif
 }
 
-
 static inline bool is_end_item(const struct _dataelement *de) {
   static const tag_t end_item = MAKE_TAG(0xfffe, 0xe00d);
   return de->tag == end_item;
@@ -254,8 +253,8 @@ static inline bool is_end_sq(const struct _dataelement *de) {
   return de->tag == end_sq;
 }
 static inline bool is_encapsulated_pixel_data(const struct _dataelement *de) {
-//  static const tag_t pixel_data = MAKE_TAG(0x7fe0, 0x0010);
-  const bool is_pixel_data = is_tag_pixeldata(de);
+  //  static const tag_t pixel_data = MAKE_TAG(0x7fe0, 0x0010);
+  const bool is_pixel_data = is_tag_pixeldata(de->tag);
   if (is_pixel_data) {
     // Make sure Pixel Data is Encapsulated (Sequence of Fragments):
     if (de->vl == kUndefinedLength && de->vr == kOB) {
@@ -264,7 +263,6 @@ static inline bool is_encapsulated_pixel_data(const struct _dataelement *de) {
   }
   return false;
 }
-
 
 static inline bool is_undef_len(const struct _dataelement *de) {
   const bool b = de->vl == (uint32_t)-1;
@@ -282,12 +280,13 @@ static inline uint32_t compute_len(const struct _dataelement *de) {
 }
 static inline uint32_t compute_undef_len(const struct _dataelement *de,
                                          uint32_t len) {
-  assert(is_undef_len(de)); (void)de;
+  assert(is_undef_len(de));
+  (void)de;
   assert(len != (uint32_t)-1);
   return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + len;
 }
 
-struct _ede {
+struct _ede32 {
   utag_t utag;
   uvr32_t uvr;
   uvl_t uvl;
@@ -305,6 +304,6 @@ struct _ide {
 
 int read_explicit(struct _src *src, struct _dataset *ds);
 
-typedef struct _ede ede_t;
+typedef struct _ede32 ede32_t;
 typedef struct _ede16 ede16_t;
 typedef struct _ide ide_t;
