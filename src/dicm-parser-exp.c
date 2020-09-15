@@ -43,12 +43,11 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
   if (ds->deflenitem == ds->curdeflenitem) {
     // End of Item
-    ds->deflenitem = kUndefinedLength;
-    ds->curdeflenitem = 0;
+    reset_defined_length_item(ds);
     return kItemDelimitationItem;
   } else if (ds->deflensq == ds->curdeflensq) {
-    ds->deflensq = kUndefinedLength;
-    ds->curdeflensq = 0;
+    // End of Sequence
+    reset_defined_length_sequence(ds);
     return kSequenceOfItemsDelimitationItem;
   }
 

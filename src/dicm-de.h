@@ -100,10 +100,26 @@ struct _dataset {
   vl_t curdeflenitem;
 };
 
-
 enum {
   kUndefinedLength = (vl_t)-1,
 };
+
+static inline void reset_defined_length_item(struct _dataset *ds) {
+  ds->deflenitem = kUndefinedLength;
+  ds->curdeflenitem = 0;
+}
+
+static inline void reset_defined_length_sequence(struct _dataset *ds) {
+  ds->deflensq = kUndefinedLength;
+  ds->curdeflensq = 0;
+}
+
+static inline void reset_dataset(struct _dataset *ds) {
+  ds->de.tag = 0;
+  reset_defined_length_item(ds);
+  reset_defined_length_sequence(ds);
+  ds->sequenceoffragments = -1;
+}
 
 // struct _dataelement;
 tag_t dicm_de_get_tag(struct _dataelement *de);
