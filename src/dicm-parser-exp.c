@@ -34,7 +34,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   typedef union {
     byte_t bytes[12];
-    ede_t ede;      // explicit data element. 12 bytes
+    ede32_t ede32;      // explicit data element. 12 bytes
     ede16_t ede16;  // explicit data element, VR 16. 8 bytes
     ide_t ide;      // implicit data element. 8 bytes
   } ude_t;
@@ -58,7 +58,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     return -kNotEnoughData;
   }
 #ifdef DOSWAP
-  SWAP_TAG(ude.ede.utag);
+  SWAP_TAG(ude.ede32.utag);
 #endif
 
   if (unlikely(is_tag_start(ude.ide.utag.tag))) {
@@ -103,43 +103,47 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   }
 
   // VR16 ?
+  vl_t vl;
   if (is_vr16(ude.ede16.uvr.vr)) {
     de->tag = ude.ede16.utag.tag;
     de->vr = ude.ede16.uvr.vr;
-    de->vl = ude.ede16.uvl.vl16;
+    vl = ude.ede16.uvl.vl16;
   } else {
     // padding must be set to zero
-    if (unlikely(ude.ede.uvr.vr.reserved != 0)) return -kDicmReservedNotZero;
+    if (unlikely(ude.ede32.uvr.vr.reserved != 0)) return -kDicmReservedNotZero;
 
-    ret = src->ops->read(src, ude.ede.uvl.bytes, 4);
+    ret = src->ops->read(src, ude.ede32.uvl.bytes, 4);
     if (unlikely(ret < 4)) return -kNotEnoughData;
 
-    de->tag = ude.ede.utag.tag;
-    de->vr = ude.ede.uvr.vr.vr;
-    de->vl = ude.ede.uvl.vl;
+    de->tag = ude.ede32.utag.tag;
+    de->vr = ude.ede32.uvr.vr.vr;
+    vl = ude.ede32.uvl.vl;
   }
 
-  if (tag_get_group(ude.ede.utag.tag) == 0x2) {
-    assert(de->vl != kUndefinedLength);
-    assert(de->vl % 2 == 0);
+  if(vl != kUndefinedLength && vl % 2 != 0) return -kDicmOddDefinedLength;
+  de->vl = vl;
+
+  if (tag_get_group(ude.ede32.utag.tag) == 0x2) {
+    assert(vl != kUndefinedLength);
+    assert(vl % 2 == 0);
     src->ops->seek(src, de->vl);
     return kFileMetaElement;
-  } else if (is_tag_pixeldata(ude.ede.utag.tag) && ude.ede.uvr.vr.vr == kOB &&
-             ude.ede.uvl.vl == kUndefinedLength) {
-    assert(ds->sequenceoffragments == -1);
+  } else if (is_tag_pixeldata(ude.ede32.utag.tag) && ude.ede32.uvr.vr.vr == kOB &&
+             ude.ede32.uvl.vl == kUndefinedLength) {
+    assert(sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
     return kSequenceOfFragments;
-  } else if (ude.ede.uvr.vr.vr == kSQ && ude.ede.uvl.vl == kUndefinedLength) {
+  } else if (ude.ede32.uvr.vr.vr == kSQ && ude.ede32.uvl.vl == kUndefinedLength) {
     return kSequenceOfItems;
-  } else if (ude.ede.uvr.vr.vr == kSQ) {
-    assert(de->vl % 2 == 0);
+  } else if (ude.ede32.uvr.vr.vr == kSQ) {
+    assert(vl % 2 == 0);
     // defined length SQ
     assert(ds->deflensq == kUndefinedLength);
-    ds->deflensq = ude.ede.uvl.vl;
+    ds->deflensq = ude.ede32.uvl.vl;
     return kSequenceOfItems;
-  } else if (likely(tag_get_group(ude.ede.utag.tag) >= 0x8)) {
-    assert(de->vl != kUndefinedLength);
-    assert(de->vl % 2 == 0);
+  } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x8)) {
+    assert(vl != kUndefinedLength);
+    assert(vl % 2 == 0);
     src->ops->seek(src, de->vl);
     if (ds->deflenitem != kUndefinedLength) {
       // are we processing a defined length Item ?
