@@ -84,15 +84,20 @@ struct _filemetaelement {
   vl_t vl;
 };
 
+// Define a dataset with a max nesting level of one to parse defined length SQ
+// + defined length item.
+// Implementation should use tail-recursion optimization to allow processing of
+// infinite depth defined length SQ.
 struct _dataset {
   struct _dataelement de;
+  // Fragments are easier to handle since they cannot be nested
+  int sequenceoffragments; // -1: none, 0: BasicOffsetTable, >0: Fragment
   // defined length SQ:
   vl_t deflensq;
   vl_t curdeflensq;
   // defined length Item:
   vl_t deflenitem;
   vl_t curdeflenitem;
-  int sequenceoffragments;
 };
 
 
