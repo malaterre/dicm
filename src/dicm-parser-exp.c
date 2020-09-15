@@ -72,6 +72,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
       return ds->sequenceoffragments++ == 0 ? kBasicOffsetTable : kFragment;
     } else if (de->vl != kUndefinedLength) {
       assert(ds->deflenitem == kUndefinedLength);
+      assert(de->vl % 2 == 0);
       ds->deflenitem = ude.ide.uvl.vl;
       if (ds->deflensq != kUndefinedLength) {
         // are we processing a defined length SQ ?
@@ -80,15 +81,12 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     }
 
     return kItem;
-  } else if (/*ude.ide.utag.tag == (tag_t)kEndItem*/ is_tag_end_item(
-                 ude.ide.utag.tag) ||
-             /*ude.ide.utag.tag == (tag_t)kEndSQ*/ is_tag_end_sq(
-                 ude.ide.utag.tag)) {
+  } else if (is_tag_end_item(ude.ide.utag.tag) ||
+             is_tag_end_sq(ude.ide.utag.tag)) {
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;
 
-    // assert(de->vl == 0);
     if (unlikely(ude.ide.uvl.vl != 0)) return -kDicmReservedNotZero;
 
     if (ds->sequenceoffragments >= 0) {
@@ -123,6 +121,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
   if (tag_get_group(ude.ede.utag.tag) == 0x2) {
     assert(de->vl != kUndefinedLength);
+    assert(de->vl % 2 == 0);
     src->ops->seek(src, de->vl);
     return kFileMetaElement;
   } else if (is_tag_pixeldata(ude.ede.utag.tag) && ude.ede.uvr.vr.vr == kOB &&
@@ -133,12 +132,14 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   } else if (ude.ede.uvr.vr.vr == kSQ && ude.ede.uvl.vl == kUndefinedLength) {
     return kSequenceOfItems;
   } else if (ude.ede.uvr.vr.vr == kSQ) {
+    assert(de->vl % 2 == 0);
     // defined length SQ
     assert(ds->deflensq == kUndefinedLength);
     ds->deflensq = ude.ede.uvl.vl;
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede.utag.tag) >= 0x8)) {
     assert(de->vl != kUndefinedLength);
+    assert(de->vl % 2 == 0);
     src->ops->seek(src, de->vl);
     if (ds->deflenitem != kUndefinedLength) {
       // are we processing a defined length Item ?
