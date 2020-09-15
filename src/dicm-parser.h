@@ -194,14 +194,12 @@ static inline uint_fast16_t tag_get_element(const tag_t tag) {
 #endif
 }
 
-
-
 static inline bool tag_is_lower(const struct _dataelement *de, tag_t tag) {
 #ifdef DOSWAP
   return de->tag < tag;
 #else
-  return tag_get_group(de->tag) | tag_get_element(de->tag) <
-	  tag_get_group(tag) | tag_get_element(tag);
+  return (tag_get_group(de->tag) | tag_get_element(de->tag)) <
+         (tag_get_group(tag) | tag_get_element(tag));
 #endif
 }
 

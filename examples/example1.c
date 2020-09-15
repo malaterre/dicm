@@ -61,10 +61,10 @@ static void default_file_preamble(const char *buf) {
 
 static void default_prefix(const char *buf) { printf("%.4s\n", buf); }
 
-static void default_filemetaelement(const struct _dataelement *de) {
+static void default_filemetaelement(const struct _filemetaelement *fme) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(fme->tag),
+         (unsigned int)get_element(fme->tag), get_vr(fme->vr), fme->vl);
 }
 
 static void default_item() {
@@ -122,14 +122,14 @@ static const struct _writer default_writer = {
 
 static unsigned int event_level = 0;
 
-static void event_file_preamble(const char *buf) {
+static void event_file_preamble(__maybe_unused const char *buf) {
   printf("kFilePreamble\n");
 }
 
-static void event_prefix(const char *buf) { printf("kPrefix\n", buf); }
+static void event_prefix(__maybe_unused const char *buf) { printf("kPrefix\n"); }
 
-static void event_filemetaelement(const char *buf) {
-  printf("kFileMetaElement\n", buf);
+static void event_filemetaelement(__maybe_unused const struct _filemetaelement *fme) {
+  printf("kFileMetaElement\n");
 }
 
 static void event_item() {
@@ -166,19 +166,19 @@ static void event_end_frags() {
   printf("kSequenceOfFragmentsDelimitationItem\n");
 }
 
-static void event_sequenceofitems(const struct _dataelement *de) {
+static void event_sequenceofitems(__maybe_unused const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kSequenceOfItems\n");
   ++event_level;
 }
 
-static void event_sequenceoffragments(const struct _dataelement *de) {
+static void event_sequenceoffragments(__maybe_unused const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kSequenceOfFragments\n");
   ++event_level;
 }
 
-static void event_dataelement(const struct _dataelement *de) {
+static void event_dataelement(__maybe_unused const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kDataElement\n");
 }
@@ -199,6 +199,7 @@ static const struct _writer event_writer = {
 };
 
 void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
+  struct _filemetaelement *fme;
   struct _dataelement *de;
   const char *buf;
   while (dicm_sreader_hasnext(sreader)) {
@@ -217,8 +218,8 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
         break;
 
       case kFileMetaElement:
-        if ((de = dicm_sreader_get_dataelement(sreader)))
-          writer->print_filemetaelement(de);
+        if ((fme = dicm_sreader_get_filemetaelement(sreader)))
+          writer->print_filemetaelement(fme);
         break;
 
       case kDataElement:
