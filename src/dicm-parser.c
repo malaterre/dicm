@@ -266,12 +266,14 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   assert(sizeof(ude_t) == 12);
   struct _dataelement *de = &ds->de;
 
-  if (ds->deflenitem && ds->deflenitem == ds->curdeflenitem) {
+  if (/*ds->deflenitem &&*/ ds->deflenitem == ds->curdeflenitem) {
     // End of Item
-    ds->deflenitem = ds->curdeflenitem = 0;
+    ds->deflenitem = kUndefinedLength;
+    ds->curdeflenitem = 0;
     return kItemDelimitationItem;
-  } else if (ds->deflensq && ds->deflensq == ds->curdeflensq) {
-    ds->deflensq = ds->curdeflensq = 0;
+  } else if (/*ds->deflensq &&*/ ds->deflensq == ds->curdeflensq) {
+    ds->deflensq = kUndefinedLength;
+    ds->curdeflensq = 0;
     return kSequenceOfItemsDelimitationItem;
   }
 
@@ -291,9 +293,9 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
       src->ops->seek(src, de->vl);
       return ds->sequenceoffragments++ == 0 ? kBasicOffsetTable : kFragment;
     } else if (de->vl != kUndefinedLength) {
-      assert(ds->deflenitem == 0);
+      assert(ds->deflenitem == kUndefinedLength);
       ds->deflenitem = ude.ide.uvl.vl;
-      if (ds->deflensq) {
+      if (ds->deflensq != kUndefinedLength) {
         // are we processing a defined length SQ ?
         ds->curdeflensq += 4 + 4;
       }
@@ -352,17 +354,17 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     return kSequenceOfItems;
   } else if (ude.ede.uvr.vr.vr == kSQ) {
     // defined length SQ
-    assert( ds->deflensq == 0 );
+    assert( ds->deflensq == kUndefinedLength );
     ds->deflensq = ude.ede.uvl.vl;
     return kSequenceOfItems;
   } else if (likely(ude.ede.utag.tags[1] >= 0x8)) {
     assert(de->vl != kUndefinedLength);
     src->ops->seek(src, de->vl);
-    if (ds->deflenitem) {
+    if (ds->deflenitem != kUndefinedLength) {
       // are we processing a defined length Item ?
       ds->curdeflenitem += compute_len(de);
     }
-    if (ds->deflensq) {
+    if (ds->deflensq != kUndefinedLength) {
       // are we processing a defined length SQ ?
       ds->curdeflensq += compute_len(de);
     }

@@ -48,9 +48,9 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
   memset(sreader->buffer, 0, sizeof sreader->buffer);
   sreader->bufsize = 0;  // sizeof sreader->buffer;
   sreader->dataset.de.tag = 0;
-  sreader->dataset.deflensq = 0;
+  sreader->dataset.deflensq = kUndefinedLength;
   sreader->dataset.curdeflensq = 0;
-  sreader->dataset.deflenitem = 0;
+  sreader->dataset.deflenitem = kUndefinedLength;
   sreader->dataset.curdeflenitem = 0;
   sreader->dataset.sequenceoffragments = -1;
   return sreader;
@@ -301,6 +301,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           assert(0);
         }
       }
+      sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
 
