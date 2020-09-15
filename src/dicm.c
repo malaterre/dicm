@@ -88,19 +88,21 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
 
     case kPrefix:
       ret = read_explicit(src, ds);
-      if (ret < 0) {
+/*      if (ret < 0) {
         sreader->current_state = ret;  // kEndInstance;
       } else {
         if (dicm_de_get_group(de) == 0x2)
           sreader->current_state = kFileMetaElement;
         else
           assert(0);
-      }
+      }*/
+      sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
 
     case kFileMetaElement:
       ret = read_explicit(src, de);
+/*
       if (ret < 0) {
         sreader->current_state = ret;  // kEndInstance;
       } else {
@@ -111,13 +113,14 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
           sreader->current_state = kDataElement;
         } else
           assert(0);
-      }
+      }*/
+      sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
 
     case kDataElement:
       ret = read_explicit(src, de);
-      if (ret < 0) {
+/*      if (ret < 0) {
         sreader->current_state = ret;  // kEndInstance;
       } else {
         if (dicm_de_is_start(de)) {
@@ -136,7 +139,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
         } else {
           assert(0);
         }
-      }
+      }*/
       sreader->current_state = ret;
       assert(ret == sreader->current_state);
       break;
