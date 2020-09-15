@@ -128,7 +128,6 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
   if (tag_get_group(ude.ede32.utag.tag) == 0x2) {
     assert(de.vl != kUndefinedLength);
-    assert(de.vl % 2 == 0);
     src->ops->seek(src, curde->vl);
     return kFileMetaElement;
   } else if (is_tag_pixeldata(ude.ede32.utag.tag) && ude.ede32.uvr.vr.vr == kOB &&
@@ -139,14 +138,12 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   } else if (ude.ede32.uvr.vr.vr == kSQ && ude.ede32.uvl.vl == kUndefinedLength) {
     return kSequenceOfItems;
   } else if (ude.ede32.uvr.vr.vr == kSQ) {
-    assert(de.vl % 2 == 0);
     // defined length SQ
     assert(ds->deflensq == kUndefinedLength);
     ds->deflensq = ude.ede32.uvl.vl;
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x8)) {
     assert(de.vl != kUndefinedLength);
-    assert(de.vl % 2 == 0);
     src->ops->seek(src, curde->vl);
     if (ds->deflenitem != kUndefinedLength) {
       // are we processing a defined length Item ?
