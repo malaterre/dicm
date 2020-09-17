@@ -24,6 +24,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 typedef uint32_t tag_t;
 typedef uint16_t vr_t; // FIXME should it be u32 ?
@@ -90,6 +91,11 @@ struct _filemetaelement {
 // infinite depth defined length SQ.
 struct _dataset {
   struct _dataelement de;
+
+  char buffer[128 /*4096*/];  // Minimal amount of memory (preamble is the
+                              // bigest one ?)
+  size_t bufsize;             //
+
   // Fragments are easier to handle since they cannot be nested
   int sequenceoffragments; // -1: none, 0: BasicOffsetTable, >0: Fragment
   // defined length SQ:
