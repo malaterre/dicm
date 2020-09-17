@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "dicm-private.h"
 #include "dicm-de.h"
 #include "dicm-io.h"
 
@@ -305,6 +306,8 @@ struct _ide {
 int read_filepreamble(struct _src *src, struct _dataset *ds);
 int read_prefix(struct _src *src, struct _dataset *ds);
 int read_explicit(struct _src *src, struct _dataset *ds);
+int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
+                         struct _dataelement *de);
 
 typedef struct _ede32 ede32_t;
 typedef struct _ede16 ede16_t;

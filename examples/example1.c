@@ -36,6 +36,8 @@ extern struct _mem ansi;
 #include <stdlib.h> /* EXIT_SUCCESS */
 
 struct _writer {
+  // FIXME, simplify with a single function ???
+  // void (*write)(int state, const struct _dataset *ds);
   void (*print_file_preamble)(const char *buf);
   void (*print_prefix)(const char *buf);
   void (*print_filemetaelement)(const struct _filemetaelement *de);
@@ -94,6 +96,13 @@ static void default_end_frags() {
   --default_level;
 }
 
+static void default_sequenceofitems(const struct _dataelement *de) {
+  if (default_level) printf("%*c", 1 << default_level, ' ');
+  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
+         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+}
+
+
 static void default_sequenceoffragments(const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
@@ -111,6 +120,7 @@ static const struct _writer default_writer = {
     .print_prefix = default_prefix,
     .print_filemetaelement = default_filemetaelement,
     .print_dataelement = default_dataelement,
+    .print_sequenceofitems= default_sequenceofitems,
     .print_sequenceoffragments = default_sequenceoffragments,
     .print_item = default_item,
     .print_bot = default_bot,
@@ -280,8 +290,8 @@ int main(int argc, char *argv[]) {
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
-  //process_writer(&default_writer, sreader);
-  process_writer(&event_writer, sreader);
+  process_writer(&default_writer, sreader);
+  //process_writer(&event_writer, sreader);
   dicm_sreader_fini(sreader);
 
   fsrc.ops->close(&fsrc);
