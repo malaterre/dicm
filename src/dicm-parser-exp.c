@@ -30,15 +30,19 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * Implementation detail. All the work will simply parse the file structure. No
+ * work will be done to byte swap the Data Element Tag or VR
+ */
 int read_explicit(struct _src *src, struct _dataset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
-  typedef union {
+  union {
     byte_t bytes[12];
-    ede32_t ede32;      // explicit data element. 12 bytes
+    ede32_t ede32;  // explicit data element, VR 32. 12 bytes
     ede16_t ede16;  // explicit data element, VR 16. 8 bytes
-    ide_t ide;      // implicit data element. 8 bytes
-  } ude_t;
-  assert(sizeof(ude_t) == 12);
+    ide_t ide;      // implicit data element, no VR. 8 bytes
+  } ude;
+  assert(sizeof(ude) == 12);
   struct _dataelement *curde = &ds->de;
   tag_t prevtag = curde->tag;
 
@@ -53,14 +57,10 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   }
   const int sequenceoffragments = ds->sequenceoffragments;
 
-  ude_t ude;
   size_t ret = src->ops->read(src, ude.bytes, 8);
   if (unlikely(ret < 8)) {
     return -kNotEnoughData;
   }
-#ifdef DOSWAP
-  SWAP_TAG(ude.ede32.utag);
-#endif
 
   if (unlikely(is_tag_start(ude.ide.utag.tag))) {
     curde->tag = ude.ide.utag.tag;
@@ -121,7 +121,8 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     de.vl = ude.ede32.uvl.vl;
   }
 
-  if(de.vl != kUndefinedLength && de.vl % 2 != 0) return -kDicmOddDefinedLength;
+  if (de.vl != kUndefinedLength && de.vl % 2 != 0)
+    return -kDicmOddDefinedLength;
   curde->tag = de.tag;
   curde->vr = de.vr;
   curde->vl = de.vl;
@@ -130,12 +131,14 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     assert(de.vl != kUndefinedLength);
     src->ops->seek(src, curde->vl);
     return kFileMetaElement;
-  } else if (is_tag_pixeldata(ude.ede32.utag.tag) && ude.ede32.uvr.vr.vr == kOB &&
+  } else if (is_tag_pixeldata(ude.ede32.utag.tag) &&
+             ude.ede32.uvr.vr.vr == kOB &&
              ude.ede32.uvl.vl == kUndefinedLength) {
     assert(sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
     return kSequenceOfFragments;
-  } else if (ude.ede32.uvr.vr.vr == kSQ && ude.ede32.uvl.vl == kUndefinedLength) {
+  } else if (ude.ede32.uvr.vr.vr == kSQ &&
+             ude.ede32.uvl.vl == kUndefinedLength) {
     return kSequenceOfItems;
   } else if (ude.ede32.uvr.vr.vr == kSQ) {
     // defined length SQ
