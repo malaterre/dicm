@@ -217,11 +217,10 @@ static const struct _writer event_writer = {
 };
 
 void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
-  struct _filemetaelement *fme;
-  struct _dataelement *de;
   struct _dicm_filepreamble filepreamble;
   struct _dicm_prefix prefix;
-  const char *buf;
+  struct _filemetaelement *fme;
+  struct _dataelement *de;
   while (dicm_sreader_hasnext(sreader)) {
     int next = dicm_sreader_next(sreader);
     switch (next) {

@@ -43,7 +43,7 @@ int dicm_sreader_fini(struct _dicm_sreader *sreader);
 /**
  * Indicate whether or not there is a next dataelement
  */
-__must_check int dicm_sreader_hasnext(struct _dicm_sreader *sreader);
+__must_check bool dicm_sreader_hasnext(struct _dicm_sreader *sreader);
 
 /**
  * Move to next dataelement
