@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 
 typedef uint32_t tag_t;
 typedef uint16_t vr_t; // FIXME should it be u32 ?
@@ -125,6 +126,8 @@ static inline void reset_dataset(struct _dataset *ds) {
   reset_defined_length_item(ds);
   reset_defined_length_sequence(ds);
   ds->sequenceoffragments = -1;
+  memset(ds->buffer, 0, sizeof ds->buffer);
+  ds->bufsize = 0;
 }
 
 // struct _dataelement;

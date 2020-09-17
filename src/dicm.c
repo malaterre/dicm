@@ -32,7 +32,6 @@
 struct _dicm_sreader {
   struct _mem *mem;
   struct _src *src;
-  // struct _dataelement dataelement;  // current dataelement
   struct _dataset dataset;  // current dataset
   enum state current_state;
 };
@@ -42,8 +41,6 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
   sreader->mem = mem;
   sreader->src = src;
   sreader->current_state = -1; //kStartInstance;
-  memset(sreader->dataset.buffer, 0, sizeof sreader->dataset.buffer);
-  sreader->dataset.bufsize = 0;  // sizeof sreader->buffer;
   reset_dataset(&sreader->dataset);
   return sreader;
 }
