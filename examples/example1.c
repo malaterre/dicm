@@ -205,9 +205,6 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
   while (dicm_sreader_hasnext(sreader)) {
     int next = dicm_sreader_next(sreader);
     switch (next) {
-      case kStartInstance:
-        break;
-
       case kFilePreamble:
         if ((buf = dicm_sreader_get_file_preamble(sreader)))
           writer->print_file_preamble(buf);
@@ -259,9 +256,6 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
 
       case kSequenceOfFragmentsDelimitationItem:
         writer->print_end_frags();
-        break;
-
-      case kEndInstance:
         break;
 
       default:
