@@ -46,14 +46,33 @@ bool dicm_de_is_encapsulated_pixel_data(const struct _dataelement *de) {
 
 bool dicm_de_is_sq(const struct _dataelement *de) {
   if (de->vl == (uint32_t)-1 && de->vr == kSQ) {
-// undef sq
+    // undef sq
     return true;
-  }
-  else if (de->vr == kSQ) {
-// defined len sq
+  } else if (de->vr == kSQ) {
+    // defined len sq
     return true;
   }
   return false;
 }
 
+int read_filepreamble(struct _src *src, struct _dataset *ds) {
+  char *buf = ds->buffer;
+  const size_t size = src->ops->read(src, buf, 128);
+  if (unlikely(size < 128)) {
+    ds->bufsize = size;
+    return -kNotEnoughData;
+  }
+  ds->bufsize = 128;
+  return kFilePreamble;
+}
 
+int read_prefix(struct _src *src, struct _dataset *ds) {
+  char *buf = ds->buffer;
+  const size_t size = src->ops->read(src, buf, 4);
+  if (unlikely(size < 4)) {
+    ds->bufsize = size;
+    return -kNotEnoughData;
+  }
+  ds->bufsize = 4;
+  return kPrefix;
+}

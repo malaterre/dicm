@@ -302,6 +302,8 @@ struct _ide {
   uvl_t uvl;
 };  // implicit data element. 8 bytes
 
+int read_filepreamble(struct _src *src, struct _dataset *ds);
+int read_prefix(struct _src *src, struct _dataset *ds);
 int read_explicit(struct _src *src, struct _dataset *ds);
 
 typedef struct _ede32 ede32_t;
