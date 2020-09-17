@@ -76,3 +76,38 @@ int read_prefix(struct _src *src, struct _dataset *ds) {
   ds->bufsize = 4;
   return kPrefix;
 }
+
+int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
+                         struct _dataelement *de) {
+  const char *buf = ds->buffer;
+  const size_t bufsize = ds->bufsize;
+  union {
+    byte_t bytes[12];
+    ede32_t ede32;  // explicit data element, VR 32. 12 bytes
+    ede16_t ede16;  // explicit data element, VR 16. 8 bytes
+    ide_t ide;      // implicit data element, no VR. 8 bytes
+  } ude;
+  memcpy(ude.bytes, buf, bufsize);
+  SWAP_TAG(ude.ide.utag);
+
+  if (current_state == kFileMetaElement || current_state == kDataElement) {
+    if (bufsize == 12) {
+      de->tag = ude.ede32.utag.tag;
+      de->vr = ude.ede32.uvr.vr.vr;
+      de->vl = ude.ede32.uvl.vl;
+    } else if (bufsize == 8) {
+      de->tag = ude.ede16.utag.tag;
+      de->vr = ude.ede16.uvr.vr;
+      de->vl = ude.ede16.uvl.vl16;
+    } else {
+      assert(0);
+    }
+  } else {
+    assert(current_state == kSequenceOfItems ||
+           current_state == kSequenceOfFragments);
+    de->tag = ude.ide.utag.tag;
+    de->vr = kINVALID;
+    de->vl = ude.ide.uvl.vl;
+  }
+  return 0;
+}
