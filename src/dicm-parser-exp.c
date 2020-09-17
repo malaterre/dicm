@@ -43,8 +43,9 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     ide_t ide;      // implicit data element, no VR. 8 bytes
   } ude;
   assert(sizeof(ude) == 12);
-  struct _dataelement *curde = &ds->de;
-  tag_t prevtag = curde->tag;
+  char *buf = ds->buffer;
+  // struct _dataelement *curde = &ds->de;
+  // tag_t prevtag = curde->tag;
 
   if (ds->deflenitem == ds->curdeflenitem) {
     // End of Item
@@ -63,17 +64,22 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   }
 
   if (unlikely(is_tag_start(ude.ide.utag.tag))) {
+#if 0
     curde->tag = ude.ide.utag.tag;
     curde->vr = kINVALID;
     curde->vl = ude.ide.uvl.vl;
+#else
+    memcpy(buf, ude.bytes, sizeof ude.ide);
+    ds->bufsize = sizeof ude.ide;
+#endif
 
     if (sequenceoffragments >= 0) {
-      src->ops->seek(src, curde->vl);
+      src->ops->seek(src, ude.ide.uvl.vl /*curde->vl*/);
       ds->sequenceoffragments++;
       return sequenceoffragments == 0 ? kBasicOffsetTable : kFragment;
-    } else if (curde->vl != kUndefinedLength) {
+    } else if (ude.ide.uvl.vl /*curde->vl*/ != kUndefinedLength) {
       assert(ds->deflenitem == kUndefinedLength);
-      assert(curde->vl % 2 == 0);
+      assert(ude.ide.uvl.vl /* curde->vl */ % 2 == 0);
       ds->deflenitem = ude.ide.uvl.vl;
       if (ds->deflensq != kUndefinedLength) {
         // are we processing a defined length SQ ?
@@ -84,9 +90,14 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     return kItem;
   } else if (unlikely(is_tag_end_item(ude.ide.utag.tag)) ||
              unlikely(is_tag_end_sq(ude.ide.utag.tag))) {
+#if 0
     curde->tag = ude.ide.utag.tag;
     curde->vr = kINVALID;
     curde->vl = ude.ide.uvl.vl;
+#else
+    memcpy(buf, ude.bytes, sizeof ude.ide);
+    ds->bufsize = sizeof ude.ide;
+#endif
 
     if (unlikely(ude.ide.uvl.vl != 0)) return -kDicmReservedNotZero;
 
@@ -99,9 +110,11 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
                                              : kSequenceOfItemsDelimitationItem;
   }
 
+#if 0
   if (unlikely(!tag_is_lower(curde, ude.ide.utag.tag))) {
     return -kDicmOutOfOrder;
   }
+#endif
 
   // VR16 ?
   dataelement_t de;
@@ -109,6 +122,9 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     de.tag = ude.ede16.utag.tag;
     de.vr = ude.ede16.uvr.vr;
     de.vl = ude.ede16.uvl.vl16;
+
+    memcpy(buf, ude.bytes, sizeof ude.ede16);
+    ds->bufsize = sizeof ude.ede16;
   } else {
     // padding must be set to zero
     if (unlikely(ude.ede32.uvr.vr.reserved != 0)) return -kDicmReservedNotZero;
@@ -119,17 +135,22 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     de.tag = ude.ede32.utag.tag;
     de.vr = ude.ede32.uvr.vr.vr;
     de.vl = ude.ede32.uvl.vl;
+
+    memcpy(buf, ude.bytes, sizeof ude.ede32);
+    ds->bufsize = sizeof ude.ede32;
   }
 
   if (de.vl != kUndefinedLength && de.vl % 2 != 0)
     return -kDicmOddDefinedLength;
+#if 0
   curde->tag = de.tag;
   curde->vr = de.vr;
   curde->vl = de.vl;
+#endif
 
   if (tag_get_group(ude.ede32.utag.tag) == 0x2) {
     assert(de.vl != kUndefinedLength);
-    src->ops->seek(src, curde->vl);
+    src->ops->seek(src, de.vl);
     return kFileMetaElement;
   } else if (is_tag_pixeldata(ude.ede32.utag.tag) &&
              ude.ede32.uvr.vr.vr == kOB &&
@@ -147,14 +168,14 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x8)) {
     assert(de.vl != kUndefinedLength);
-    src->ops->seek(src, curde->vl);
+    src->ops->seek(src, de.vl);
     if (ds->deflenitem != kUndefinedLength) {
       // are we processing a defined length Item ?
-      ds->curdeflenitem += compute_len(curde);
+      ds->curdeflenitem += compute_len(&de);
     }
     if (ds->deflensq != kUndefinedLength) {
       // are we processing a defined length SQ ?
-      ds->curdeflensq += compute_len(curde);
+      ds->curdeflensq += compute_len(&de);
     }
     return kDataElement;
   }

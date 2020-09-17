@@ -32,7 +32,7 @@
 struct _dicm_sreader {
   struct _mem *mem;
   struct _src *src;
-  //struct _dataelement dataelement;  // current dataelement
+  // struct _dataelement dataelement;  // current dataelement
   struct _dataset dataset;  // current dataset
   enum state current_state;
 };
@@ -41,7 +41,7 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
   struct _dicm_sreader *sreader = mem->ops->alloc(mem, sizeof *sreader);
   sreader->mem = mem;
   sreader->src = src;
-  sreader->current_state = kStartInstance;
+  sreader->current_state = -1; //kStartInstance;
   memset(sreader->dataset.buffer, 0, sizeof sreader->dataset.buffer);
   sreader->dataset.bufsize = 0;  // sizeof sreader->buffer;
   reset_dataset(&sreader->dataset);
@@ -54,14 +54,9 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
   struct _dataset *ds = &sreader->dataset;
   struct _dataelement *de = &ds->de;
 
-  if (src->ops->at_end(src)) {
-    // dead code ??
-    sreader->current_state = kEndInstance;
-    assert(0);
-    return sreader->current_state;
-  }
+  assert(!src->ops->at_end(src));
   switch (current_state) {
-    case kStartInstance:
+    case -1:
       sreader->current_state = read_filepreamble(src, ds);
       break;
 
@@ -82,7 +77,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
       break;
 
     case kItem:
-      de->tag = 0; // FIXME tag ordering handling
+      de->tag = 0;  // FIXME tag ordering handling
       sreader->current_state = read_explicit(src, ds);
       break;
 
@@ -95,7 +90,6 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
       de->tag = 0;
       sreader->current_state = read_explicit(src, ds);
       break;
-
 
     case kItemDelimitationItem:
       de->tag = 0;
@@ -120,10 +114,6 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
       sreader->current_state = read_explicit(src, ds);
       break;
 
-    case kEndInstance:
-      /* Do something different and set current_state */
-      break;
-
     default:
       assert(0);  // Programmer error
   }
@@ -131,10 +121,12 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
 }
 
 int dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
-  int ret = dicm_sreader_impl(sreader);
   struct _src *src = sreader->src;
-  //printf("ret %d\n", ret);
-  // return sreader->current_state != kEndInstance;
+  int ret = dicm_sreader_impl(sreader);
+  if (ret < 0) {
+    assert(src->ops->at_end(src));
+  }
+  // printf("ret %d\n", ret);
   return !src->ops->at_end(src);
 }
 
@@ -154,7 +146,8 @@ const char *dicm_sreader_get_prefix(struct _dicm_sreader *sreader) {
 
 struct _dataelement *dicm_sreader_get_dataelement(
     struct _dicm_sreader *sreader) {
-  // FIXME would be nice to setup an error handler here instead of returning NULL
+  // FIXME would be nice to setup an error handler here instead of returning
+  // NULL
   if (sreader->current_state != kDataElement &&
       sreader->current_state != kSequenceOfItems &&
       sreader->current_state != kSequenceOfFragments)
