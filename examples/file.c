@@ -19,7 +19,6 @@
  *
  */
 #define _FILE_OFFSET_BITS 64
-#define _POSIX_C_SOURCE 200808L
 
 #include "dicm-io.h"
 
@@ -90,7 +89,7 @@ static bool fdst_close(struct _dst *dst) {
   return true;
 }
 
-static size_t fdst_write(struct _dst *dst, void *buf, size_t bsize) {
+static size_t fdst_write(struct _dst *dst, const void *buf, size_t bsize) {
   const size_t write = fwrite(buf, 1, bsize, dst->data);
   if (write != bsize) {
     return bsize;

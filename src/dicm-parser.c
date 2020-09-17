@@ -55,7 +55,7 @@ bool dicm_de_is_sq(const struct _dataelement *de) {
   return false;
 }
 
-int read_filepreamble(struct _src *src, struct _dataset *ds) {
+int read_filepreamble(struct _src *src, struct _filemetaset *ds) {
   char *buf = ds->buffer;
   const size_t size = src->ops->read(src, buf, 128);
   if (unlikely(size < 128)) {
@@ -66,7 +66,7 @@ int read_filepreamble(struct _src *src, struct _dataset *ds) {
   return kFilePreamble;
 }
 
-int read_prefix(struct _src *src, struct _dataset *ds) {
+int read_prefix(struct _src *src, struct _filemetaset *ds) {
   char *buf = ds->buffer;
   const size_t size = src->ops->read(src, buf, 4);
   if (unlikely(size < 4)) {
@@ -74,7 +74,7 @@ int read_prefix(struct _src *src, struct _dataset *ds) {
     return -kNotEnoughData;
   }
   ds->bufsize = 4;
-  return kPrefix;
+  return kDICOMPrefix;
 }
 
 int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
@@ -90,9 +90,16 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   memcpy(ude.bytes, buf, bufsize);
   SWAP_TAG(ude.ide.utag);
 
-  if (current_state == kFileMetaElement || current_state == kDataElement ||
-      current_state == kSequenceOfItems ||
-      current_state == kSequenceOfFragments) {
+  assert(current_state !=
+          kFileMetaElement /* should only occur when stream_filemetaelements */
+      && current_state != kFileMetaInformationGroupLength );
+
+  if (current_state ==
+          kFileMetaElement /* should only occur when stream_filemetaelements */
+      || current_state == kFileMetaInformationGroupLength
+      || current_state == kDataElement || current_state == kSequenceOfItems
+      || current_state == kGroupLengthDataElement
+      || current_state == kSequenceOfFragments) {
     if (bufsize == 12) {
       de->tag = ude.ede32.utag.tag;
       de->vr = ude.ede32.uvr.vr.vr;
@@ -116,3 +123,37 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   }
   return 0;
 }
+
+int buf_into_filemetaelement(const struct _filemetaset *ds,
+                             enum state current_state,
+                             struct _filemetaelement *fme)
+
+{
+  const char *buf = ds->buffer;
+  const size_t bufsize = ds->bufsize;
+  union {
+    byte_t bytes[12];
+    ede32_t ede32;  // explicit data element, VR 32. 12 bytes
+    ede16_t ede16;  // explicit data element, VR 16. 8 bytes
+  } ude;
+  memcpy(ude.bytes, buf, bufsize);
+  SWAP_TAG(ude.ede32.utag);
+
+  if (current_state == kFileMetaElement || current_state == kFileMetaInformationGroupLength) {
+    if (bufsize == 12) {
+      fme->tag = ude.ede32.utag.tag;
+      fme->vr = ude.ede32.uvr.vr.vr;
+      fme->vl = ude.ede32.uvl.vl;
+    } else if (bufsize == 8) {
+      fme->tag = ude.ede16.utag.tag;
+      fme->vr = ude.ede16.uvr.vr;
+      fme->vl = ude.ede16.uvl.vl16;
+    } else {
+      assert(0);
+    }
+  } else {
+    assert(0);
+  }
+  return 0;
+}
+

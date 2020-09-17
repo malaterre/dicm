@@ -27,12 +27,28 @@
 #include <stdint.h> /* uint16_t */
 
 enum state {
-  //  kStartInstance = 0,
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html#table_7.1-1
-  kFilePreamble = 0,
-  kPrefix,
+  kStartFileMetaInformation = 0,
+  /**
+   * Only when stream_filemetaelements is true
+   */
+  kFilePreamble,
+  /**
+   * Only when stream_filemetaelements is true
+   */
+  kDICOMPrefix,
+  /**
+   * Only when stream_filemetaelements is true
+   */
+  kFileMetaInformationGroupLength,
+  /**
+   * Only when stream_filemetaelements is true
+   */
   kFileMetaElement,
-  kDataElement, // Implicit or Explicit
+  kEndFileMetaInformation,
+  kDataElement,  // Implicit or Explicit
+  kGroupLengthDataElement,  // PS 3.5 §7.2
+  kEndGroupDataElement,
   kSequenceOfItems,
   kSequenceOfFragments,
   kItem,                                 // (FFFE,E000)
@@ -47,3 +63,4 @@ enum state {
 #define fseek _DICM_POISON(fseeko)
 #define ftell _DICM_POISON(ftello)
 #define strtod _DICM_POISON(_dicm_parse_double)
+
