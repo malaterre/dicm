@@ -40,7 +40,7 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
   struct _dicm_sreader *sreader = mem->ops->alloc(mem, sizeof *sreader);
   sreader->mem = mem;
   sreader->src = src;
-  sreader->current_state = -1; //kStartInstance;
+  sreader->current_state = -1;  // kStartInstance;
   reset_dataset(&sreader->dataset);
   return sreader;
 }
@@ -49,7 +49,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   int current_state = sreader->current_state;
   struct _dataset *ds = &sreader->dataset;
-//  struct _dataelement *de = &ds->de;
+  //  struct _dataelement *de = &ds->de;
 
   assert(!src->ops->at_end(src));
   switch (current_state) {
@@ -74,32 +74,32 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
       break;
 
     case kItem:
-      //de->tag = 0;  // FIXME tag ordering handling
+      // de->tag = 0;  // FIXME tag ordering handling
       sreader->current_state = read_explicit(src, ds);
       break;
 
     case kBasicOffsetTable:
-      //de->tag = 0;
+      // de->tag = 0;
       sreader->current_state = read_explicit(src, ds);
       break;
 
     case kFragment:
-      //de->tag = 0;
+      // de->tag = 0;
       sreader->current_state = read_explicit(src, ds);
       break;
 
     case kItemDelimitationItem:
-      //de->tag = 0;
+      // de->tag = 0;
       sreader->current_state = read_explicit(src, ds);
       break;
 
     case kSequenceOfItemsDelimitationItem:
-      //de->tag = 0;
+      // de->tag = 0;
       sreader->current_state = read_explicit(src, ds);
       break;
 
     case kSequenceOfFragmentsDelimitationItem:
-      //de->tag = 0;
+      // de->tag = 0;
       sreader->current_state = read_explicit(src, ds);
       break;
 
@@ -132,16 +132,20 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
   return sreader->current_state;
 }
 
-const char *dicm_sreader_get_file_preamble(struct _dicm_sreader *sreader) {
-  if (sreader->current_state != kFilePreamble) return NULL;
-  assert( sreader->dataset.bufsize == 128 );
-  return sreader->dataset.buffer;
+bool dicm_sreader_get_file_preamble(struct _dicm_sreader *sreader,
+                                    struct _dicm_filepreamble *filepreamble) {
+  if (sreader->current_state != kFilePreamble) return false;
+  assert(sreader->dataset.bufsize == 128);
+  memcpy(filepreamble->data, sreader->dataset.buffer, sreader->dataset.bufsize);
+  return true;
 }
 
-const char *dicm_sreader_get_prefix(struct _dicm_sreader *sreader) {
-  if (sreader->current_state != kPrefix) return NULL;
-  assert( sreader->dataset.bufsize == 4 );
-  return sreader->dataset.buffer;
+bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
+                             struct _dicm_prefix *prefix) {
+  if (sreader->current_state != kPrefix) return false;
+  assert(sreader->dataset.bufsize == 4);
+  memcpy(prefix->data, sreader->dataset.buffer, sreader->dataset.bufsize);
+  return true;
 }
 
 struct _dataelement *dicm_sreader_get_dataelement(

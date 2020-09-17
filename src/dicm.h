@@ -29,6 +29,14 @@
 
 struct _dicm_sreader;
 
+struct _dicm_filepreamble {
+  byte_t data[128];
+};
+
+struct _dicm_prefix {
+  byte_t data[4];
+};
+
 struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src);
 int dicm_sreader_fini(struct _dicm_sreader *sreader);
 
@@ -42,10 +50,11 @@ __must_check int dicm_sreader_hasnext(struct _dicm_sreader *sreader);
  */
 int dicm_sreader_next(struct _dicm_sreader *sreader);
 
-__must_check const char *dicm_sreader_get_file_preamble(
-    struct _dicm_sreader *sreader);
+__must_check bool dicm_sreader_get_file_preamble(struct _dicm_sreader *sreader,
+                                                 struct _dicm_filepreamble *filepreamble);
 
-__must_check const char *dicm_sreader_get_prefix(struct _dicm_sreader *sreader);
+__must_check bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
+                                          struct _dicm_prefix *prefix);
 
 /**
  * Return current dataelement
