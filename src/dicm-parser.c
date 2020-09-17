@@ -90,7 +90,9 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   memcpy(ude.bytes, buf, bufsize);
   SWAP_TAG(ude.ide.utag);
 
-  if (current_state == kFileMetaElement || current_state == kDataElement) {
+  if (current_state == kFileMetaElement || current_state == kDataElement ||
+      current_state == kSequenceOfItems ||
+      current_state == kSequenceOfFragments) {
     if (bufsize == 12) {
       de->tag = ude.ede32.utag.tag;
       de->vr = ude.ede32.uvr.vr.vr;
@@ -103,8 +105,9 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
       assert(0);
     }
   } else {
-    assert(current_state == kSequenceOfItems ||
-           current_state == kSequenceOfFragments);
+assert(0);
+//    assert(current_state == kSequenceOfItems ||
+//           current_state == kSequenceOfFragments);
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;

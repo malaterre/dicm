@@ -102,7 +102,6 @@ static void default_sequenceofitems(const struct _dataelement *de) {
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
 }
 
-
 static void default_sequenceoffragments(const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
@@ -120,7 +119,7 @@ static const struct _writer default_writer = {
     .print_prefix = default_prefix,
     .print_filemetaelement = default_filemetaelement,
     .print_dataelement = default_dataelement,
-    .print_sequenceofitems= default_sequenceofitems,
+    .print_sequenceofitems = default_sequenceofitems,
     .print_sequenceoffragments = default_sequenceoffragments,
     .print_item = default_item,
     .print_bot = default_bot,
@@ -136,9 +135,12 @@ static void event_file_preamble(__maybe_unused const char *buf) {
   printf("kFilePreamble\n");
 }
 
-static void event_prefix(__maybe_unused const char *buf) { printf("kPrefix\n"); }
+static void event_prefix(__maybe_unused const char *buf) {
+  printf("kPrefix\n");
+}
 
-static void event_filemetaelement(__maybe_unused const struct _filemetaelement *fme) {
+static void event_filemetaelement(
+    __maybe_unused const struct _filemetaelement *fme) {
   printf("kFileMetaElement\n");
 }
 
@@ -176,13 +178,15 @@ static void event_end_frags() {
   printf("kSequenceOfFragmentsDelimitationItem\n");
 }
 
-static void event_sequenceofitems(__maybe_unused const struct _dataelement *de) {
+static void event_sequenceofitems(
+    __maybe_unused const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kSequenceOfItems\n");
   ++event_level;
 }
 
-static void event_sequenceoffragments(__maybe_unused const struct _dataelement *de) {
+static void event_sequenceoffragments(
+    __maybe_unused const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kSequenceOfFragments\n");
   ++event_level;
@@ -198,7 +202,7 @@ static const struct _writer event_writer = {
     .print_prefix = event_prefix,
     .print_filemetaelement = event_filemetaelement,
     .print_dataelement = event_dataelement,
-    .print_sequenceofitems= event_sequenceofitems,
+    .print_sequenceofitems = event_sequenceofitems,
     .print_sequenceoffragments = event_sequenceoffragments,
     .print_item = event_item,
     .print_bot = event_bot,
@@ -291,7 +295,7 @@ int main(int argc, char *argv[]) {
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
   process_writer(&default_writer, sreader);
-  //process_writer(&event_writer, sreader);
+  // process_writer(&event_writer, sreader);
   dicm_sreader_fini(sreader);
 
   fsrc.ops->close(&fsrc);
