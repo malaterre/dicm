@@ -168,7 +168,8 @@ bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
 bool dicm_sreader_get_filemetaelement(struct _dicm_sreader *sreader,
                                       struct _filemetaelement *fme) {
   if (sreader->current_state != kFileMetaElement) return false;
-  buf_into_dataelement(&sreader->dataset, sreader->current_state, fme);
+  buf_into_dataelement(&sreader->dataset, sreader->current_state,
+                       (struct _dataelement *)fme);  // FIXME
   return true;
 }
 
