@@ -53,8 +53,8 @@ int dicm_sreader_next(struct _dicm_sreader *sreader);
 /**
  * Return DICOM File Preamble
  */
-__must_check bool dicm_sreader_get_file_preamble(struct _dicm_sreader *sreader,
-                                                 struct _dicm_filepreamble *filepreamble);
+__must_check bool dicm_sreader_get_file_preamble(
+    struct _dicm_sreader *sreader, struct _dicm_filepreamble *filepreamble);
 
 /**
  * Return DICOM Prefix
@@ -65,13 +65,13 @@ __must_check bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
 /**
  * Return current filedataelement
  */
-__must_check struct _filemetaelement *dicm_sreader_get_filemetaelement(
-    struct _dicm_sreader *sreader);
+__must_check bool dicm_sreader_get_filemetaelement(
+    struct _dicm_sreader *sreader, struct _filemetaelement *fme);
 
 /**
  * Return current dataelement
  */
-__must_check struct _dataelement *dicm_sreader_get_dataelement(
-    struct _dicm_sreader *sreader);
+__must_check bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
+                                               struct _dataelement *);
 
 typedef struct _dicm_sreader dicm_sreader_t;

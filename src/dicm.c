@@ -147,8 +147,8 @@ bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
   return true;
 }
 
-struct _dataelement *dicm_sreader_get_dataelement(
-    struct _dicm_sreader *sreader) {
+bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
+                                  struct _dataelement *de) {
   // FIXME would be nice to setup an error handler here instead of returning
   // NULL
   if (sreader->current_state != kDataElement &&
@@ -160,18 +160,16 @@ struct _dataelement *dicm_sreader_get_dataelement(
       sreader->current_state != kItemDelimitationItem &&
       sreader->current_state != kSequenceOfItemsDelimitationItem &&
       sreader->current_state != kSequenceOfFragmentsDelimitationItem)
-    return NULL;
-  buf_into_dataelement(&sreader->dataset, sreader->current_state,
-                       &sreader->dataset.de);
-  return &sreader->dataset.de;
+    return false;
+  buf_into_dataelement(&sreader->dataset, sreader->current_state, de);
+  return true;
 }
 
-struct _filemetaelement *dicm_sreader_get_filemetaelement(
-    struct _dicm_sreader *sreader) {
-  if (sreader->current_state != kFileMetaElement) return NULL;
-  buf_into_dataelement(&sreader->dataset, sreader->current_state,
-                       &sreader->dataset.de);
-  return (struct _filemetaelement *)&sreader->dataset.de;  // FIXME
+bool dicm_sreader_get_filemetaelement(struct _dicm_sreader *sreader,
+                                      struct _filemetaelement *fme) {
+  if (sreader->current_state != kFileMetaElement) return false;
+  buf_into_dataelement(&sreader->dataset, sreader->current_state, fme);
+  return true;
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {
