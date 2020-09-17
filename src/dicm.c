@@ -150,7 +150,13 @@ struct _dataelement *dicm_sreader_get_dataelement(
   // NULL
   if (sreader->current_state != kDataElement &&
       sreader->current_state != kSequenceOfItems &&
-      sreader->current_state != kSequenceOfFragments)
+      sreader->current_state != kSequenceOfFragments &&
+      sreader->current_state != kItem &&
+      sreader->current_state != kBasicOffsetTable &&
+      sreader->current_state != kFragment &&
+      sreader->current_state != kItemDelimitationItem &&
+      sreader->current_state != kSequenceOfItemsDelimitationItem &&
+      sreader->current_state != kSequenceOfFragmentsDelimitationItem)
     return NULL;
   buf_into_dataelement(&sreader->dataset, sreader->current_state,
                        &sreader->dataset.de);

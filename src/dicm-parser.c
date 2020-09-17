@@ -105,9 +105,11 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
       assert(0);
     }
   } else {
-assert(0);
-//    assert(current_state == kSequenceOfItems ||
-//           current_state == kSequenceOfFragments);
+    assert(current_state == kItem || current_state == kBasicOffsetTable ||
+           current_state == kFragment ||
+           current_state == kItemDelimitationItem ||
+           current_state == kSequenceOfItemsDelimitationItem ||
+           current_state == kSequenceOfFragmentsDelimitationItem);
     de->tag = ude.ide.utag.tag;
     de->vr = kINVALID;
     de->vl = ude.ide.uvl.vl;

@@ -44,12 +44,12 @@ struct _writer {
   void (*print_dataelement)(const struct _dataelement *de);
   void (*print_sequenceofitems)(const struct _dataelement *de);
   void (*print_sequenceoffragments)(const struct _dataelement *de);
-  void (*print_item)();
-  void (*print_bot)();
-  void (*print_fragment)();
-  void (*print_end_item)();
-  void (*print_end_sq)();
-  void (*print_end_frags)();
+  void (*print_item)(const struct _dataelement *de);
+  void (*print_bot)(const struct _dataelement *de);
+  void (*print_fragment)(const struct _dataelement *de);
+  void (*print_end_item)(const struct _dataelement *de);
+  void (*print_end_sq)(const struct _dataelement *de);
+  void (*print_end_frags)(const struct _dataelement *de);
 };
 
 static unsigned int default_level = 0;
@@ -69,29 +69,26 @@ static void default_filemetaelement(const struct _filemetaelement *fme) {
          (unsigned int)get_element(fme->tag), get_vr(fme->vr), fme->vl);
 }
 
-static void default_item() {
-  ++default_level;
+static void default_item(const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void default_bot() {
-  ++default_level;
+static void default_bot(const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void default_fragment() {
-  ++default_level;
+static void default_fragment(const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void default_end_item() {}
+static void default_end_item(const struct _dataelement *de) {}
 
-static void default_end_sq() {
+static void default_end_sq(const struct _dataelement *de) {
   assert(default_level > 0);
   --default_level;
 }
 
-static void default_end_frags() {
+static void default_end_frags(const struct _dataelement *de) {
   assert(default_level > 0);
   --default_level;
 }
@@ -100,12 +97,14 @@ static void default_sequenceofitems(const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+  ++default_level;
 }
 
 static void default_sequenceoffragments(const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+  ++default_level;
 }
 
 static void default_dataelement(const struct _dataelement *de) {
@@ -144,34 +143,34 @@ static void event_filemetaelement(
   printf("kFileMetaElement\n");
 }
 
-static void event_item() {
+static void event_item(const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kItem\n");
 }
 
-static void event_bot() {
+static void event_bot(const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kBasicOffsetTable\n");
 }
 
-static void event_fragment() {
+static void event_fragment(const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kFragment\n");
 }
 
-static void event_end_item() {
+static void event_end_item(const struct _dataelement *de) {
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kItemDelimitationItem\n");
 }
 
-static void event_end_sq() {
+static void event_end_sq(const struct _dataelement *de) {
   assert(event_level > 0);
   --event_level;
   if (event_level) printf("%*c", 1 << event_level, ' ');
   printf("kSequenceOfItemsDelimitationItem\n");
 }
 
-static void event_end_frags() {
+static void event_end_frags(const struct _dataelement *de) {
   assert(event_level > 0);
   --event_level;
   if (event_level) printf("%*c", 1 << event_level, ' ');
@@ -249,27 +248,32 @@ void process_writer(const struct _writer *writer, dicm_sreader_t *sreader) {
         break;
 
       case kItem:
-        writer->print_item();
+        if ((de = dicm_sreader_get_dataelement(sreader)))
+          writer->print_item(de);
         break;
 
       case kBasicOffsetTable:
-        writer->print_bot();
+        if ((de = dicm_sreader_get_dataelement(sreader))) writer->print_bot(de);
         break;
 
       case kFragment:
-        writer->print_fragment();
+        if ((de = dicm_sreader_get_dataelement(sreader)))
+          writer->print_fragment(de);
         break;
 
       case kItemDelimitationItem:
-        writer->print_end_item();
+        if ((de = dicm_sreader_get_dataelement(sreader)))
+          writer->print_end_item(de);
         break;
 
       case kSequenceOfItemsDelimitationItem:
-        writer->print_end_sq();
+        if ((de = dicm_sreader_get_dataelement(sreader)))
+          writer->print_end_sq(de);
         break;
 
       case kSequenceOfFragmentsDelimitationItem:
-        writer->print_end_frags();
+        if ((de = dicm_sreader_get_dataelement(sreader)))
+          writer->print_end_frags(de);
         break;
 
       default:
