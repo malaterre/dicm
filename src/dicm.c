@@ -49,7 +49,6 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   int current_state = sreader->current_state;
   struct _dataset *ds = &sreader->dataset;
-  //  struct _dataelement *de = &ds->de;
 
   assert(!src->ops->at_end(src));
   switch (current_state) {
@@ -117,7 +116,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
   return sreader->current_state;
 }
 
-int dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
+bool dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   int ret = dicm_sreader_impl(sreader);
   if (ret < 0) {
