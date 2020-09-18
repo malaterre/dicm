@@ -5,5 +5,9 @@ mem-ansi.c
 dlog.c
 file.c
 )
-add_executable(example1 example1.c)
+add_executable(example1 example1.c
+default.c
+event.c
+dcmdump.c
+)
 target_link_libraries(example1 dicm dicm-default)
