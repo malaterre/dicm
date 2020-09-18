@@ -74,7 +74,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 #endif
 
     if (sequenceoffragments >= 0) {
-      src->ops->seek(src, ude.ide.uvl.vl /*curde->vl*/);
+      //src->ops->seek(src, ude.ide.uvl.vl /*curde->vl*/);
       ds->sequenceoffragments++;
       return sequenceoffragments == 0 ? kBasicOffsetTable : kFragment;
     } else if (ude.ide.uvl.vl /*curde->vl*/ != kUndefinedLength) {
@@ -150,7 +150,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
   if (tag_get_group(ude.ede32.utag.tag) == 0x2) {
     assert(de.vl != kUndefinedLength);
-    src->ops->seek(src, de.vl);
+    //src->ops->seek(src, de.vl);
     return kFileMetaElement;
   } else if (is_tag_pixeldata(ude.ede32.utag.tag) &&
              ude.ede32.uvr.vr.vr == kOB &&
@@ -168,7 +168,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x8)) {
     assert(de.vl != kUndefinedLength);
-    src->ops->seek(src, de.vl);
+    //src->ops->seek(src, de.vl);
     if (ds->deflenitem != kUndefinedLength) {
       // are we processing a defined length Item ?
       ds->curdeflenitem += compute_len(&de);

@@ -304,8 +304,8 @@ int main(int argc, char *argv[]) {
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
-  process_writer(&default_writer, sreader);
-  // process_writer(&event_writer, sreader);
+  //process_writer(&default_writer, sreader);
+  process_writer(&event_writer, sreader);
   dicm_sreader_fini(sreader);
 
   fsrc.ops->close(&fsrc);
