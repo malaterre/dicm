@@ -57,13 +57,13 @@ static void dcmdump_filemetaelement(struct _writer *writer,
   size_t len = dicm_sreader_pull_dataelement_value(
       writer->sreader, (const struct _dataelement *)fme, buf, sizeof buf);
 
-  if( fme->vr != kUI )
-  memset(buf, ' ', sizeof buf);  // FIXME
+  if (fme->vr != kUI) memset(buf, ' ', sizeof buf);  // FIXME
   buf[63] = 0;
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   unsigned int width = len;
   printf("(%04x,%04x) %.2s [%-*s] # %d\n", (unsigned int)get_group(fme->tag),
-         (unsigned int)get_element(fme->tag), get_vr(fme->vr), width, buf, fme->vl);
+         (unsigned int)get_element(fme->tag), get_vr(fme->vr), width, buf,
+         fme->vl);
 }
 
 static void dcmdump_item(struct _writer *writer,
@@ -121,16 +121,16 @@ static void dcmdump_dataelement(struct _writer *writer,
     first_dataelement = 1;
   }
   char buf[64];
-  size_t len = dicm_sreader_pull_dataelement_value(
-      writer->sreader, de, buf, sizeof buf);
+  size_t len =
+      dicm_sreader_pull_dataelement_value(writer->sreader, de, buf, sizeof buf);
 
-  if( de->vr != kUI )
-  memset(buf, ' ', sizeof buf);  // FIXME
+  if (de->vr != kUI) memset(buf, ' ', sizeof buf);  // FIXME
   buf[63] = 0;
-   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
+  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   unsigned int width = len;
   printf("%04x,%04x %.2s [%-*s] # %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), width, buf, de->vl);
+         (unsigned int)get_element(de->tag), get_vr(de->vr), width, buf,
+         de->vl);
 }
 
 const struct _writer_ops dcmdump_writer = {
