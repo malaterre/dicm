@@ -30,3 +30,6 @@
 #define unlikely(x)    __builtin_expect(!!(x), 0)
 
 //#define DOSWAP
+
+// strnlen requires >= 200809
+#define _POSIX_C_SOURCE 200809L
