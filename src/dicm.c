@@ -123,8 +123,8 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
     default:
       assert(0);  // Programmer error
   }
-    return sreader->current_state;
-  }
+  return sreader->current_state;
+}
 
 bool dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
@@ -142,10 +142,10 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
 }
 
 bool dicm_sreader_get_file_preamble(struct _dicm_sreader *sreader,
-                                    struct _dicm_filepreamble *filepreamble) {
+                                    struct _dicm_filepreamble *fp) {
   if (sreader->current_state != kFilePreamble) return false;
   assert(sreader->dataset.bufsize == 128);
-  memcpy(filepreamble->data, sreader->dataset.buffer, sizeof filepreamble->data /* sreader->dataset.bufsize */);
+  memcpy(fp->data, sreader->dataset.buffer, sizeof fp->data);
   return true;
 }
 
@@ -153,7 +153,7 @@ bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
                              struct _dicm_prefix *prefix) {
   if (sreader->current_state != kPrefix) return false;
   assert(sreader->dataset.bufsize == 4);
-  memcpy(prefix->data, sreader->dataset.buffer, sizeof prefix->data /*sreader->dataset.bufsize*/);
+  memcpy(prefix->data, sreader->dataset.buffer, sizeof prefix->data);
   return true;
 }
 
@@ -189,9 +189,9 @@ int dicm_sreader_fini(struct _dicm_sreader *sreader) {
 }
 
 size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
-                                           const struct _dataelement *de, char *buf,
-                                           size_t buflen) {
-  struct _src * src = sreader->src;
+                                           const struct _dataelement *de,
+                                           char *buf, size_t buflen) {
+  struct _src *src = sreader->src;
   size_t remaining_len = de->vl - sreader->curdepos;
   size_t len = buflen < remaining_len ? buflen : remaining_len;
   if (buf) {
@@ -200,7 +200,8 @@ size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
     sreader->curdepos += readlen;
     return readlen;
   } else {
-    assert( de->vl == len );
+    assert(sreader->curdepos == 0);
+    assert(de->vl == len);
     src->ops->seek(src, len);
     return len;
   }
