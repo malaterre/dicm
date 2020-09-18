@@ -26,6 +26,8 @@
 
 static unsigned int dcmdump_level = 0;
 
+static unsigned int first_dataelement = 0;
+
 static void dcmdump_file_preamble(
     struct _writer *writer,
     __maybe_unused const struct _dicm_filepreamble *fp) {
@@ -51,13 +53,17 @@ static void dcmdump_prefix(struct _writer *writer,
 
 static void dcmdump_filemetaelement(struct _writer *writer,
                                     const struct _filemetaelement *fme) {
-  char buf[16];
-  dicm_sreader_pull_dataelement_value(
+  char buf[64];
+  size_t len = dicm_sreader_pull_dataelement_value(
       writer->sreader, (const struct _dataelement *)fme, buf, sizeof buf);
 
+  if( fme->vr != kUI )
+  memset(buf, ' ', sizeof buf);  // FIXME
+  buf[63] = 0;
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
-  printf("(%04x,%04x) %.2s %d\n", (unsigned int)get_group(fme->tag),
-         (unsigned int)get_element(fme->tag), get_vr(fme->vr), fme->vl);
+  unsigned int width = len;
+  printf("(%04x,%04x) %.2s [%-*s] # %d\n", (unsigned int)get_group(fme->tag),
+         (unsigned int)get_element(fme->tag), get_vr(fme->vr), width, buf, fme->vl);
 }
 
 static void dcmdump_item(struct _writer *writer,
@@ -93,7 +99,7 @@ static void dcmdump_end_frags(struct _writer *writer,
 static void dcmdump_sequenceofitems(struct _writer *writer,
                                     const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
+  printf("(%04x,%04x) %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
   ++dcmdump_level;
 }
@@ -108,9 +114,23 @@ static void dcmdump_sequenceoffragments(struct _writer *writer,
 
 static void dcmdump_dataelement(struct _writer *writer,
                                 const struct _dataelement *de) {
-  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+  if (!first_dataelement) {
+    printf("\n");
+    printf("# Dicom-Data-Set\n");
+    printf("# Used TransferSyntax: RLE Lossless\n");
+    first_dataelement = 1;
+  }
+  char buf[64];
+  size_t len = dicm_sreader_pull_dataelement_value(
+      writer->sreader, de, buf, sizeof buf);
+
+  if( de->vr != kUI )
+  memset(buf, ' ', sizeof buf);  // FIXME
+  buf[63] = 0;
+   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
+  unsigned int width = len;
+  printf("%04x,%04x %.2s [%-*s] # %d\n", (unsigned int)get_group(de->tag),
+         (unsigned int)get_element(de->tag), get_vr(de->vr), width, buf, de->vl);
 }
 
 const struct _writer_ops dcmdump_writer = {
