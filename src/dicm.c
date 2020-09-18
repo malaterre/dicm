@@ -56,6 +56,8 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, current_state, &de);
     dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
+    assert(sreader->curdepos == de.vl);
+    sreader->curdepos = 0;
   }
 
   struct _dataset *ds = &sreader->dataset;
@@ -200,9 +202,8 @@ size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
     sreader->curdepos += readlen;
     return readlen;
   } else {
-    assert(sreader->curdepos == 0);
-    assert(de->vl == len);
     src->ops->seek(src, len);
+    sreader->curdepos += len;
     return len;
   }
 }
