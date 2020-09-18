@@ -23,21 +23,15 @@
 
 #include "dicm-private.h"
 #include <stdio.h>
+#include <string.h>
 
 static unsigned int dcmdump_level = 0;
 
 static unsigned int first_dataelement = 0;
 
 static void dcmdump_file_preamble(
-    struct _writer *writer,
+    __maybe_unused struct _writer *writer,
     __maybe_unused const struct _dicm_filepreamble *fp) {
-  /*
-    const char *buf = fp->data;
-    for (int i = 0; i < 128; ++i) {
-      printf("%02x", (unsigned char)buf[i]);
-    }
-    printf("\n");
-  */
   printf("\n");
   printf("# Dicom-File-Format\n");
   printf("\n");
@@ -45,58 +39,87 @@ static void dcmdump_file_preamble(
   printf("# Used TransferSyntax: Little Endian Explicit\n");
 }
 
-static void dcmdump_prefix(struct _writer *writer,
-                           __maybe_unused const struct _dicm_prefix *prefix) {
-  //  const char *buf = prefix->data;
-  //  printf("%.4s\n", buf);
+static void dcmdump_prefix(__maybe_unused struct _writer *writer,
+                           __maybe_unused const struct _dicm_prefix *prefix) {}
+
+static void print_dataelement(struct _writer *writer,
+                              const struct _dataelement *de) {
+  char str[512];
+  char buf[64];
+  size_t len =
+      dicm_sreader_pull_dataelement_value(writer->sreader, de, buf, sizeof buf);
+
+  if (de->vr == kUI) {
+    int ilen = strnlen(buf, sizeof buf);
+    snprintf(str, sizeof str, "[%*s]", ilen, buf);
+  } else
+    memset(str, ' ', sizeof str);  // FIXME
+  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
+  unsigned int width = 40;
+  printf("(%04x,%04x) %.2s %-*s #  %d,\n", (unsigned int)get_group(de->tag),
+         (unsigned int)get_element(de->tag), get_vr(de->vr), width, str,
+         de->vl);
 }
 
 static void dcmdump_filemetaelement(struct _writer *writer,
                                     const struct _filemetaelement *fme) {
-  char buf[64];
-  size_t len = dicm_sreader_pull_dataelement_value(
-      writer->sreader, (const struct _dataelement *)fme, buf, sizeof buf);
-
-  if (fme->vr != kUI) memset(buf, ' ', sizeof buf);  // FIXME
-  buf[63] = 0;
-  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
-  unsigned int width = len;
-  printf("(%04x,%04x) %.2s [%-*s] # %d\n", (unsigned int)get_group(fme->tag),
-         (unsigned int)get_element(fme->tag), get_vr(fme->vr), width, buf,
-         fme->vl);
+  print_dataelement(writer, (const struct _dataelement *)fme);
 }
 
-static void dcmdump_item(struct _writer *writer,
+static void dcmdump_item(__maybe_unused struct _writer *writer,
                          __maybe_unused const struct _dataelement *de) {
-  printf(">>\n");
+  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
+  printf(
+      "(fffe,e000) na (Item with undefined length #=)        # u/l, 1 Item\n");
+  ++dcmdump_level;
 }
 
-static void dcmdump_bot(struct _writer *writer,
+static void dcmdump_bot(__maybe_unused struct _writer *writer,
                         __maybe_unused const struct _dataelement *de) {
-  printf(">>\n");
+  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
+  printf(
+      "(fffe,e000) pi (no value available)                     #   0, 1 "
+      "Item\n");
 }
 
-static void dcmdump_fragment(struct _writer *writer,
+static void dcmdump_fragment(__maybe_unused struct _writer *writer,
                              __maybe_unused const struct _dataelement *de) {
-  printf(">>\n");
+  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
+  printf(
+      "(fffe,e000) pi (no value available)                     #   0, 1 "
+      "Item\n");
 }
 
-static void dcmdump_end_item(struct _writer *writer,
-                             __maybe_unused const struct _dataelement *de) {}
+static void dcmdump_end_item(__maybe_unused struct _writer *writer,
+                             __maybe_unused const struct _dataelement *de) {
+  assert(dcmdump_level > 0);
+  --dcmdump_level;
+  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
+  printf(
+      "(fffe,e00d) na (ItemDelimitationItem)                   #   0, 0 "
+      "ItemDelimitationItem\n");
+}
 
-static void dcmdump_end_sq(struct _writer *writer,
+static void dcmdump_end_sq(__maybe_unused struct _writer *writer,
                            __maybe_unused const struct _dataelement *de) {
   assert(dcmdump_level > 0);
   --dcmdump_level;
+  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
+  printf(
+      "(fffe,e0dd) na (SequenceDelimitationItem)               #   0, 0 "
+      "SequenceDelimitationItem\n");
 }
 
-static void dcmdump_end_frags(struct _writer *writer,
+static void dcmdump_end_frags(__maybe_unused struct _writer *writer,
                               __maybe_unused const struct _dataelement *de) {
   assert(dcmdump_level > 0);
   --dcmdump_level;
+  printf(
+      "(fffe,e0dd) na (SequenceDelimitationItem)               #   0, 0 "
+      "SequenceDelimitationItem\n");
 }
 
-static void dcmdump_sequenceofitems(struct _writer *writer,
+static void dcmdump_sequenceofitems(__maybe_unused struct _writer *writer,
                                     const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf("(%04x,%04x) %.2s %d\n", (unsigned int)get_group(de->tag),
@@ -104,10 +127,10 @@ static void dcmdump_sequenceofitems(struct _writer *writer,
   ++dcmdump_level;
 }
 
-static void dcmdump_sequenceoffragments(struct _writer *writer,
+static void dcmdump_sequenceoffragments(__maybe_unused struct _writer *writer,
                                         const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
+  printf("(%04x,%04x) %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
   ++dcmdump_level;
 }
@@ -120,17 +143,7 @@ static void dcmdump_dataelement(struct _writer *writer,
     printf("# Used TransferSyntax: RLE Lossless\n");
     first_dataelement = 1;
   }
-  char buf[64];
-  size_t len =
-      dicm_sreader_pull_dataelement_value(writer->sreader, de, buf, sizeof buf);
-
-  if (de->vr != kUI) memset(buf, ' ', sizeof buf);  // FIXME
-  buf[63] = 0;
-  if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
-  unsigned int width = len;
-  printf("%04x,%04x %.2s [%-*s] # %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), width, buf,
-         de->vl);
+  print_dataelement(writer, de);
 }
 
 const struct _writer_ops dcmdump_writer = {
