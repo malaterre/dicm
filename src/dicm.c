@@ -33,6 +33,7 @@ struct _dicm_sreader {
   struct _mem *mem;
   struct _src *src;
   struct _dataset dataset;  // current dataset
+  uint32_t curdepos;
   enum state current_state;
 };
 
@@ -40,6 +41,7 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
   struct _dicm_sreader *sreader = mem->ops->alloc(mem, sizeof *sreader);
   sreader->mem = mem;
   sreader->src = src;
+  sreader->curdepos = 0;
   sreader->current_state = -1;  // kStartInstance;
   reset_dataset(&sreader->dataset);
   return sreader;
@@ -47,7 +49,15 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
 
 static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
-  int current_state = sreader->current_state;
+  const int current_state = sreader->current_state;
+  // make sure to flush remaining bits from a dataelement
+  if (current_state == kBasicOffsetTable || current_state == kFragment ||
+      current_state == kFileMetaElement || current_state == kDataElement) {
+    struct _dataelement de;
+    buf_into_dataelement(&sreader->dataset, current_state, &de);
+    dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
+  }
+
   struct _dataset *ds = &sreader->dataset;
 
   assert(!src->ops->at_end(src));
@@ -113,8 +123,8 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
     default:
       assert(0);  // Programmer error
   }
-  return sreader->current_state;
-}
+    return sreader->current_state;
+  }
 
 bool dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
@@ -135,7 +145,7 @@ bool dicm_sreader_get_file_preamble(struct _dicm_sreader *sreader,
                                     struct _dicm_filepreamble *filepreamble) {
   if (sreader->current_state != kFilePreamble) return false;
   assert(sreader->dataset.bufsize == 128);
-  memcpy(filepreamble->data, sreader->dataset.buffer, sreader->dataset.bufsize);
+  memcpy(filepreamble->data, sreader->dataset.buffer, sizeof filepreamble->data /* sreader->dataset.bufsize */);
   return true;
 }
 
@@ -143,7 +153,7 @@ bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
                              struct _dicm_prefix *prefix) {
   if (sreader->current_state != kPrefix) return false;
   assert(sreader->dataset.bufsize == 4);
-  memcpy(prefix->data, sreader->dataset.buffer, sreader->dataset.bufsize);
+  memcpy(prefix->data, sreader->dataset.buffer, sizeof prefix->data /*sreader->dataset.bufsize*/);
   return true;
 }
 
@@ -176,4 +186,22 @@ bool dicm_sreader_get_filemetaelement(struct _dicm_sreader *sreader,
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {
   sreader->mem->ops->free(sreader->mem, sreader);
   return 0;
+}
+
+size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
+                                           const struct _dataelement *de, char *buf,
+                                           size_t buflen) {
+  struct _src * src = sreader->src;
+  size_t remaining_len = de->vl - sreader->curdepos;
+  size_t len = buflen < remaining_len ? buflen : remaining_len;
+  if (buf) {
+    size_t readlen = src->ops->read(src, buf, len);
+    assert(readlen == len);  // TODO
+    sreader->curdepos += readlen;
+    return readlen;
+  } else {
+    assert( de->vl == len );
+    src->ops->seek(src, len);
+    return len;
+  }
 }
