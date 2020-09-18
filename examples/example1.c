@@ -50,60 +50,62 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
     switch (next) {
       case kFilePreamble:
         if (dicm_sreader_get_file_preamble(sreader, &filepreamble))
-          writer->ops->print_file_preamble(&filepreamble);
+          writer->ops->print_file_preamble(writer, &filepreamble);
         break;
 
       case kPrefix:
         if (dicm_sreader_get_prefix(sreader, &prefix))
-          writer->ops->print_prefix(&prefix);
+          writer->ops->print_prefix(writer, &prefix);
         break;
 
       case kFileMetaElement:
         if (dicm_sreader_get_filemetaelement(sreader, &fme))
-          writer->ops->print_filemetaelement(&fme);
+          writer->ops->print_filemetaelement(writer, &fme);
         break;
 
       case kDataElement:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_dataelement(&de);
+          writer->ops->print_dataelement(writer, &de);
         break;
 
       case kSequenceOfItems:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_sequenceofitems(&de);
+          writer->ops->print_sequenceofitems(writer, &de);
         break;
 
       case kSequenceOfFragments:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_sequenceoffragments(&de);
+          writer->ops->print_sequenceoffragments(writer, &de);
         break;
 
       case kItem:
-        if (dicm_sreader_get_dataelement(sreader, &de)) writer->ops->print_item(&de);
+        if (dicm_sreader_get_dataelement(sreader, &de))
+          writer->ops->print_item(writer, &de);
         break;
 
       case kBasicOffsetTable:
-        if (dicm_sreader_get_dataelement(sreader, &de)) writer->ops->print_bot(&de);
+        if (dicm_sreader_get_dataelement(sreader, &de))
+          writer->ops->print_bot(writer, &de);
         break;
 
       case kFragment:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_fragment(&de);
+          writer->ops->print_fragment(writer, &de);
         break;
 
       case kItemDelimitationItem:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_end_item(&de);
+          writer->ops->print_end_item(writer, &de);
         break;
 
       case kSequenceOfItemsDelimitationItem:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_end_sq(&de);
+          writer->ops->print_end_sq(writer, &de);
         break;
 
       case kSequenceOfFragmentsDelimitationItem:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_end_frags(&de);
+          writer->ops->print_end_frags(writer, &de);
         break;
 
       default:
@@ -129,8 +131,8 @@ int main(int argc, char *argv[]) {
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
-  //process_writer(&default_writer, sreader);
-  //process_writer(&event_writer, sreader);
+  // process_writer(&default_writer, sreader);
+  // process_writer(&event_writer, sreader);
   writer.ops = &dcmdump_writer;
   writer.sreader = sreader;
   process_writer(&writer, sreader);

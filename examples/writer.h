@@ -21,28 +21,35 @@
 
 #pragma once
 
-#include "dicm.h"
 #include "dicm-parser.h"
+#include "dicm.h"
 
 struct _writer {
   const struct _writer_ops *ops;
-  struct _dicm_sreader *sreader; // data
+  struct _dicm_sreader *sreader;  // data
 };
 
 struct _writer_ops {
   // FIXME Should not expose FMI to user API
-  void (*print_file_preamble)(const struct _dicm_filepreamble *fp);
-  void (*print_prefix)(const struct _dicm_prefix *prefix);
-  void (*print_filemetaelement)(const struct _filemetaelement *de);
+  void (*print_file_preamble)(struct _writer *writer,
+                              const struct _dicm_filepreamble *fp);
+  void (*print_prefix)(struct _writer *writer,
+                       const struct _dicm_prefix *prefix);
+  void (*print_filemetaelement)(struct _writer *writer,
+                                const struct _filemetaelement *de);
   // FIXME, simplify with a single function ???
   // void (*write)(int state, const struct _dataset *ds);
-  void (*print_dataelement)(const struct _dataelement *de);
-  void (*print_sequenceofitems)(const struct _dataelement *de);
-  void (*print_sequenceoffragments)(const struct _dataelement *de);
-  void (*print_item)(const struct _dataelement *de);
-  void (*print_bot)(const struct _dataelement *de);
-  void (*print_fragment)(const struct _dataelement *de);
-  void (*print_end_item)(const struct _dataelement *de);
-  void (*print_end_sq)(const struct _dataelement *de);
-  void (*print_end_frags)(const struct _dataelement *de);
+  void (*print_dataelement)(struct _writer *writer,
+                            const struct _dataelement *de);
+  void (*print_sequenceofitems)(struct _writer *writer,
+                                const struct _dataelement *de);
+  void (*print_sequenceoffragments)(struct _writer *writer,
+                                    const struct _dataelement *de);
+  void (*print_item)(struct _writer *writer, const struct _dataelement *de);
+  void (*print_bot)(struct _writer *writer, const struct _dataelement *de);
+  void (*print_fragment)(struct _writer *writer, const struct _dataelement *de);
+  void (*print_end_item)(struct _writer *writer, const struct _dataelement *de);
+  void (*print_end_sq)(struct _writer *writer, const struct _dataelement *de);
+  void (*print_end_frags)(struct _writer *writer,
+                          const struct _dataelement *de);
 };

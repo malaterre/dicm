@@ -26,7 +26,9 @@
 
 static unsigned int dcmdump_level = 0;
 
-static void dcmdump_file_preamble(__maybe_unused const struct _dicm_filepreamble *fp) {
+static void dcmdump_file_preamble(
+    struct _writer *writer,
+    __maybe_unused const struct _dicm_filepreamble *fp) {
   /*
     const char *buf = fp->data;
     for (int i = 0; i < 128; ++i) {
@@ -41,60 +43,71 @@ static void dcmdump_file_preamble(__maybe_unused const struct _dicm_filepreamble
   printf("# Used TransferSyntax: Little Endian Explicit\n");
 }
 
-static void dcmdump_prefix(__maybe_unused const struct _dicm_prefix *prefix) {
-//  const char *buf = prefix->data;
-//  printf("%.4s\n", buf);
+static void dcmdump_prefix(struct _writer *writer,
+                           __maybe_unused const struct _dicm_prefix *prefix) {
+  //  const char *buf = prefix->data;
+  //  printf("%.4s\n", buf);
 }
 
-static void dcmdump_filemetaelement(const struct _filemetaelement *fme) {
+static void dcmdump_filemetaelement(struct _writer *writer,
+                                    const struct _filemetaelement *fme) {
   char buf[16];
-  dicm_sreader_pull_dataelement_value(NULL, (const struct _dataelement *)fme,
-                                      buf, sizeof buf);
+  dicm_sreader_pull_dataelement_value(
+      writer->sreader, (const struct _dataelement *)fme, buf, sizeof buf);
 
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf("(%04x,%04x) %.2s %d\n", (unsigned int)get_group(fme->tag),
          (unsigned int)get_element(fme->tag), get_vr(fme->vr), fme->vl);
 }
 
-static void dcmdump_item(__maybe_unused const struct _dataelement *de) {
+static void dcmdump_item(struct _writer *writer,
+                         __maybe_unused const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void dcmdump_bot(__maybe_unused const struct _dataelement *de) {
+static void dcmdump_bot(struct _writer *writer,
+                        __maybe_unused const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void dcmdump_fragment(__maybe_unused const struct _dataelement *de) {
+static void dcmdump_fragment(struct _writer *writer,
+                             __maybe_unused const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void dcmdump_end_item(__maybe_unused const struct _dataelement *de) {}
+static void dcmdump_end_item(struct _writer *writer,
+                             __maybe_unused const struct _dataelement *de) {}
 
-static void dcmdump_end_sq(__maybe_unused const struct _dataelement *de) {
+static void dcmdump_end_sq(struct _writer *writer,
+                           __maybe_unused const struct _dataelement *de) {
   assert(dcmdump_level > 0);
   --dcmdump_level;
 }
 
-static void dcmdump_end_frags(__maybe_unused const struct _dataelement *de) {
+static void dcmdump_end_frags(struct _writer *writer,
+                              __maybe_unused const struct _dataelement *de) {
   assert(dcmdump_level > 0);
   --dcmdump_level;
 }
 
-static void dcmdump_sequenceofitems(const struct _dataelement *de) {
+static void dcmdump_sequenceofitems(struct _writer *writer,
+                                    const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
   ++dcmdump_level;
 }
 
-static void dcmdump_sequenceoffragments(const struct _dataelement *de) {
+static void dcmdump_sequenceoffragments(struct _writer *writer,
+                                        const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
   ++dcmdump_level;
 }
 
-static void dcmdump_dataelement(const struct _dataelement *de) {
+static void dcmdump_dataelement(struct _writer *writer,
+                                const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
