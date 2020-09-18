@@ -1,0 +1,48 @@
+/*
+ *  DICM, a library for reading DICOM instances
+ *
+ *  Copyright (c) 2020 Mathieu Malaterre
+ *  All rights reserved.
+ *
+ *  DICM is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU Lesser General Public License as
+ *  published by the Free Software Foundation, version 2.1.
+ *
+ *  DICM is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ *  GNU Lesser General Public License for more details.
+ *
+ *  You should have received a copy of the GNU Lesser General Public
+ *  License along with DICM . If not, see
+ *  <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#pragma once
+
+#include "dicm.h"
+#include "dicm-parser.h"
+
+struct _writer {
+  const struct _writer_ops *ops;
+  struct _dicm_sreader *sreader; // data
+};
+
+struct _writer_ops {
+  // FIXME Should not expose FMI to user API
+  void (*print_file_preamble)(const struct _dicm_filepreamble *fp);
+  void (*print_prefix)(const struct _dicm_prefix *prefix);
+  void (*print_filemetaelement)(const struct _filemetaelement *de);
+  // FIXME, simplify with a single function ???
+  // void (*write)(int state, const struct _dataset *ds);
+  void (*print_dataelement)(const struct _dataelement *de);
+  void (*print_sequenceofitems)(const struct _dataelement *de);
+  void (*print_sequenceoffragments)(const struct _dataelement *de);
+  void (*print_item)(const struct _dataelement *de);
+  void (*print_bot)(const struct _dataelement *de);
+  void (*print_fragment)(const struct _dataelement *de);
+  void (*print_end_item)(const struct _dataelement *de);
+  void (*print_end_sq)(const struct _dataelement *de);
+  void (*print_end_frags)(const struct _dataelement *de);
+};
