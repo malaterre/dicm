@@ -46,6 +46,32 @@ static void dcmdump_file_preamble(
 static void dcmdump_prefix(__maybe_unused struct _writer *writer,
                            __maybe_unused const struct _dicm_prefix *prefix) {}
 
+static void print_ob(char *str, const char *buf, size_t len) {
+  char *pstr = str;
+  for (unsigned int i = 0; i < len; ++i) {
+    if (i != 0) {
+      *pstr = '\\';
+      ++pstr;
+    }
+    sprintf(pstr, "%02x", (unsigned char)buf[i]);
+    pstr += 2;
+  }
+}
+
+static void print_ow(char *str, const char *buf, size_t len) {
+  char *pstr = str;
+  for (unsigned int i = 0; i < len; i += 2) {
+    if (i != 0) {
+      *pstr = '\\';
+      ++pstr;
+    }
+    sprintf(pstr, "%02x", (unsigned char)buf[i + 1]);
+    pstr += 2;
+    sprintf(pstr, "%02x", (unsigned char)buf[i]);
+    pstr += 2;
+  }
+}
+
 static void print_dataelement(struct _writer *writer,
                               const struct _dataelement *de) {
   char str[512];
@@ -53,21 +79,34 @@ static void print_dataelement(struct _writer *writer,
   size_t len =
       dicm_sreader_pull_dataelement_value(writer->sreader, de, buf, sizeof buf);
 
+  const unsigned int width = 40;
   if (de->vr == kUI || de->vr == kSH || de->vr == kAE || de->vr == kCS ||
       de->vr == kDA || de->vr == kTM || de->vr == kLO || de->vr == kPN ||
       de->vr == kDS || de->vr == kAS || de->vr == kIS || de->vr == kDT) {
     assert(len <= sizeof buf);
     unsigned int ilen = strnlen(buf, len /*sizeof buf*/);
-    if (len < sizeof buf) buf[len] = 0;
-    unsigned slen = snprintf(str, sizeof str, "[%*s]", ilen, buf);
+    if (len < sizeof buf) buf[len] = 0;  // FIXME
+    if (de->vl) {
+      /*unsigned slen =*/snprintf(str, sizeof str, "[%*s]", ilen, buf);
+    } else {
+      sprintf(str, "(%s)", "no value available");
+    }
+  } else if (de->vr == kOB || de->vr == kOW) {
+    if (de->vr == kOB)
+      print_ob(str, buf, len);
+    else if (de->vr == kOW)
+      print_ow(str, buf, len);
+    str[65] = '.';
+    str[66] = '.';
+    str[67] = '.';
+    str[68] = 0;
   } else {
     memset(str, ' ', sizeof str);  // FIXME
     str[len + 1] = 0;
   }
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
-  unsigned int width = 40;
-  printf("(%04x,%04x) %.2s %-*s #  %*d,\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), width, str, 2,
+  printf("(%04x,%04x) %.2s %-*s # %*d,\n", (unsigned int)get_group(de->tag),
+         (unsigned int)get_element(de->tag), get_vr(de->vr), width, str, 3,
          de->vl);
 }
 
