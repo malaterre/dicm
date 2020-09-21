@@ -75,9 +75,10 @@ __must_check bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
                                                struct _dataelement *de);
 
 /**
+ * Return current dataelement value.
  */
-size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
-                                           const struct _dataelement *de,
-                                           char *buf, size_t buflen);
+__must_check size_t dicm_sreader_pull_dataelement_value(
+    struct _dicm_sreader *sreader, const struct _dataelement *de, char *buf,
+    size_t buflen);
 
 typedef struct _dicm_sreader dicm_sreader_t;
