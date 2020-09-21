@@ -26,12 +26,22 @@
 //#include <sys/types.h> /* off_t */
 #include <stdint.h> /* uint16_t */
 
+enum internal_state {
+  kFilePreamble = 0,
+  kPrefix,
+  kFileMetaElement
+};
+
 enum state {
   //  kStartInstance = 0,
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html#table_7.1-1
+#if 0
   kFilePreamble = 0,
   kPrefix,
   kFileMetaElement,
+#else
+  kFileMetaInfo = 3,
+#endif
   kDataElement, // Implicit or Explicit
   kSequenceOfItems,
   kSequenceOfFragments,

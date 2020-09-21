@@ -56,33 +56,30 @@ static void copy_filemetaelement(struct _writer *writer,
   copy(writer, (const struct _dataelement *)fme);
 }
 
-static void copy_item(struct _writer *writer,
-                      __maybe_unused const struct _dataelement *de) {
+static void copy_item(struct _writer *writer, const struct _dataelement *de) {
   copy(writer, de);
 }
 
-static void copy_bot(struct _writer *writer,
-                     __maybe_unused const struct _dataelement *de) {
+static void copy_bot(struct _writer *writer, const struct _dataelement *de) {
   copy(writer, de);
 }
 
 static void copy_fragment(struct _writer *writer,
-                          __maybe_unused const struct _dataelement *de) {
+                          const struct _dataelement *de) {
   copy(writer, de);
 }
 
 static void copy_end_item(struct _writer *writer,
-                          __maybe_unused const struct _dataelement *de) {
+                          const struct _dataelement *de) {
   copy(writer, de);
 }
 
-static void copy_end_sq(struct _writer *writer,
-                        __maybe_unused const struct _dataelement *de) {
+static void copy_end_sq(struct _writer *writer, const struct _dataelement *de) {
   copy(writer, de);
 }
 
 static void copy_end_frags(struct _writer *writer,
-                           __maybe_unused const struct _dataelement *de) {
+                           const struct _dataelement *de) {
   copy(writer, de);
 }
 

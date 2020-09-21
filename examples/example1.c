@@ -132,11 +132,15 @@ int main(int argc, char *argv[]) {
   fdst.ops->open(&fdst, "output.dcm");
 
   sreader = dicm_sreader_init(&ansi, &fsrc);
+  if (!dicm_sreader_read_meta_info(sreader)) {
+    return EXIT_FAILURE;
+  }
+
   // process_writer(&default_writer, sreader);
   // process_writer(&event_writer, sreader);
   //writer.ops = &dcmdump_writer;
-  //writer.ops = &default_writer;
-  writer.ops = &copy_writer;
+  writer.ops = &default_writer;
+  //writer.ops = &copy_writer;
   writer.sreader = sreader;
   writer.dst = &fdst;
   process_writer(&writer, sreader);
