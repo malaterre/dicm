@@ -44,8 +44,6 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   } ude;
   assert(sizeof(ude) == 12);
   char *buf = ds->buffer;
-  // struct _dataelement *curde = &ds->de;
-  // tag_t prevtag = curde->tag;
 
   if (ds->deflenitem == ds->curdeflenitem) {
     // End of Item
@@ -64,14 +62,8 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   }
 
   if (unlikely(is_tag_start(ude.ide.utag.tag))) {
-#if 0
-    curde->tag = ude.ide.utag.tag;
-    curde->vr = kINVALID;
-    curde->vl = ude.ide.uvl.vl;
-#else
     memcpy(buf, ude.bytes, sizeof ude.ide);
     ds->bufsize = sizeof ude.ide;
-#endif
 
     if (sequenceoffragments >= 0) {
       //src->ops->seek(src, ude.ide.uvl.vl /*curde->vl*/);
@@ -90,14 +82,8 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     return kItem;
   } else if (unlikely(is_tag_end_item(ude.ide.utag.tag)) ||
              unlikely(is_tag_end_sq(ude.ide.utag.tag))) {
-#if 0
-    curde->tag = ude.ide.utag.tag;
-    curde->vr = kINVALID;
-    curde->vl = ude.ide.uvl.vl;
-#else
     memcpy(buf, ude.bytes, sizeof ude.ide);
     ds->bufsize = sizeof ude.ide;
-#endif
 
     if (unlikely(ude.ide.uvl.vl != 0)) return -kDicmReservedNotZero;
 
@@ -142,13 +128,8 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
   if (de.vl != kUndefinedLength && de.vl % 2 != 0)
     return -kDicmOddDefinedLength;
-#if 0
-  curde->tag = de.tag;
-  curde->vr = de.vr;
-  curde->vl = de.vl;
-#endif
 
-  if (tag_get_group(ude.ede32.utag.tag) == 0x2) {
+  if (tag_get_group(ude.ede32.utag.tag) == 0x0002) {
     assert(de.vl != kUndefinedLength);
     //src->ops->seek(src, de.vl);
     return kFileMetaElement;
@@ -166,7 +147,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     assert(ds->deflensq == kUndefinedLength);
     ds->deflensq = ude.ede32.uvl.vl;
     return kSequenceOfItems;
-  } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x8)) {
+  } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)) {
     assert(de.vl != kUndefinedLength);
     //src->ops->seek(src, de.vl);
     if (ds->deflenitem != kUndefinedLength) {

@@ -29,6 +29,10 @@ static unsigned int dcmdump_level = 0;
 
 static unsigned int first_dataelement = 0;
 
+static void print_with_indent(int indent, const char *string) {
+  printf("%*s%s", indent, "", string);
+}
+
 static void dcmdump_file_preamble(
     __maybe_unused struct _writer *writer,
     __maybe_unused const struct _dicm_filepreamble *fp) {
@@ -49,15 +53,21 @@ static void print_dataelement(struct _writer *writer,
   size_t len =
       dicm_sreader_pull_dataelement_value(writer->sreader, de, buf, sizeof buf);
 
-  if (de->vr == kUI) {
-    int ilen = strnlen(buf, sizeof buf);
-    snprintf(str, sizeof str, "[%*s]", ilen, buf);
-  } else
+  if (de->vr == kUI || de->vr == kSH || de->vr == kAE || de->vr == kCS ||
+      de->vr == kDA || de->vr == kTM || de->vr == kLO || de->vr == kPN ||
+      de->vr == kDS || de->vr == kAS || de->vr == kIS || de->vr == kDT) {
+    assert(len <= sizeof buf);
+    unsigned int ilen = strnlen(buf, len /*sizeof buf*/);
+    if (len < sizeof buf) buf[len] = 0;
+    unsigned slen = snprintf(str, sizeof str, "[%*s]", ilen, buf);
+  } else {
     memset(str, ' ', sizeof str);  // FIXME
+    str[len + 1] = 0;
+  }
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   unsigned int width = 40;
-  printf("(%04x,%04x) %.2s %-*s #  %d,\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), width, str,
+  printf("(%04x,%04x) %.2s %-*s #  %*d,\n", (unsigned int)get_group(de->tag),
+         (unsigned int)get_element(de->tag), get_vr(de->vr), width, str, 2,
          de->vl);
 }
 
