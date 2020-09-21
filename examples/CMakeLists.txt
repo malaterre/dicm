@@ -4,6 +4,7 @@ mem-ansi.c
 #log4c.c
 dlog.c
 file.c
+copy.c
 )
 add_executable(example1 example1.c
 default.c
