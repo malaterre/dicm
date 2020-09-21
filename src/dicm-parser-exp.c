@@ -48,26 +48,26 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   if (ds->deflenitem == ds->curdeflenitem) {
     // End of Item
     reset_defined_length_item(ds);
+
     return kItemDelimitationItem;
   } else if (ds->deflensq == ds->curdeflensq) {
     // End of Sequence
     reset_defined_length_sequence(ds);
+
     return kSequenceOfItemsDelimitationItem;
   }
   const int sequenceoffragments = ds->sequenceoffragments;
 
   size_t ret = src->ops->read(src, ude.bytes, 8);
-  if (unlikely(ret < 8)) {
-    return -kNotEnoughData;
-  }
+  if (unlikely(ret < 8)) return -kNotEnoughData;
 
   if (unlikely(is_tag_start(ude.ide.utag.tag))) {
     memcpy(buf, ude.bytes, sizeof ude.ide);
     ds->bufsize = sizeof ude.ide;
 
     if (sequenceoffragments >= 0) {
-      //src->ops->seek(src, ude.ide.uvl.vl /*curde->vl*/);
       ds->sequenceoffragments++;
+
       return sequenceoffragments == 0 ? kBasicOffsetTable : kFragment;
     } else if (ude.ide.uvl.vl /*curde->vl*/ != kUndefinedLength) {
       assert(ds->deflenitem == kUndefinedLength);
@@ -89,9 +89,10 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
     if (sequenceoffragments >= 0) {
       ds->sequenceoffragments = -1;
+
       return kSequenceOfFragmentsDelimitationItem;
     }
-    // return ude.ide.utag.tag == (tag_t)kEndItem
+
     return is_tag_end_item(ude.ide.utag.tag) ? kItemDelimitationItem
                                              : kSequenceOfItemsDelimitationItem;
   }
@@ -131,13 +132,14 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
   if (tag_get_group(ude.ede32.utag.tag) == 0x0002) {
     assert(de.vl != kUndefinedLength);
-    //src->ops->seek(src, de.vl);
+
     return kFileMetaElement;
   } else if (is_tag_pixeldata(ude.ede32.utag.tag) &&
              ude.ede32.uvr.vr.vr == kOB &&
              ude.ede32.uvl.vl == kUndefinedLength) {
     assert(sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
+
     return kSequenceOfFragments;
   } else if (ude.ede32.uvr.vr.vr == kSQ &&
              ude.ede32.uvl.vl == kUndefinedLength) {
@@ -146,10 +148,10 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     // defined length SQ
     assert(ds->deflensq == kUndefinedLength);
     ds->deflensq = ude.ede32.uvl.vl;
+
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)) {
     assert(de.vl != kUndefinedLength);
-    //src->ops->seek(src, de.vl);
     if (ds->deflenitem != kUndefinedLength) {
       // are we processing a defined length Item ?
       ds->curdeflenitem += compute_len(&de);
@@ -158,6 +160,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
       // are we processing a defined length SQ ?
       ds->curdeflensq += compute_len(&de);
     }
+
     return kDataElement;
   }
   assert(0);
