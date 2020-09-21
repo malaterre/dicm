@@ -86,13 +86,11 @@ struct _filemetaelement {
   vl_t vl;
 };
 
-// Define a dataset with a max nesting level of one to parse defined length SQ
-// + defined length item.
+// Define the minimal dataset info structure with a max nesting level of one to
+// parse defined length SQ + defined length item.
 // Implementation should use tail-recursion optimization to allow processing of
 // infinite depth defined length SQ.
 struct _dataset {
-  struct _dataelement de;
-
   char buffer[128 /*4096*/];  // Minimal amount of memory (preamble is the
                               // bigest one ?)
   size_t bufsize;             //
@@ -122,7 +120,6 @@ static inline void reset_defined_length_sequence(struct _dataset *ds) {
 }
 
 static inline void reset_dataset(struct _dataset *ds) {
-  ds->de.tag = 0;
   reset_defined_length_item(ds);
   reset_defined_length_sequence(ds);
   ds->sequenceoffragments = -1;

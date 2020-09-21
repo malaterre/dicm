@@ -81,4 +81,6 @@ __must_check size_t dicm_sreader_pull_dataelement_value(
     struct _dicm_sreader *sreader, const struct _dataelement *de, char *buf,
     size_t buflen);
 
+struct _dataset *dicm_sreader_get_dataset(struct _dicm_sreader *sreader);
+
 typedef struct _dicm_sreader dicm_sreader_t;
