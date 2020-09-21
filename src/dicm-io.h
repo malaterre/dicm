@@ -62,7 +62,7 @@ struct _dst_ops {
   /**
    * bsize in bytes
    */
-  size_t (*write)(struct _dst *dst, void *buf, size_t bsize);
+  size_t (*write)(struct _dst *dst, const void *buf, size_t bsize);
 };
 
 typedef struct _src src_t;

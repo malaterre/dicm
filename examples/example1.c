@@ -34,6 +34,7 @@ extern struct _mem ansi;
 extern const struct _writer_ops default_writer;
 extern const struct _writer_ops event_writer;
 extern const struct _writer_ops dcmdump_writer;
+extern const struct _writer_ops copy_writer;
 
 #include <assert.h> /* assert */
 #include <errno.h>  /* errno */
@@ -133,7 +134,8 @@ int main(int argc, char *argv[]) {
   sreader = dicm_sreader_init(&ansi, &fsrc);
   // process_writer(&default_writer, sreader);
   // process_writer(&event_writer, sreader);
-  writer.ops = &dcmdump_writer;
+  //writer.ops = &dcmdump_writer;
+  writer.ops = &copy_writer;
   writer.sreader = sreader;
   process_writer(&writer, sreader);
   dicm_sreader_fini(sreader);
