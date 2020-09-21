@@ -29,9 +29,11 @@ static unsigned int dcmdump_level = 0;
 
 static unsigned int first_dataelement = 0;
 
+#ifdef FIXME
 static void print_with_indent(int indent, const char *string) {
   printf("%*s%s", indent, "", string);
 }
+#endif
 
 static void dcmdump_file_preamble(
     __maybe_unused struct _writer *writer,

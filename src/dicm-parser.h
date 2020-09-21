@@ -27,12 +27,12 @@
 
 #include <assert.h>
 
-#define MAKE_TAG(group, element) (group << 16 | element)
+#define MAKE_TAG(group, element) (group << 16u | element)
 
-#define MAKE_TAG2(group, element) (element << 16 | group)
+#define MAKE_TAG2(group, element) (element << 16u | group)
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define SWAP_TAG(t) t.tag = MAKE_TAG(t.tags[0], t.tags[1])
+#define SWAP_TAG(t) t.tag = MAKE_TAG((unsigned int)t.tags[0], (unsigned int)t.tags[1])
 #else
 #define SWAP_TAG(t)                \
   t.tags[0] = bswap_16(t.tags[0]); \
@@ -205,7 +205,7 @@ static inline bool tag_is_lower(const struct _dataelement *de, tag_t tag) {
 }
 
 static inline bool is_start(const struct _dataelement *de) {
-  static const tag_t start = MAKE_TAG(0xfffe, 0xe000);
+  static const tag_t start = MAKE_TAG(0xFFFEu, 0xE000u);
   return de->tag == start;
 }
 static inline bool is_tag_start(const tag_t tag) {
@@ -213,7 +213,7 @@ static inline bool is_tag_start(const tag_t tag) {
   const tag_t start = MAKE_TAG(0xfffe, 0xe000);
   return tag == start;
 #else
-  const tag_t start = MAKE_TAG2(0xfffe, 0xe000);
+  const tag_t start = MAKE_TAG2(0xFFFEu, 0xE000u);
   return tag == start;
 #endif
 }
@@ -222,7 +222,7 @@ static inline bool is_tag_end_item(const tag_t tag) {
   const tag_t end_item = MAKE_TAG(0xfffe, 0xe00d);
   return tag == end_item;
 #else
-  const tag_t end_item = MAKE_TAG2(0xfffe, 0xe00d);
+  const tag_t end_item = MAKE_TAG2(0xFFFEu, 0xE00Du);
   return tag == end_item;
 #endif
 }
@@ -231,7 +231,7 @@ static inline bool is_tag_end_sq(const tag_t tag) {
   const tag_t end_sq = MAKE_TAG(0xfffe, 0xe0dd);
   return tag == end_sq;
 #else
-  const tag_t end_sq = MAKE_TAG2(0xfffe, 0xe0dd);
+  const tag_t end_sq = MAKE_TAG2(0xFFFEu, 0xE0DDu);
   return tag == end_sq;
 #endif
 }
@@ -240,17 +240,17 @@ static inline bool is_tag_pixeldata(const tag_t tag) {
   const tag_t pixel_data = MAKE_TAG(0x7fe0, 0x0010);
   return tag == pixel_data;
 #else
-  const tag_t pixel_data = MAKE_TAG2(0x7fe0, 0x0010);
+  const tag_t pixel_data = MAKE_TAG2(0x7FE0u, 0x0010u);
   return tag == pixel_data;
 #endif
 }
 
 static inline bool is_end_item(const struct _dataelement *de) {
-  static const tag_t end_item = MAKE_TAG(0xfffe, 0xe00d);
+  static const tag_t end_item = MAKE_TAG(0xFFFEu, 0xE00Du);
   return de->tag == end_item;
 }
 static inline bool is_end_sq(const struct _dataelement *de) {
-  static const tag_t end_sq = MAKE_TAG(0xfffe, 0xe0dd);
+  static const tag_t end_sq = MAKE_TAG(0xFFFEu, 0xE0DDu);
   return de->tag == end_sq;
 }
 static inline bool is_encapsulated_pixel_data(const struct _dataelement *de) {
@@ -308,6 +308,9 @@ int read_prefix(struct _src *src, struct _dataset *ds);
 int read_explicit(struct _src *src, struct _dataset *ds);
 int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
                          struct _dataelement *de);
+int buf_into_filemetaelement(const struct _dataset *ds,
+                             enum state current_state,
+                             struct _filemetaelement *fme);
 
 typedef struct _ede32 ede32_t;
 typedef struct _ede16 ede16_t;

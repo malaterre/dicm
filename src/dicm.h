@@ -38,6 +38,12 @@ struct _dicm_prefix {
 };
 
 struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src);
+
+/**
+ * Read file meta info (preamble, prefix, file meta elements)
+ */
+__must_check bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader);
+
 int dicm_sreader_fini(struct _dicm_sreader *sreader);
 
 /**
@@ -77,9 +83,9 @@ __must_check bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
 /**
  * Return current dataelement value.
  */
-__must_check size_t dicm_sreader_pull_dataelement_value(
-    struct _dicm_sreader *sreader, const struct _dataelement *de, char *buf,
-    size_t buflen);
+size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
+                                           const struct _dataelement *de,
+                                           char *buf, size_t buflen);
 
 struct _dataset *dicm_sreader_get_dataset(struct _dicm_sreader *sreader);
 
