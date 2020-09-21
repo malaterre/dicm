@@ -35,54 +35,70 @@ static void copy_prefix(struct _writer *writer,
   dst->ops->write(dst, prefix->data, sizeof prefix->data);
 }
 
+static void copy(struct _writer *writer, const struct _dataelement *de) {
+  struct _dicm_sreader *sreader = writer->sreader;
+  struct _dst *dst = writer->dst;
+  struct _dataset *dataset = dicm_sreader_get_dataset(sreader);
+  dst->ops->write(dst, dataset->buffer, dataset->bufsize);
+
+  if (de->vl != kUndefinedLength) {
+    char buf[4096];
+    size_t len;
+    while ((len = dicm_sreader_pull_dataelement_value(sreader, de, buf,
+                                                      sizeof buf))) {
+      dst->ops->write(dst, buf, len);
+    }
+  }
+}
+
 static void copy_filemetaelement(struct _writer *writer,
                                  const struct _filemetaelement *fme) {
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(fme->tag),
-         (unsigned int)get_element(fme->tag), get_vr(fme->vr), fme->vl);
+  copy(writer, (const struct _dataelement *)fme);
 }
 
 static void copy_item(struct _writer *writer,
                       __maybe_unused const struct _dataelement *de) {
-  printf(">>\n");
+  copy(writer, de);
 }
 
 static void copy_bot(struct _writer *writer,
                      __maybe_unused const struct _dataelement *de) {
-  printf(">>\n");
+  copy(writer, de);
 }
 
 static void copy_fragment(struct _writer *writer,
                           __maybe_unused const struct _dataelement *de) {
-  printf(">>\n");
+  copy(writer, de);
 }
 
 static void copy_end_item(struct _writer *writer,
-                          __maybe_unused const struct _dataelement *de) {}
+                          __maybe_unused const struct _dataelement *de) {
+  copy(writer, de);
+}
 
 static void copy_end_sq(struct _writer *writer,
                         __maybe_unused const struct _dataelement *de) {
+  copy(writer, de);
 }
 
 static void copy_end_frags(struct _writer *writer,
                            __maybe_unused const struct _dataelement *de) {
+  copy(writer, de);
 }
 
 static void copy_sequenceofitems(struct _writer *writer,
                                  const struct _dataelement *de) {
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+  copy(writer, de);
 }
 
 static void copy_sequenceoffragments(struct _writer *writer,
                                      const struct _dataelement *de) {
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+  copy(writer, de);
 }
 
 static void copy_dataelement(struct _writer *writer,
                              const struct _dataelement *de) {
-  printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
-         (unsigned int)get_element(de->tag), get_vr(de->vr), de->vl);
+  copy(writer, de);
 }
 
 const struct _writer_ops copy_writer = {

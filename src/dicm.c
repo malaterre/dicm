@@ -193,6 +193,7 @@ int dicm_sreader_fini(struct _dicm_sreader *sreader) {
 size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
                                            const struct _dataelement *de,
                                            char *buf, size_t buflen) {
+  assert(de->vl != kUndefinedLength);
   struct _src *src = sreader->src;
   size_t remaining_len = de->vl - sreader->curdepos;
   size_t len = buflen < remaining_len ? buflen : remaining_len;
@@ -206,4 +207,8 @@ size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
     sreader->curdepos += len;
     return len;
   }
+}
+
+struct _dataset *dicm_sreader_get_dataset(struct _dicm_sreader *sreader) {
+  return &sreader->dataset;
 }

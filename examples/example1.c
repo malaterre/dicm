@@ -135,8 +135,10 @@ int main(int argc, char *argv[]) {
   // process_writer(&default_writer, sreader);
   // process_writer(&event_writer, sreader);
   //writer.ops = &dcmdump_writer;
+  //writer.ops = &default_writer;
   writer.ops = &copy_writer;
   writer.sreader = sreader;
+  writer.dst = &fdst;
   process_writer(&writer, sreader);
   dicm_sreader_fini(sreader);
 
