@@ -34,6 +34,7 @@ struct _dicm_sreader {
   struct _src *src;
   struct _dataset dataset;  // current dataset
 
+bool stream_filemetaelements;
 #if 0
   struct _dicm_filepreamble filepreamble;
   struct _dicm_prefix prefix;
@@ -44,14 +45,23 @@ struct _dicm_sreader {
   enum state current_state;
 };
 
-struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src) {
+struct _dicm_sreader *dicm_sreader_init(struct _mem *mem) {
   struct _dicm_sreader *sreader = mem->ops->alloc(mem, sizeof *sreader);
   sreader->mem = mem;
-  sreader->src = src;
+  sreader->stream_filemetaelements = false;
   sreader->curdepos = 0;
-  sreader->current_state = -1;  // kStartInstance;
+  sreader->current_state = -1;
   reset_dataset(&sreader->dataset);
   return sreader;
+}
+
+void dicm_sreader_set_src(struct _dicm_sreader *sreader, struct _src *src) {
+  sreader->src = src;
+}
+
+void dicm_sreader_stream_filemetaelements(struct _dicm_sreader *sreader, bool stream_filemetaelements)
+{
+  sreader->stream_filemetaelements = stream_filemetaelements;
 }
 
 size_t dicm_sreader_pull_filemetaelement_value(
@@ -73,7 +83,7 @@ size_t dicm_sreader_pull_filemetaelement_value(
   }
 }
 
-static inline uint32_t compute_fmelen(const struct _filemetaelement *fme) {
+static inline uint32_t get_filemetaeelement_length(const struct _filemetaelement *fme) {
   assert(fme->vl != kUndefinedLength);
   if (is_vr16(fme->vr)) {
     return 4 /* tag */ + 4 /* VR/VL */ + fme->vl /* VL */;
@@ -82,8 +92,6 @@ static inline uint32_t compute_fmelen(const struct _filemetaelement *fme) {
 }
 
 bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
-  //  struct _src *src = sreader->src;
-  //  const int current_state = sreader->current_state;
   struct _dicm_filepreamble filepreamble;
   struct _dicm_prefix prefix;
   struct _filemetaelement fme;
@@ -135,22 +143,24 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
                                                 sizeof buf) != fme.vl) {
       assert(0);
     }
-    gl += compute_fmelen(&fme);
+    gl += get_filemetaeelement_length(&fme);
     assert(gl <= group_length.ul);
   }
 
-  sreader->current_state = kFileMetaInfo;
+  sreader->current_state = kEndFileMetaInfo;
   return true;
 }
 
 static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   const int current_state = sreader->current_state;
+  const bool stream_filemetaelements = sreader->stream_filemetaelements;
   // make sure to flush remaining bits from a dataelement
-  if (current_state == kBasicOffsetTable || current_state == kFragment ||
-      /*current_state == kFileMetaElement ||*/ current_state == kDataElement) {
+  if (current_state == kBasicOffsetTable || current_state == kFragment
+      || current_state == kFileMetaElement /* only when stream_filemetaelements */
+      || current_state == kDataElement) {
     struct _dataelement de;
-    buf_into_dataelement(&sreader->dataset, current_state, &de);
+    buf_into_dataelement(&sreader->dataset, current_state, &de );
     dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
@@ -160,25 +170,37 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
 
   assert(!src->ops->at_end(src));
   switch (current_state) {
-#if 0
     case -1:
-      sreader->current_state = read_filepreamble(src, ds);
+      sreader->current_state = kStartFileMetaInfo;
+      break;
+
+    case kStartFileMetaInfo:
+      if (stream_filemetaelements)
+        sreader->current_state = read_filepreamble(src, ds);
+      else {
+        dicm_sreader_read_meta_info(sreader);
+        assert(sreader->current_state == kEndFileMetaInfo);
+      }
       break;
 
     case kFilePreamble:
+      assert(stream_filemetaelements);
       sreader->current_state = read_prefix(src, ds);
       break;
 
     case kPrefix:
+      assert(stream_filemetaelements);
       sreader->current_state = read_explicit(src, ds);
       break;
 
     case kFileMetaElement:
+      assert(stream_filemetaelements);
       sreader->current_state = read_explicit(src, ds);
       break;
-#else
-    case kFileMetaInfo:
-#endif
+
+    case kEndFileMetaInfo:
+      sreader->current_state = read_explicit(src, ds);
+      break;
 
     case kDataElement:
       sreader->current_state = read_explicit(src, ds);
@@ -263,7 +285,9 @@ bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
                                   struct _dataelement *de) {
   // FIXME would be nice to setup an error handler here instead of returning
   // NULL
+  const bool stream_filemetaelements = sreader->stream_filemetaelements;
   if (sreader->current_state != kDataElement &&
+      (stream_filemetaelements && sreader->current_state != kFileMetaElement) &&
       sreader->current_state != kSequenceOfItems &&
       sreader->current_state != kSequenceOfFragments &&
       sreader->current_state != kItem &&
