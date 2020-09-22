@@ -50,7 +50,7 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
     int next = dicm_sreader_next(sreader);
     switch (next) {
       case kStartFileMetaInformation:
-        // TODO
+        writer->ops->print_start_fmi(writer);
         break;
 
       case kFilePreamble:
@@ -64,7 +64,7 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
         break;
 
       case kFileMetaInformationGroupLength:
-        // TODO
+        writer->ops->print_fmi_gl(writer, 0);
         break;
 
       case kFileMetaElement:
@@ -73,7 +73,7 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
         break;
 
       case kEndFileMetaInformation:
-        // TODO
+        writer->ops->print_end_fmi(writer);
         break;
 
       case kDataElement:

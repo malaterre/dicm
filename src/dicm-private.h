@@ -26,16 +26,27 @@
 //#include <sys/types.h> /* off_t */
 #include <stdint.h> /* uint16_t */
 
-
 enum state {
-  kStartFileMetaInformation = 0,
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html#table_7.1-1
+  kStartFileMetaInformation = 0,
+  /**
+   * Only when stream_filemetaelements is true
+   */
   kFilePreamble,
+  /**
+   * Only when stream_filemetaelements is true
+   */
   kDICOMPrefix,
+  /**
+   * Only when stream_filemetaelements is true
+   */
   kFileMetaInformationGroupLength,
+  /**
+   * Only when stream_filemetaelements is true
+   */
   kFileMetaElement,
   kEndFileMetaInformation,
-  kDataElement, // Implicit or Explicit
+  kDataElement,  // Implicit or Explicit
   kSequenceOfItems,
   kSequenceOfFragments,
   kItem,                                 // (FFFE,E000)
