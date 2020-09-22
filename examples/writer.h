@@ -32,6 +32,9 @@ struct _writer {
 
 struct _writer_ops {
   // FIXME Should not expose FMI to user API
+  void (*print_start_fmi)(struct _writer *writer);
+  void (*print_end_fmi)(struct _writer *writer);
+  void (*print_fmi_gl)(struct _writer *writer, uint32_t gl);
   void (*print_file_preamble)(struct _writer *writer,
                               const struct _dicm_filepreamble *fp);
   void (*print_prefix)(struct _writer *writer,
