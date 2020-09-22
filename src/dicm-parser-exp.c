@@ -69,9 +69,9 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
       ds->sequenceoffragments++;
 
       return sequenceoffragments == 0 ? kBasicOffsetTable : kFragment;
-    } else if (ude.ide.uvl.vl /*curde->vl*/ != kUndefinedLength) {
+    } else if (ude.ide.uvl.vl != kUndefinedLength) {
       assert(ds->deflenitem == kUndefinedLength);
-      assert(ude.ide.uvl.vl /* curde->vl */ % 2 == 0);
+      assert(ude.ide.uvl.vl % 2 == 0);
       ds->deflenitem = ude.ide.uvl.vl;
       if (ds->deflensq != kUndefinedLength) {
         // are we processing a defined length SQ ?
@@ -178,13 +178,12 @@ int read_fme(struct _src *src, struct _dataset *ds) {
   assert(sizeof(ude) == 12);
   char *buf = ds->buffer;
 
-    if (ds->fmelen == ds->curfmelen) {
-  ds->fmelen = kUndefinedLength;
-  ds->curfmelen = 0;
+  if (ds->fmelen == ds->curfmelen) {
+    ds->fmelen = kUndefinedLength;
+    ds->curfmelen = 0;
 
-
-      return kEndFileMetaInformation;
-    }
+    return kEndFileMetaInformation;
+  }
 
   if (ds->deflenitem == ds->curdeflenitem) {
     // End of Item
@@ -268,7 +267,7 @@ int read_fme(struct _src *src, struct _dataset *ds) {
     ds->bufsize = sizeof ude.ede32;
   }
 
-    assert(de.vl != kUndefinedLength);
+  assert(de.vl != kUndefinedLength);
   if (de.vl != kUndefinedLength && de.vl % 2 != 0)
     return -kDicmOddDefinedLength;
 
@@ -291,7 +290,7 @@ int read_fme(struct _src *src, struct _dataset *ds) {
     assert(sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
 
-assert(0);
+    assert(0);
     return kSequenceOfFragments;
   } else if (ude.ede32.uvr.vr.vr == kSQ &&
              ude.ede32.uvl.vl == kUndefinedLength) {
@@ -320,6 +319,4 @@ assert(0);
   }
   assert(0);
   return -kInvalidTag;
-
 }
-
