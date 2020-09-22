@@ -91,9 +91,7 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   SWAP_TAG(ude.ide.utag);
 
   if (
-#if 0
-current_state == kFileMetaElement ||
-#endif
+current_state == kFileMetaElement /* should only occur when stream_filemetaelements */||
       current_state == kDataElement || current_state == kSequenceOfItems ||
       current_state == kSequenceOfFragments) {
     if (bufsize == 12) {

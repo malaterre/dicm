@@ -37,7 +37,11 @@ struct _dicm_prefix {
   byte_t data[4];
 };
 
-struct _dicm_sreader *dicm_sreader_init(struct _mem *mem, struct _src *src);
+struct _dicm_sreader *dicm_sreader_init(struct _mem *mem);
+
+void dicm_sreader_set_src(struct _dicm_sreader *sreader, struct _src *src);
+
+void dicm_sreader_stream_filemetaelements(struct _dicm_sreader *sreader, bool stream_filemetaelements);
 
 /**
  * Read file meta info (preamble, prefix, file meta elements)
