@@ -128,16 +128,22 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
     if (next != kFileMetaElement) {
       assert(0);
     }
-    dicm_sreader_get_filemetaelement(sreader, &fme);
-    dicm_sreader_pull_filemetaelement_value(sreader, &fme, buf, sizeof buf);
+    if (!dicm_sreader_get_filemetaelement(sreader, &fme)) {
+      assert(0);
+    }
+    if (dicm_sreader_pull_filemetaelement_value(sreader, &fme, buf,
+                                                sizeof buf) != fme.vl) {
+      assert(0);
+    }
     gl += compute_fmelen(&fme);
+    assert(gl <= group_length.ul);
   }
 
   sreader->current_state = kFileMetaInfo;
   return true;
 }
 
-static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
+static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   const int current_state = sreader->current_state;
   // make sure to flush remaining bits from a dataelement
@@ -224,7 +230,7 @@ static int dicm_sreader_impl(struct _dicm_sreader *sreader) {
 
 bool dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
-  int ret = dicm_sreader_impl(sreader);
+  int ret = dicm_sreader_hasnext_impl(sreader);
   if (ret < 0) {
     assert(src->ops->at_end(src));
   }
