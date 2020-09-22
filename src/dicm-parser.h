@@ -272,6 +272,15 @@ static inline bool is_undef_len(const struct _dataelement *de) {
   }
   return b;
 }
+#if 0
+static inline uint32_t compute_fmelen(const struct _fmeelement *fme) {
+  assert(!is_undef_len(fme));
+  if (is_vr16(fme->vr)) {
+    return 4 /* tag */ + 4 /* VR/VL */ + fme->vl /* VL */;
+  }
+  return 4 /* tag */ + 4 /* VR */ + 4 /* VL */ + fme->vl /* VL */;
+}
+#endif
 static inline uint32_t compute_len(const struct _dataelement *de) {
   assert(!is_undef_len(de));
   if (is_vr16(de->vr)) {
