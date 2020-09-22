@@ -49,7 +49,7 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
   while (dicm_sreader_hasnext(sreader)) {
     int next = dicm_sreader_next(sreader);
     switch (next) {
-      case kStartFileMetaInfo:
+      case kStartFileMetaInformation:
         // TODO
         break;
 
@@ -58,18 +58,22 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
           writer->ops->print_file_preamble(writer, &filepreamble);
         break;
 
-      case kPrefix:
+      case kDICOMPrefix:
         if (dicm_sreader_get_prefix(sreader, &prefix))
           writer->ops->print_prefix(writer, &prefix);
         break;
 
-      case kEndFileMetaInfo:
+      case kFileMetaInformationGroupLength:
         // TODO
         break;
 
       case kFileMetaElement:
         if (dicm_sreader_get_filemetaelement(sreader, &fme))
           writer->ops->print_filemetaelement(writer, &fme);
+        break;
+
+      case kEndFileMetaInformation:
+        // TODO
         break;
 
       case kDataElement:
@@ -141,15 +145,14 @@ int main(int argc, char *argv[]) {
 
   sreader = dicm_sreader_init(&ansi);
   dicm_sreader_set_src(sreader, &fsrc);
-  dicm_sreader_stream_filemetaelements(sreader, false);
+  dicm_sreader_stream_filemetaelements(sreader, true);
   /*  if (!dicm_sreader_read_meta_info(sreader)) {
       return EXIT_FAILURE;
     }*/
 
-  // process_writer(&default_writer, sreader);
-  // process_writer(&event_writer, sreader);
   // writer.ops = &dcmdump_writer;
-  writer.ops = &default_writer;
+  writer.ops = &event_writer;
+  // writer.ops = &default_writer;
   // writer.ops = &copy_writer;
   writer.sreader = sreader;
   writer.dst = &fdst;

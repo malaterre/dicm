@@ -97,6 +97,9 @@ struct _dataset {
 
   // Fragments are easier to handle since they cannot be nested
   int sequenceoffragments; // -1: none, 0: BasicOffsetTable, >0: Fragment
+  // fme length
+  vl_t fmelen;
+  vl_t curfmelen;
   // defined length SQ:
   vl_t deflensq;
   vl_t curdeflensq;
@@ -122,6 +125,10 @@ static inline void reset_defined_length_sequence(struct _dataset *ds) {
 static inline void reset_dataset(struct _dataset *ds) {
   reset_defined_length_item(ds);
   reset_defined_length_sequence(ds);
+
+  ds->fmelen = kUndefinedLength;
+  ds->curfmelen = 0;
+
   ds->sequenceoffragments = -1;
   memset(ds->buffer, 0, sizeof ds->buffer);
   ds->bufsize = 0;

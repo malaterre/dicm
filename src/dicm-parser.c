@@ -74,7 +74,7 @@ int read_prefix(struct _src *src, struct _dataset *ds) {
     return -kNotEnoughData;
   }
   ds->bufsize = 4;
-  return kPrefix;
+  return kDICOMPrefix;
 }
 
 int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
@@ -90,9 +90,10 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   memcpy(ude.bytes, buf, bufsize);
   SWAP_TAG(ude.ide.utag);
 
-  if (
-current_state == kFileMetaElement /* should only occur when stream_filemetaelements */||
-      current_state == kDataElement || current_state == kSequenceOfItems ||
+  if (current_state ==
+          kFileMetaElement /* should only occur when stream_filemetaelements */
+      || current_state == kFileMetaInformationGroupLength
+      || current_state == kDataElement || current_state == kSequenceOfItems ||
       current_state == kSequenceOfFragments) {
     if (bufsize == 12) {
       de->tag = ude.ede32.utag.tag;
@@ -133,7 +134,8 @@ int buf_into_filemetaelement(const struct _dataset *ds,
   memcpy(ude.bytes, buf, bufsize);
   SWAP_TAG(ude.ede32.utag);
 
-  if (current_state == kFileMetaElement) {
+  if (current_state == kFileMetaElement
+|| current_state == kFileMetaInformationGroupLength) {
     if (bufsize == 12) {
       fme->tag = ude.ede32.utag.tag;
       fme->vr = ude.ede32.uvr.vr.vr;
