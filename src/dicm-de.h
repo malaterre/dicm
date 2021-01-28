@@ -116,14 +116,14 @@ enum {
 };
 
 
-static inline void _pushsqlevel(struct _dataset *ds)
+static inline void pushsqlevel(struct _dataset *ds)
 {
   assert( ds->_levelsq < MAX_LEVEL_SQ);
   ds->_levelsq++;
   assert( ds->_levelsq >= 0);
 }
 
-static inline void _popsqlevel(struct _dataset *ds)
+static inline void popsqlevel(struct _dataset *ds)
 {
   assert( ds->_levelsq < MAX_LEVEL_SQ);
   assert( ds->_levelsq >= 0);
@@ -139,15 +139,16 @@ static inline void reset_defined_length_sequence(struct _dataset *ds) {
 }
 
 static inline void reset_cur_defined_length_sequence(struct _dataset *ds) {
+  assert( ds->_deflensq[ds->_levelsq] != kUndefinedLength );
   ds->_deflensq[ds->_levelsq] = kUndefinedLength;
   ds->_curdeflensq[ds->_levelsq] = 0;
-  _popsqlevel(ds);
+  popsqlevel(ds);
 }
 
 
 static inline void set_deflensq(struct _dataset *ds, vl_t len)
 {
-  _pushsqlevel(ds);
+  pushsqlevel(ds);
   assert( ds->_deflensq[ds->_levelsq] == kUndefinedLength );
   ds->_deflensq[ds->_levelsq] = len;
 }
@@ -165,7 +166,9 @@ static inline void set_curdeflensq(struct _dataset *ds, vl_t len)
 {
   assert( ds->_levelsq >= 0 );
   assert( ds->_levelsq < MAX_LEVEL_SQ );
+  assert( ds->_curdeflensq[ds->_levelsq] <= ds->_deflensq[ds->_levelsq] );
   ds->_curdeflensq[ds->_levelsq] = len;
+  assert( ds->_curdeflensq[ds->_levelsq] <= ds->_deflensq[ds->_levelsq] );
 }
 
 static inline vl_t get_curdeflensq(struct _dataset *ds)
@@ -176,14 +179,14 @@ static inline vl_t get_curdeflensq(struct _dataset *ds)
   return ds->_curdeflensq[ds->_levelsq];
 }
 #undef MAX_LEVEL_SQ
-static inline void _pushitemlevel(struct _dataset *ds)
+static inline void pushitemlevel(struct _dataset *ds)
 {
   assert( ds->_levelitem < MAX_LEVEL_ITEM);
   ds->_levelitem++;
   assert( ds->_levelitem >= 0);
 }
 
-static inline void _popitemlevel(struct _dataset *ds)
+static inline void popitemlevel(struct _dataset *ds)
 {
   assert( ds->_levelitem < MAX_LEVEL_ITEM);
   assert( ds->_levelitem >= 0);
@@ -199,15 +202,16 @@ static inline void reset_defined_length_item(struct _dataset *ds) {
   }
 }
 static inline void reset_cur_defined_length_item(struct _dataset *ds) {
+  assert( ds->_deflenitem[ds->_levelitem] != kUndefinedLength );
   ds->_deflenitem[ds->_levelitem] = kUndefinedLength;
   ds->_curdeflenitem[ds->_levelitem] = 0;
-  _popitemlevel(ds);
+  popitemlevel(ds);
 }
 
 
 static inline void set_deflenitem(struct _dataset *ds, vl_t len)
 {
-  _pushitemlevel(ds);
+  pushitemlevel(ds);
   assert( ds->_deflenitem[ds->_levelitem] == kUndefinedLength );
   ds->_deflenitem[ds->_levelitem] = len;
 }
@@ -225,7 +229,9 @@ static inline void set_curdeflenitem(struct _dataset *ds, vl_t len)
 {
   assert( ds->_levelitem >= 0 );
   assert( ds->_levelitem < MAX_LEVEL_ITEM);
+  assert( ds->_curdeflenitem[ds->_levelitem] <= ds->_deflenitem[ds->_levelitem] );
   ds->_curdeflenitem[ds->_levelitem] = len;
+  assert( ds->_curdeflenitem[ds->_levelitem] <= ds->_deflenitem[ds->_levelitem] );
 }
 
 static inline vl_t get_curdeflenitem(struct _dataset *ds)
