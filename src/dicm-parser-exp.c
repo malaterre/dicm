@@ -66,14 +66,14 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     // 1. Sequence of Fragments
     if (sequenceoffragments >= 0) {
       ds->sequenceoffragments++;
-      
+
       if (get_deflenitem(ds) != kUndefinedLength) {
         // are we processing a defined length Item ?
-        set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + ude.ide.uvl.vl );
+        set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + ude.ide.uvl.vl);
       }
       if (get_deflensq(ds) != kUndefinedLength) {
         // are we processing a defined length SQ ?
-        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + ude.ide.uvl.vl );
+        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + ude.ide.uvl.vl);
       }
       return sequenceoffragments == 0 ? kBasicOffsetTable : kFragment;
     } else {  // or 2. Sequence of Items:
@@ -163,8 +163,9 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   if (de.vl != kUndefinedLength && de.vl % 2 != 0)
     return -kDicmOddDefinedLength;
 
-  if (is_tag_pixeldata(ude.ede32.utag.tag) && ude.ede32.uvr.vr.vr == kOB &&
+  if (is_tag_pixeldata(ude.ede32.utag.tag) &&
       ude.ede32.uvl.vl == kUndefinedLength) {
+    if (ude.ede32.uvr.vr.vr != kOB) return -kEncapsulatedPixelDataIsNotOB;
     assert(sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
     if (get_deflenitem(ds) != kUndefinedLength) {
@@ -339,8 +340,8 @@ int read_fme(struct _src *src, struct _filemetaset *ds) {
   } else if (is_tag_pixeldata(ude.ede32.utag.tag) &&
              ude.ede32.uvr.vr.vr == kOB &&
              ude.ede32.uvl.vl == kUndefinedLength) {
-//    assert(sequenceoffragments == -1);
-//    ds->sequenceoffragments = 0;
+    //    assert(sequenceoffragments == -1);
+    //    ds->sequenceoffragments = 0;
 
     assert(0);
     return kSequenceOfFragments;
@@ -351,8 +352,8 @@ int read_fme(struct _src *src, struct _filemetaset *ds) {
   } else if (ude.ede32.uvr.vr.vr == kSQ) {
     assert(0);
     // defined length SQ
-//    assert(ds->deflensq == kUndefinedLength);
-//    ds->deflensq = ude.ede32.uvl.vl;
+    //    assert(ds->deflensq == kUndefinedLength);
+    //    ds->deflensq = ude.ede32.uvl.vl;
 
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)) {
