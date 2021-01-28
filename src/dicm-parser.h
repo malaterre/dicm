@@ -312,12 +312,13 @@ struct _ide {
   uvl_t uvl;
 };  // implicit data element. 8 bytes
 
-int read_filepreamble(struct _src *src, struct _dataset *ds);
-int read_prefix(struct _src *src, struct _dataset *ds);
+int read_filepreamble(struct _src *src, struct _filemetaset *ds);
+int read_prefix(struct _src *src, struct _filemetaset *ds);
 int read_explicit(struct _src *src, struct _dataset *ds);
+int read_fme(struct _src *src, struct _filemetaset *ds);
 int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
                          struct _dataelement *de);
-int buf_into_filemetaelement(const struct _dataset *ds,
+int buf_into_filemetaelement(const struct _filemetaset *ds,
                              enum state current_state,
                              struct _filemetaelement *fme);
 
