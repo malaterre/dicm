@@ -165,7 +165,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
   if (is_tag_pixeldata(ude.ede32.utag.tag) &&
       ude.ede32.uvl.vl == kUndefinedLength) {
-    if (ude.ede32.uvr.vr.vr != kOB) return -kEncapsulatedPixelDataIsNotOB;
+    if (unlikely(ude.ede32.uvr.vr.vr != kOB)) return -kEncapsulatedPixelDataIsNotOB;
     assert(sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
     if (get_deflenitem(ds) != kUndefinedLength) {
