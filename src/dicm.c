@@ -33,6 +33,7 @@ struct _dicm_sreader {
   struct _mem *mem;
   struct _src *src;
   struct _dataset dataset;  // current dataset
+  struct _filemetaset filemetaset;  // current filemeta
 
 bool stream_filemetaelements;
 #if 0
@@ -52,6 +53,7 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem) {
   sreader->curdepos = 0;
   sreader->current_state = -1;
   reset_dataset(&sreader->dataset);
+  reset_filemetaset(&sreader->filemetaset);
   return sreader;
 }
 
@@ -74,9 +76,9 @@ size_t dicm_sreader_pull_filemetaelement_value(
   if (buf) {
     size_t readlen = src->ops->read(src, buf, len);
     assert(readlen == len);  // TODO
+    sreader->curdepos += len;
     return readlen;
   } else {
-    assert(0);
     src->ops->seek(src, len);
     sreader->curdepos += len;
     return len;
@@ -96,9 +98,10 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   struct _dicm_prefix prefix;
   struct _filemetaelement fme;
   struct _src *src = sreader->src;
-  struct _dataset *ds = &sreader->dataset;
+//  struct _dataset *ds = &sreader->dataset;
+  struct _filemetaset *fms = &sreader->filemetaset;
 
-  int next = read_filepreamble(src, ds);
+  int next = read_filepreamble(src, fms);
   //  if (!dicm_sreader_hasnext(sreader)) return false;
   //  int next = dicm_sreader_next(sreader);
   sreader->current_state = next;
@@ -109,11 +112,12 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   if (!dicm_sreader_hasnext(sreader)) return false;
   next = dicm_sreader_next(sreader);
 #endif
-  next = read_prefix(src, ds);
+  next = read_prefix(src, fms);
   sreader->current_state = next;
   if (next == kDICOMPrefix) dicm_sreader_get_prefix(sreader, &prefix);
 
-  next = read_explicit(src, ds);
+  // next = read_explicit(src, ds);
+  next = read_fme(src, fms);
 #if 0
   if (!dicm_sreader_hasnext(sreader)) return false;
   next = dicm_sreader_next(sreader);
@@ -131,7 +135,8 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   uint32_t gl = 0;
   char buf[64];
   while (gl != group_length.ul) {
-    next = read_explicit(src, ds);
+    // next = read_explicit(src, ds);
+    next = read_fme(src, fms);
     sreader->current_state = next;
     if (next != kFileMetaElement) {
       assert(0);
@@ -157,8 +162,6 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   const bool stream_filemetaelements = sreader->stream_filemetaelements;
   // make sure to flush remaining bits from a dataelement
   if (current_state == kBasicOffsetTable || current_state == kFragment
-      || current_state == kFileMetaElement /* only when stream_filemetaelements */
-//      || current_state == kFileMetaInformationGroupLength /* only when stream_filemetaelements */
       || current_state == kDataElement) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, current_state, &de );
@@ -166,8 +169,20 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
   }
+  else if (0
+      || current_state == kFileMetaElement /* only when stream_filemetaelements */
+//      || current_state == kFileMetaInformationGroupLength /* only when stream_filemetaelements */
+      ) {
+    struct _filemetaelement de;
+    buf_into_filemetaelement(&sreader->filemetaset, current_state, &de );
+    dicm_sreader_pull_filemetaelement_value(sreader, &de, NULL, de.vl);
+    assert(sreader->curdepos == de.vl);
+    sreader->curdepos = 0;
+  }
+
 
   struct _dataset *ds = &sreader->dataset;
+  struct _filemetaset *fms = &sreader->filemetaset;
 
   assert(!src->ops->at_end(src));
   switch (current_state) {
@@ -177,7 +192,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
 
     case kStartFileMetaInformation:
       if (stream_filemetaelements)
-        sreader->current_state = read_filepreamble(src, ds);
+        sreader->current_state = read_filepreamble(src, fms);
       else {
         dicm_sreader_read_meta_info(sreader);
         assert(sreader->current_state == kEndFileMetaInformation);
@@ -186,23 +201,23 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
 
     case kFilePreamble:
       assert(stream_filemetaelements);
-      sreader->current_state = read_prefix(src, ds);
+      sreader->current_state = read_prefix(src, fms);
       break;
 
     case kDICOMPrefix:
       assert(stream_filemetaelements);
-      sreader->current_state = read_fme(src, ds);
+      sreader->current_state = read_fme(src, fms);
       assert(sreader->current_state == kFileMetaInformationGroupLength);
       break;
 
     case kFileMetaInformationGroupLength:
       assert(stream_filemetaelements);
-      sreader->current_state = read_fme(src, ds);
+      sreader->current_state = read_fme(src, fms);
       break;
 
     case kFileMetaElement:
       assert(stream_filemetaelements);
-      sreader->current_state = read_fme(src, ds);
+      sreader->current_state = read_fme(src, fms);
       break;
 
     case kEndFileMetaInformation:
@@ -275,16 +290,16 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
 bool dicm_sreader_get_file_preamble(struct _dicm_sreader *sreader,
                                     struct _dicm_filepreamble *fp) {
   if (sreader->current_state != kFilePreamble) return false;
-  assert(sreader->dataset.bufsize == 128);
-  memcpy(fp->data, sreader->dataset.buffer, sizeof fp->data);
+  assert(sreader->filemetaset.bufsize == 128);
+  memcpy(fp->data, sreader->filemetaset.buffer, sizeof fp->data);
   return true;
 }
 
 bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
                              struct _dicm_prefix *prefix) {
   if (sreader->current_state != kDICOMPrefix) return false;
-  assert(sreader->dataset.bufsize == 4);
-  memcpy(prefix->data, sreader->dataset.buffer, sizeof prefix->data);
+  assert(sreader->filemetaset.bufsize == 4);
+  memcpy(prefix->data, sreader->filemetaset.buffer, sizeof prefix->data);
   return true;
 }
 
@@ -314,7 +329,7 @@ bool dicm_sreader_get_filemetaelement(struct _dicm_sreader *sreader,
   if (sreader->current_state != kFileMetaElement &&
       sreader->current_state != kFileMetaInformationGroupLength)
     return false;
-  buf_into_filemetaelement(&sreader->dataset, sreader->current_state, fme);
+  buf_into_filemetaelement(&sreader->filemetaset, sreader->current_state, fme);
   return true;
 }
 

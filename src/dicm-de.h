@@ -97,9 +97,6 @@ struct _dataset {
 
   // Fragments are easier to handle since they cannot be nested
   int sequenceoffragments; // -1: none, 0: BasicOffsetTable, >0: Fragment
-  // fme length
-  vl_t fmelen;
-  vl_t curfmelen;
   // defined length SQ:
   vl_t deflensq;
   vl_t curdeflensq;
@@ -107,6 +104,17 @@ struct _dataset {
   vl_t deflenitem;
   vl_t curdeflenitem;
 };
+
+struct _filemetaset {
+  char buffer[128 /*4096*/];  // Minimal amount of memory (preamble is the
+                              // bigest one ?)
+  size_t bufsize;             //
+
+  // fme length
+  vl_t fmelen;
+  vl_t curfmelen;
+};
+
 
 enum {
   kUndefinedLength = (vl_t)-1,
@@ -126,10 +134,15 @@ static inline void reset_dataset(struct _dataset *ds) {
   reset_defined_length_item(ds);
   reset_defined_length_sequence(ds);
 
+  ds->sequenceoffragments = -1;
+  memset(ds->buffer, 0, sizeof ds->buffer);
+  ds->bufsize = 0;
+}
+
+static inline void reset_filemetaset(struct _filemetaset *ds) {
   ds->fmelen = kUndefinedLength;
   ds->curfmelen = 0;
 
-  ds->sequenceoffragments = -1;
   memset(ds->buffer, 0, sizeof ds->buffer);
   ds->bufsize = 0;
 }

@@ -167,7 +167,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   return -kInvalidTag;
 }
 
-int read_fme(struct _src *src, struct _dataset *ds) {
+int read_fme(struct _src *src, struct _filemetaset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   union {
     byte_t bytes[12];
@@ -185,6 +185,7 @@ int read_fme(struct _src *src, struct _dataset *ds) {
     return kEndFileMetaInformation;
   }
 
+#if 0
   if (ds->deflenitem == ds->curdeflenitem) {
     // End of Item
     reset_defined_length_item(ds);
@@ -197,11 +198,14 @@ int read_fme(struct _src *src, struct _dataset *ds) {
     return kSequenceOfItemsDelimitationItem;
   }
   const int sequenceoffragments = ds->sequenceoffragments;
+#endif
 
   size_t ret = src->ops->read(src, ude.bytes, 8);
   if (unlikely(ret < 8)) return -kNotEnoughData;
 
   if (unlikely(is_tag_start(ude.ide.utag.tag))) {
+    assert(0);
+#if 0
     memcpy(buf, ude.bytes, sizeof ude.ide);
     ds->bufsize = sizeof ude.ide;
 
@@ -219,9 +223,12 @@ int read_fme(struct _src *src, struct _dataset *ds) {
       }
     }
 
+#endif
     return kItem;
   } else if (unlikely(is_tag_end_item(ude.ide.utag.tag)) ||
              unlikely(is_tag_end_sq(ude.ide.utag.tag))) {
+    assert(0);
+#if 0
     memcpy(buf, ude.bytes, sizeof ude.ide);
     ds->bufsize = sizeof ude.ide;
 
@@ -233,6 +240,7 @@ int read_fme(struct _src *src, struct _dataset *ds) {
       return kSequenceOfFragmentsDelimitationItem;
     }
 
+#endif
     return is_tag_end_item(ude.ide.utag.tag) ? kItemDelimitationItem
                                              : kSequenceOfItemsDelimitationItem;
   }
@@ -287,8 +295,8 @@ int read_fme(struct _src *src, struct _dataset *ds) {
   } else if (is_tag_pixeldata(ude.ede32.utag.tag) &&
              ude.ede32.uvr.vr.vr == kOB &&
              ude.ede32.uvl.vl == kUndefinedLength) {
-    assert(sequenceoffragments == -1);
-    ds->sequenceoffragments = 0;
+//    assert(sequenceoffragments == -1);
+//    ds->sequenceoffragments = 0;
 
     assert(0);
     return kSequenceOfFragments;
@@ -299,13 +307,14 @@ int read_fme(struct _src *src, struct _dataset *ds) {
   } else if (ude.ede32.uvr.vr.vr == kSQ) {
     assert(0);
     // defined length SQ
-    assert(ds->deflensq == kUndefinedLength);
-    ds->deflensq = ude.ede32.uvl.vl;
+//    assert(ds->deflensq == kUndefinedLength);
+//    ds->deflensq = ude.ede32.uvl.vl;
 
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)) {
     assert(0);
     assert(de.vl != kUndefinedLength);
+#if 0
     if (ds->deflenitem != kUndefinedLength) {
       // are we processing a defined length Item ?
       ds->curdeflenitem += compute_len(&de);
@@ -314,6 +323,7 @@ int read_fme(struct _src *src, struct _dataset *ds) {
       // are we processing a defined length SQ ?
       ds->curdeflensq += compute_len(&de);
     }
+#endif
 
     return kDataElement;
   }

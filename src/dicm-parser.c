@@ -55,7 +55,7 @@ bool dicm_de_is_sq(const struct _dataelement *de) {
   return false;
 }
 
-int read_filepreamble(struct _src *src, struct _dataset *ds) {
+int read_filepreamble(struct _src *src, struct _filemetaset *ds) {
   char *buf = ds->buffer;
   const size_t size = src->ops->read(src, buf, 128);
   if (unlikely(size < 128)) {
@@ -66,7 +66,7 @@ int read_filepreamble(struct _src *src, struct _dataset *ds) {
   return kFilePreamble;
 }
 
-int read_prefix(struct _src *src, struct _dataset *ds) {
+int read_prefix(struct _src *src, struct _filemetaset *ds) {
   char *buf = ds->buffer;
   const size_t size = src->ops->read(src, buf, 4);
   if (unlikely(size < 4)) {
@@ -119,7 +119,7 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   return 0;
 }
 
-int buf_into_filemetaelement(const struct _dataset *ds,
+int buf_into_filemetaelement(const struct _filemetaset *ds,
                              enum state current_state,
                              struct _filemetaelement *fme)
 
@@ -134,8 +134,7 @@ int buf_into_filemetaelement(const struct _dataset *ds,
   memcpy(ude.bytes, buf, bufsize);
   SWAP_TAG(ude.ede32.utag);
 
-  if (current_state == kFileMetaElement
-|| current_state == kFileMetaInformationGroupLength) {
+  if (current_state == kFileMetaElement || current_state == kFileMetaInformationGroupLength) {
     if (bufsize == 12) {
       fme->tag = ude.ede32.utag.tag;
       fme->vr = ude.ede32.uvr.vr.vr;
