@@ -114,7 +114,9 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
 #endif
   next = read_prefix(src, fms);
   sreader->current_state = next;
-  if (next == kDICOMPrefix) dicm_sreader_get_prefix(sreader, &prefix);
+  assert(next == kDICOMPrefix);
+  if (next == kDICOMPrefix)
+    dicm_sreader_get_prefix(sreader, &prefix);
 
   // next = read_explicit(src, ds);
   next = read_fme(src, fms);
@@ -123,15 +125,22 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   next = dicm_sreader_next(sreader);
 #endif
   sreader->current_state = next;
-  if (next == kFileMetaElement) dicm_sreader_get_filemetaelement(sreader, &fme);
+  assert(next == kFileMetaInformationGroupLength);
+  if (next == kFileMetaInformationGroupLength)
+   dicm_sreader_get_filemetaelement(sreader, &fme);
 
   union {
     uint32_t ul;
     char bytes[4];
   } group_length;
   assert(fme.vl == sizeof group_length);
+#if 0
   dicm_sreader_pull_filemetaelement_value(sreader, &fme, group_length.bytes,
                                           sizeof group_length);
+#else
+  group_length.ul = fms->fmelen;
+#endif
+
   uint32_t gl = 0;
   char buf[64];
   while (gl != group_length.ul) {
@@ -151,8 +160,10 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
     gl += get_filemetaeelement_length(&fme);
     assert(gl <= group_length.ul);
   }
+  assert(gl == group_length.ul);
 
   sreader->current_state = kEndFileMetaInformation;
+  sreader->curdepos = 0;
   return true;
 }
 
@@ -165,6 +176,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       || current_state == kDataElement) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, current_state, &de );
+    assert(sreader->curdepos == 0);
     dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
@@ -175,6 +187,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       ) {
     struct _filemetaelement de;
     buf_into_filemetaelement(&sreader->filemetaset, current_state, &de );
+    assert(sreader->curdepos == 0);
     dicm_sreader_pull_filemetaelement_value(sreader, &de, NULL, de.vl);
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
