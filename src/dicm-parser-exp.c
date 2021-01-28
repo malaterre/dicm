@@ -63,23 +63,28 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     memcpy(buf, ude.bytes, sizeof ude.ide);
     ds->bufsize = sizeof ude.ide;
 
+    // 1. Sequence of Fragments
     if (sequenceoffragments >= 0) {
       ds->sequenceoffragments++;
-
+      
+      if (get_deflenitem(ds) != kUndefinedLength) {
+        // are we processing a defined length Item ?
+        set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + ude.ide.uvl.vl );
+      }
+      if (get_deflensq(ds) != kUndefinedLength) {
+        // are we processing a defined length SQ ?
+        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + ude.ide.uvl.vl );
+      }
       return sequenceoffragments == 0 ? kBasicOffsetTable : kFragment;
-    } else if (ude.ide.uvl.vl != kUndefinedLength) {
-      assert(ude.ide.uvl.vl % 2 == 0);
-      set_deflenitem(ds, ude.ide.uvl.vl);
+    } else {  // or 2. Sequence of Items:
       if (get_deflensq(ds) != kUndefinedLength) {
         // are we processing a defined length SQ ?
         set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
       }
-    } else {
-      assert(ude.ide.uvl.vl == kUndefinedLength);
       pushitemlevel(ds);
-      if (get_deflensq(ds) != kUndefinedLength) {
-        // are we processing a defined length SQ ?
-        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
+      if (ude.ide.uvl.vl != kUndefinedLength) {
+        assert(ude.ide.uvl.vl % 2 == 0);
+        set_deflenitem(ds, ude.ide.uvl.vl);
       }
     }
 
@@ -91,13 +96,24 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
 
     if (unlikely(ude.ide.uvl.vl != 0)) return -kDicmReservedNotZero;
 
+    // 1. Sequence of Fragments
     if (sequenceoffragments >= 0) {
+      assert(is_tag_end_sq(ude.ide.utag.tag));
       ds->sequenceoffragments = -1;
 
+      if (get_deflenitem(ds) != kUndefinedLength) {
+        // are we processing a defined length Item ?
+        set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4);
+      }
+      if (get_deflensq(ds) != kUndefinedLength) {
+        // are we processing a defined length SQ ?
+        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
+      }
       assert(is_tag_end_sq(ude.ide.utag.tag));
       return kSequenceOfFragmentsDelimitationItem;
     }
 
+    // or 2. Sequence of Items:
     if (is_tag_end_item(ude.ide.utag.tag)) {
       assert(get_deflenitem(ds) == kUndefinedLength);
       popitemlevel(ds);
@@ -108,6 +124,7 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
       return kItemDelimitationItem;
     } else {
       assert(is_tag_end_sq(ude.ide.utag.tag));
+      assert(get_deflensq(ds) == kUndefinedLength);
       popsqlevel(ds);
       return kSequenceOfItemsDelimitationItem;
     }
@@ -146,16 +163,18 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   if (de.vl != kUndefinedLength && de.vl % 2 != 0)
     return -kDicmOddDefinedLength;
 
-  if (tag_get_group(ude.ede32.utag.tag) == 0x0002) {
-    assert(0);
-    assert(de.vl != kUndefinedLength);
-
-    return kFileMetaElement;
-  } else if (is_tag_pixeldata(ude.ede32.utag.tag) &&
-             ude.ede32.uvr.vr.vr == kOB &&
-             ude.ede32.uvl.vl == kUndefinedLength) {
+  if (is_tag_pixeldata(ude.ede32.utag.tag) && ude.ede32.uvr.vr.vr == kOB &&
+      ude.ede32.uvl.vl == kUndefinedLength) {
     assert(sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
+    if (get_deflenitem(ds) != kUndefinedLength) {
+      // are we processing a defined length Item ?
+      set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + 4);
+    }
+    if (get_deflensq(ds) != kUndefinedLength) {
+      // are we processing a defined length SQ ?
+      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + 4);
+    }
 
     return kSequenceOfFragments;
   } else if (ude.ede32.uvr.vr.vr == kSQ &&
