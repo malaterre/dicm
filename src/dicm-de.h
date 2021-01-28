@@ -211,7 +211,6 @@ static inline void reset_cur_defined_length_item(struct _dataset *ds) {
 
 static inline void set_deflenitem(struct _dataset *ds, vl_t len)
 {
-  pushitemlevel(ds);
   assert( ds->_deflenitem[ds->_levelitem] == kUndefinedLength );
   ds->_deflenitem[ds->_levelitem] = len;
 }
