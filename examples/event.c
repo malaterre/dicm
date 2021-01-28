@@ -57,25 +57,25 @@ static void event_filemetaelement(
 
 static void event_item(__maybe_unused struct _writer *writer,
                        __maybe_unused const struct _dataelement *de) {
-  if (event_level) printf("%*c", 1 << event_level, ' ');
-  printf("kItem\n");
+  if (event_level) printf("%*c", 2 * event_level, ' ');
+  printf("kItem %u\n", de->vl);
 }
 
 static void event_bot(__maybe_unused struct _writer *writer,
                       __maybe_unused const struct _dataelement *de) {
-  if (event_level) printf("%*c", 1 << event_level, ' ');
+  if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kBasicOffsetTable\n");
 }
 
 static void event_fragment(__maybe_unused struct _writer *writer,
                            __maybe_unused const struct _dataelement *de) {
-  if (event_level) printf("%*c", 1 << event_level, ' ');
+  if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kFragment\n");
 }
 
 static void event_end_item(__maybe_unused struct _writer *writer,
                            __maybe_unused const struct _dataelement *de) {
-  if (event_level) printf("%*c", 1 << event_level, ' ');
+  if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kItemDelimitationItem\n");
 }
 
@@ -83,7 +83,7 @@ static void event_end_sq(__maybe_unused struct _writer *writer,
                          __maybe_unused const struct _dataelement *de) {
   assert(event_level > 0);
   --event_level;
-  if (event_level) printf("%*c", 1 << event_level, ' ');
+  if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kSequenceOfItemsDelimitationItem\n");
 }
 
@@ -91,29 +91,29 @@ static void event_end_frags(__maybe_unused struct _writer *writer,
                             __maybe_unused const struct _dataelement *de) {
   assert(event_level > 0);
   --event_level;
-  if (event_level) printf("%*c", 1 << event_level, ' ');
+  if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kSequenceOfFragmentsDelimitationItem\n");
 }
 
 static void event_sequenceofitems(
     __maybe_unused struct _writer *writer,
     __maybe_unused const struct _dataelement *de) {
-  if (event_level) printf("%*c", 1 << event_level, ' ');
-  printf("kSequenceOfItems\n");
+  if (event_level) printf("%*c", 2 * event_level, ' ');
+  printf("kSequenceOfItems %u\n", de->vl);
   ++event_level;
 }
 
 static void event_sequenceoffragments(
     __maybe_unused struct _writer *writer,
     __maybe_unused const struct _dataelement *de) {
-  if (event_level) printf("%*c", 1 << event_level, ' ');
+  if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kSequenceOfFragments\n");
   ++event_level;
 }
 
 static void event_dataelement(__maybe_unused struct _writer *writer,
                               __maybe_unused const struct _dataelement *de) {
-  if (event_level) printf("%*c", 1 << event_level, ' ');
+  if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kDataElement\n");
 }
 
