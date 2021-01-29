@@ -81,6 +81,14 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
           writer->ops->print_dataelement(writer, &de);
         break;
 
+      case kGroupLengthDataElement:
+        writer->ops->print_group_gl(writer, &de);
+        break;
+
+      case kEndGroupDataElement:
+        writer->ops->print_end_group(writer);
+        break;
+
       case kSequenceOfItems:
         if (dicm_sreader_get_dataelement(sreader, &de))
           writer->ops->print_sequenceofitems(writer, &de);

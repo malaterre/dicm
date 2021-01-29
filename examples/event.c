@@ -38,6 +38,15 @@ static void event_fmi_gl(__maybe_unused struct _writer *writer,
   printf("kFileMetaInformationGroupLength\n");
 }
 
+static void event_group_gl(__maybe_unused struct _writer *writer,
+                         __maybe_unused uint32_t gl) {
+  printf("kGroupLengthDataElement\n");
+}
+
+static void event_end_group(__maybe_unused struct _writer *writer) {
+  printf("kEndGroupDataElement\n");
+}
+
 static void event_file_preamble(
     __maybe_unused struct _writer *writer,
     __maybe_unused const struct _dicm_filepreamble *fp) {
@@ -125,6 +134,9 @@ const struct _writer_ops event_writer = {
     .print_prefix = event_prefix,
     .print_filemetaelement = event_filemetaelement,
     .print_dataelement = event_dataelement,
+    // .print_start_group = event_start_group,
+    .print_group_gl = event_group_gl,
+    .print_end_group = event_end_group,
     .print_sequenceofitems = event_sequenceofitems,
     .print_sequenceoffragments = event_sequenceoffragments,
     .print_item = event_item,
