@@ -266,7 +266,7 @@ static inline bool is_encapsulated_pixel_data(const struct _dataelement *de) {
 }
 
 static inline bool is_undef_len(const struct _dataelement *de) {
-  const bool b = de->vl == (uint32_t)-1;
+  const bool b = de->vl == kUndefinedLength;
   if (b) {
     return de->vr == kSQ || is_encapsulated_pixel_data(de) || is_start(de);
   }

@@ -45,6 +45,8 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   assert(sizeof(ude) == 12);
   char *buf = ds->buffer;
 
+  // For defined length Item and Defined length SQ we need to create synthetic
+  // Delimitation Item. Handle those pseudo event here:
   if (get_deflenitem(ds) == get_curdeflenitem(ds)) {
     // End of Defined Length Item
     reset_cur_defined_length_item(ds);
@@ -53,6 +55,12 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
     // End of Defined Length Sequence
     reset_cur_defined_length_sequence(ds);
     return kSequenceOfItemsDelimitationItem;
+  } else if (ds->grouplen == ds->curgrouplen) {
+    ds->curgroup = 0; // reset
+    ds->grouplen = kUndefinedLength;
+    ds->curgrouplen = 0;
+
+    return kEndGroupDataElement;
   }
   const int sequenceoffragments = ds->sequenceoffragments;
 
@@ -205,6 +213,33 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
       // are we processing a defined length SQ ?
       set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
     }
+    // Group Length
+    if (tag_get_element(ude.ede32.utag.tag) == 0x0000) {
+      union {
+        uint32_t ul;
+        char bytes[4];
+      } group_length;
+      src->ops->read(src, group_length.bytes, 4);
+      assert(ds->curgroup == 0);
+      ds->curgroup = tag_get_group(ude.ede32.utag.tag);
+      assert( ds->grouplen == kUndefinedLength );
+      ds->grouplen = group_length.ul;
+      // group length include all but the group length element
+      assert(ds->curgrouplen == 0);
+
+      return kGroupLengthDataElement;
+    } else {
+      if (ds->curgroup == tag_get_group(ude.ede32.utag.tag)) {
+        ds->curgrouplen += compute_len(&de);
+        assert( ds->curgrouplen <= ds->grouplen );
+      } else {
+        assert(0);
+        // reset but do not pretend there is a group length element:
+        ds->curgroup = 0;
+        ds->grouplen = kUndefinedLength;
+        ds->curgrouplen = 0;
+      }
+    }
 
     return kDataElement;
   }
@@ -325,6 +360,7 @@ int read_fme(struct _src *src, struct _filemetaset *ds) {
     return -kDicmOddDefinedLength;
 
   if (tag_get_group(ude.ede32.utag.tag) == 0x0002) {
+    // FME Group Length is actually read entirely (including value)
     if (tag_get_element(ude.ede32.utag.tag) == 0x0000) {
       union {
         uint32_t ul;
