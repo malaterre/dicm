@@ -45,6 +45,8 @@ struct _writer_ops {
   // void (*write)(int state, const struct _dataset *ds);
   void (*print_dataelement)(struct _writer *writer,
                             const struct _dataelement *de);
+  void (*print_end_group)(struct _writer *writer);
+  void (*print_group_gl)(struct _writer *writer, uint32_t gl);
   void (*print_sequenceofitems)(struct _writer *writer,
                                 const struct _dataelement *de);
   void (*print_sequenceoffragments)(struct _writer *writer,
