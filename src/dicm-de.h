@@ -96,6 +96,11 @@ struct _dataset {
                               // bigest one ?)
   size_t bufsize;             //
 
+  // group length machinery:
+  uint_fast16_t curgroup;
+  vl_t grouplen;
+  vl_t curgrouplen;
+
   // Fragments are easier to handle since they cannot be nested
   int sequenceoffragments; // -1: none, 0: BasicOffsetTable, >0: Fragment
   // defined length Item:
@@ -255,6 +260,9 @@ struct _filemetaset {
 
 
 static inline void reset_dataset(struct _dataset *ds) {
+  ds->curgroup = 0; // uint_fast16_t
+  ds->grouplen = kUndefinedLength;
+  ds->curgrouplen = 0;
   reset_defined_length_item(ds);
   reset_defined_length_sequence(ds);
 

@@ -47,6 +47,8 @@ enum state {
   kFileMetaElement,
   kEndFileMetaInformation,
   kDataElement,  // Implicit or Explicit
+  kGroupLengthDataElement,  // PS 3.5 §7.2
+  kEndGroupDataElement,
   kSequenceOfItems,
   kSequenceOfFragments,
   kItem,                                 // (FFFE,E000)

@@ -241,6 +241,14 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       sreader->current_state = read_explicit(src, ds);
       break;
 
+    case kGroupLengthDataElement:
+      sreader->current_state = read_explicit(src, ds);
+      break;
+
+    case kEndGroupDataElement:
+      sreader->current_state = read_explicit(src, ds);
+      break;
+
     case kItem:
       // de->tag = 0;  // FIXME tag ordering handling
       sreader->current_state = read_explicit(src, ds);
