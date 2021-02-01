@@ -417,15 +417,24 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     } else {
       pushsqlevel(ds);
     }
-  }
-  else if (sreader->current_state == kBasicOffsetTable ||
-           sreader->current_state == kFragment) {
+  } else if (sreader->current_state == kSequenceOfFragmentsDelimitationItem) {
+      ds->sequenceoffragments = -1;
+
+      if (get_deflenitem(ds) != kUndefinedLength) {
+        // are we processing a defined length Item ?
+        set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4);
+      }
+      if (get_deflensq(ds) != kUndefinedLength) {
+        // are we processing a defined length SQ ?
+        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
+      }
+  } else if (sreader->current_state == kBasicOffsetTable ||
+             sreader->current_state == kFragment) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
 
     if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
   }
-
 
   return sreader->current_state;
 }
