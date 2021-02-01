@@ -196,36 +196,6 @@ enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
       // are we processing a defined length SQ ?
       set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
     }
-    // Group Length
-#if 0
-    if (tag_get_element(ude.ede32.utag.tag) == 0x0000) {
-      union {
-        uint32_t ul;
-        char bytes[4];
-      } group_length;
-      src->ops->read(src, group_length.bytes, 4);
-      assert(ds->curgroup == 0);
-      ds->curgroup = tag_get_group(ude.ede32.utag.tag);
-      assert( ds->grouplen == kUndefinedLength );
-      ds->grouplen = group_length.ul;
-      // group length include all but the group length element
-      assert(ds->curgrouplen == 0);
-
-      return kGroupLengthDataElement;
-    } else {
-      if (ds->curgroup == tag_get_group(ude.ede32.utag.tag)) {
-        ds->curgrouplen += compute_len(&de);
-        assert( ds->curgrouplen <= ds->grouplen );
-      } else {
-        assert(0);
-        // reset but do not pretend there is a group length element:
-        ds->curgroup = 0;
-        ds->grouplen = kUndefinedLength;
-        ds->curgrouplen = 0;
-      }
-    }
-#endif
-
     return kDataElement;
   }
   assert(0);
