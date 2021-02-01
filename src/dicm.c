@@ -180,7 +180,7 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   return true;
 }
 
-int dicm_read_explicit(struct _src *src, struct _dataset *ds, const struct _dicm_options *options) {
+int check_defined_length(struct _src *src, struct _dataset *ds, const struct _dicm_options *options) {
   const bool deflenitem = options->deflenitem;
   const bool deflensq = options->deflensq;
   const bool group_length = options->group_length;
@@ -201,6 +201,13 @@ int dicm_read_explicit(struct _src *src, struct _dataset *ds, const struct _dicm
 
     return kEndGroupDataElement;
   }
+  return -1;
+}
+
+int dicm_read_explicit(struct _src *src, struct _dataset *ds, const struct _dicm_options *options) {
+  const bool deflenitem = options->deflenitem;
+  const bool deflensq = options->deflensq;
+  const bool group_length = options->group_length;
   const enum state s = read_explicit_impl(src, ds);
 
   return s;
@@ -243,6 +250,33 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   struct _filemetaset *fms = &sreader->filemetaset;
 
   assert(!src->ops->at_end(src));
+
+  // fake event handling (defined length stuff):
+  int fake_current_state = -1;
+  switch (previous_current_state) {
+    case kEndFileMetaInformation:
+    case kDataElement:
+    case kGroupLengthDataElement:
+    case kEndGroupDataElement:
+    case kItem:
+    case kBasicOffsetTable:
+    case kFragment:
+    case kSequenceOfFragments:
+    case kItemDelimitationItem:
+    case kSequenceOfItemsDelimitationItem:
+    case kSequenceOfFragmentsDelimitationItem:
+    case kSequenceOfItems:
+      fake_current_state = check_defined_length(src, ds, options);
+      break;
+    default:
+      ;
+  }
+  if( fake_current_state > 0 ) {
+    sreader->current_state = fake_current_state;
+    return sreader->current_state;
+  }
+
+  // actual read
   switch (previous_current_state) {
     case -1:
       sreader->current_state = kStartFileMetaInformation;
