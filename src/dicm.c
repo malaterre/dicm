@@ -234,7 +234,6 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     buf_into_dataelement(&sreader->dataset, previous_current_state, &de);
 
     assert(de.vl != kUndefinedLength);
-    if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
     assert(sreader->curdepos == 0);
     dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
     assert(sreader->curdepos == de.vl);
@@ -419,6 +418,14 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       pushsqlevel(ds);
     }
   }
+  else if (sreader->current_state == kBasicOffsetTable ||
+           sreader->current_state == kFragment) {
+    struct _dataelement de;
+    buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
+
+    if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
+  }
+
 
   return sreader->current_state;
 }
