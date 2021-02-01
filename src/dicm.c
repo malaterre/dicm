@@ -227,68 +227,9 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   }
 
   // make sure to flush remaining bits from a dataelement
-  if (0 && previous_current_state == kDataElement) {
-    struct _dataelement de;
-    buf_into_dataelement(&sreader->dataset, previous_current_state, &de);
-
-    assert(de.vl != kUndefinedLength);
-    if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
-
-    if (get_deflenitem(ds) != kUndefinedLength) {
-      // are we processing a defined length Item ?
-      set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
-    }
-    if (get_deflensq(ds) != kUndefinedLength) {
-      // are we processing a defined length SQ ?
-      set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
-    }
-
-    const uint_fast16_t element = get_element(de.tag);
-    if (element == 0x0) {
-      if (group_length) {
-        union {
-          uint32_t ul;
-          char bytes[4];
-        } group_length;
-        assert(de.vl == 4);
-        dicm_sreader_pull_dataelement_value(sreader, &de, group_length.bytes,
-                                            de.vl);
-        assert(sreader->curdepos == de.vl);
-        sreader->curdepos = 0;
-
-        struct _dataset *ds = &sreader->dataset;
-        assert(ds->curgroup == 0);
-        ds->curgroup = get_group(de.tag);
-        assert(ds->grouplen == kUndefinedLength);
-        ds->grouplen = group_length.ul;
-        // group length include all but the group length element
-        assert(ds->curgrouplen == 0);
-
-        sreader->current_state = kGroupLengthDataElement;
-        return sreader->current_state;
-      } else {
-        // FIXME swallow group length
-        dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
-        assert(sreader->curdepos == de.vl);
-        sreader->curdepos = 0;
-      }
-    } else {
-      if (group_length) {
-        struct _dataset *ds = &sreader->dataset;
-        if (ds->curgroup == get_group(de.tag)) {
-          ds->curgrouplen += compute_len(&de);
-          assert(ds->curgrouplen <= ds->grouplen);
-        }
-      }
-      // not a group length data element:
-      assert(element != 0x0);
-      dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
-      assert(sreader->curdepos == de.vl);
-      sreader->curdepos = 0;
-    }
-  } else if (previous_current_state == kBasicOffsetTable
-|| previous_current_state == kDataElement
- || previous_current_state == kFragment) {
+  if (previous_current_state == kBasicOffsetTable ||
+      previous_current_state == kDataElement ||
+      previous_current_state == kFragment) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, previous_current_state, &de);
 
