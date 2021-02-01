@@ -227,7 +227,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   }
 
   // make sure to flush remaining bits from a dataelement
-  if (previous_current_state == kDataElement) {
+  if (0 && previous_current_state == kDataElement) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, previous_current_state, &de);
 
@@ -286,7 +286,9 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       assert(sreader->curdepos == de.vl);
       sreader->curdepos = 0;
     }
-  } else if (previous_current_state == kBasicOffsetTable || previous_current_state == kFragment) {
+  } else if (previous_current_state == kBasicOffsetTable
+|| previous_current_state == kDataElement
+ || previous_current_state == kFragment) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, previous_current_state, &de);
 
@@ -394,7 +396,58 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       assert(0);  // Programmer error
   }
 
-  if (sreader->current_state == kSequenceOfFragments) {
+  if (sreader->current_state == kDataElement) {
+    struct _dataelement de;
+    buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
+
+    assert(de.vl != kUndefinedLength);
+    if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
+
+    if (get_deflenitem(ds) != kUndefinedLength) {
+      // are we processing a defined length Item ?
+      set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
+    }
+    if (get_deflensq(ds) != kUndefinedLength) {
+      // are we processing a defined length SQ ?
+      set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
+    }
+
+    const uint_fast16_t element = get_element(de.tag);
+    if (element == 0x0) {
+      if (group_length) {
+        union {
+          uint32_t ul;
+          char bytes[4];
+        } group_length;
+        assert(de.vl == 4);
+        dicm_sreader_pull_dataelement_value(sreader, &de, group_length.bytes,
+                                            de.vl);
+        assert(sreader->curdepos == de.vl);
+        sreader->curdepos = 0;
+
+        struct _dataset *ds = &sreader->dataset;
+        assert(ds->curgroup == 0);
+        ds->curgroup = get_group(de.tag);
+        assert(ds->grouplen == kUndefinedLength);
+        ds->grouplen = group_length.ul;
+        // group length include all but the group length element
+        assert(ds->curgrouplen == 0);
+
+        assert(sreader->current_state == kDataElement);
+        sreader->current_state = kGroupLengthDataElement;
+      } else {
+        // FIXME swallow group length
+      }
+    } else {
+      if (group_length) {
+        struct _dataset *ds = &sreader->dataset;
+        if (ds->curgroup == get_group(de.tag)) {
+          ds->curgrouplen += compute_len(&de);
+          assert(ds->curgrouplen <= ds->grouplen);
+        }
+      }
+    }
+  } else if (sreader->current_state == kSequenceOfFragments) {
     assert(ds->sequenceoffragments == -1);
     ds->sequenceoffragments = 0;
     if (get_deflenitem(ds) != kUndefinedLength) {
@@ -405,7 +458,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       // are we processing a defined length SQ ?
       set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + 4);
     }
-  } else if (sreader->current_state == kSequenceOfItems ) {
+  } else if (sreader->current_state == kSequenceOfItems) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
     if (de.vl != kUndefinedLength) {
