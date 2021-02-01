@@ -35,5 +35,5 @@ input-group.dcm
 )
 
 foreach(DICOM_FILE ${DICOM_FILES})
-  add_test(NAME example1_${DICOM_FILE} COMMAND example1 ${DICM_TEST_DATA_ROOT}/${DICOM_FILE})
+  add_test(NAME example1_${DICOM_FILE} COMMAND example1 "" ${DICM_TEST_DATA_ROOT}/${DICOM_FILE})
 endforeach()

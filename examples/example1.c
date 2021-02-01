@@ -137,7 +137,9 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
 
 int main(int argc, char *argv[]) {
   if (argc < 2) return EXIT_FAILURE;
-  const char *filename = argv[1];
+  const char *options = argv[1];
+  const char *filename = argv[2];
+  if (argc == 2) filename = argv[1];
   set_global_logger(&dlog);
 
   src_t fsrc;
@@ -153,7 +155,10 @@ int main(int argc, char *argv[]) {
 
   sreader = dicm_sreader_init(&ansi);
   dicm_sreader_set_src(sreader, &fsrc);
-  dicm_sreader_stream_filemetaelements(sreader, true);
+  if( strcmp(options, "fme") == 0 ) 
+    dicm_sreader_stream_filemetaelements(sreader, true);
+  else if( strcmp(options, "gl") == 0 ) 
+    dicm_sreader_group_length(sreader, true);
   /*  if (!dicm_sreader_read_meta_info(sreader)) {
       return EXIT_FAILURE;
     }*/

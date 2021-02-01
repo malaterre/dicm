@@ -230,7 +230,7 @@ static enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
  * Implementation detail. All the work will simply parse the file structure. No
  * work will be done to byte swap the Data Element Tag or VR
  */
-int read_explicit(struct _src *src, struct _dataset *ds) {
+int dicm_read_explicit(struct _src *src, struct _dataset *ds) {
   // For defined length Item and Defined length SQ we need to create synthetic
   // Delimitation Item. Handle those pseudo event here:
   if (get_deflenitem(ds) == get_curdeflenitem(ds)) {
