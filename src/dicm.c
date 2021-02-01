@@ -28,6 +28,11 @@
 #include <stdlib.h> /* malloc/free */
 #include <string.h> /* memset */
 
+struct _dicm_options {
+    bool stream_filemetaelements;
+    bool group_length;
+};
+
 /** stream reader */
 struct _dicm_sreader {
   struct _mem *mem;
@@ -35,7 +40,7 @@ struct _dicm_sreader {
   struct _dataset dataset;  // current dataset
   struct _filemetaset filemetaset;  // current filemeta
 
-bool stream_filemetaelements;
+  struct _dicm_options options;
 #if 0
   struct _dicm_filepreamble filepreamble;
   struct _dicm_prefix prefix;
@@ -49,7 +54,7 @@ bool stream_filemetaelements;
 struct _dicm_sreader *dicm_sreader_init(struct _mem *mem) {
   struct _dicm_sreader *sreader = mem->ops->alloc(mem, sizeof *sreader);
   sreader->mem = mem;
-  sreader->stream_filemetaelements = false;
+  sreader->options.stream_filemetaelements = false;
   sreader->curdepos = 0;
   sreader->current_state = -1;
   reset_dataset(&sreader->dataset);
@@ -63,7 +68,12 @@ void dicm_sreader_set_src(struct _dicm_sreader *sreader, struct _src *src) {
 
 void dicm_sreader_stream_filemetaelements(struct _dicm_sreader *sreader, bool stream_filemetaelements)
 {
-  sreader->stream_filemetaelements = stream_filemetaelements;
+  sreader->options.stream_filemetaelements = stream_filemetaelements;
+}
+
+void dicm_sreader_group_length(struct _dicm_sreader *sreader, bool group_length)
+{
+  sreader->options.group_length = group_length;
 }
 
 size_t dicm_sreader_pull_filemetaelement_value(
@@ -118,7 +128,6 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   if (next == kDICOMPrefix)
     dicm_sreader_get_prefix(sreader, &prefix);
 
-  // next = read_explicit(src, ds);
   next = read_fme(src, fms);
 #if 0
   if (!dicm_sreader_hasnext(sreader)) return false;
@@ -144,7 +153,6 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   uint32_t gl = 0;
   char buf[64];
   while (gl != group_length.ul) {
-    // next = read_explicit(src, ds);
     next = read_fme(src, fms);
     sreader->current_state = next;
     if (next != kFileMetaElement) {
@@ -170,7 +178,8 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
 static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   const int current_state = sreader->current_state;
-  const bool stream_filemetaelements = sreader->stream_filemetaelements;
+  const bool stream_filemetaelements = sreader->options.stream_filemetaelements;
+  const bool group_length = sreader->options.group_length;
   // make sure to flush remaining bits from a dataelement
   if (current_state == kBasicOffsetTable || current_state == kFragment
       || current_state == kDataElement) {
@@ -234,57 +243,57 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       break;
 
     case kEndFileMetaInformation:
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kDataElement:
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kGroupLengthDataElement:
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kEndGroupDataElement:
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kItem:
       // de->tag = 0;  // FIXME tag ordering handling
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kBasicOffsetTable:
       // de->tag = 0;
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kFragment:
       // de->tag = 0;
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kItemDelimitationItem:
       // de->tag = 0;
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kSequenceOfItemsDelimitationItem:
       // de->tag = 0;
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kSequenceOfFragmentsDelimitationItem:
       // de->tag = 0;
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kSequenceOfItems:
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     case kSequenceOfFragments:
-      sreader->current_state = read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds);
       break;
 
     default:
@@ -328,7 +337,7 @@ bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
                                   struct _dataelement *de) {
   // FIXME would be nice to setup an error handler here instead of returning
   // NULL
-  const bool stream_filemetaelements = sreader->stream_filemetaelements;
+  const bool stream_filemetaelements = sreader->options.stream_filemetaelements;
   if (sreader->current_state != kDataElement &&
       (stream_filemetaelements && sreader->current_state != kFileMetaElement) &&
 //      (stream_filemetaelements && sreader->current_state != kFileMetaInformationGroupLength) &&
