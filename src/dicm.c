@@ -213,11 +213,26 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   const bool stream_filemetaelements = sreader->options.stream_filemetaelements;
   const bool group_length = sreader->options.group_length;
   const struct _dicm_options *options = &sreader->options;
+  struct _dataset *ds = &sreader->dataset;
+
   // make sure to flush remaining bits from a dataelement
   if (current_state == kBasicOffsetTable || current_state == kFragment ||
       current_state == kDataElement) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, current_state, &de);
+
+    if (current_state == kDataElement) {
+      assert(de.vl != kUndefinedLength);
+      if (get_deflenitem(ds) != kUndefinedLength) {
+        // are we processing a defined length Item ?
+        set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
+      }
+      if (get_deflensq(ds) != kUndefinedLength) {
+        // are we processing a defined length SQ ?
+        set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
+      }
+    }
+
     const uint_fast16_t element = get_element(de.tag);
     if (element == 0x0) {
       if (group_length) {
@@ -266,6 +281,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
              //      || current_state == kFileMetaInformationGroupLength /* only
              //      when stream_filemetaelements */
   ) {
+    assert(stream_filemetaelements);
     struct _filemetaelement de;
     buf_into_filemetaelement(&sreader->filemetaset, current_state, &de );
     assert(sreader->curdepos == 0);
@@ -274,7 +290,6 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     sreader->curdepos = 0;
   }
 
-  struct _dataset *ds = &sreader->dataset;
   struct _filemetaset *fms = &sreader->filemetaset;
 
   assert(!src->ops->at_end(src));
