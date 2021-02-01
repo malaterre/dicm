@@ -128,11 +128,7 @@ enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
 #endif
 
   // VR16 ?
-  dataelement_t de;
   if (is_vr16(ude.ede16.uvr.vr)) {
-    de.tag = ude.ede16.utag.tag;
-    de.vr = ude.ede16.uvr.vr;
-    de.vl = ude.ede16.uvl.vl16;
 
     memcpy(buf, ude.bytes, sizeof ude.ede16);
     ds->bufsize = sizeof ude.ede16;
@@ -143,16 +139,9 @@ enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
     ret = src->ops->read(src, ude.ede32.uvl.bytes, 4);
     if (unlikely(ret < 4)) return -kNotEnoughData;
 
-    de.tag = ude.ede32.utag.tag;
-    de.vr = ude.ede32.uvr.vr.vr;
-    de.vl = ude.ede32.uvl.vl;
-
     memcpy(buf, ude.bytes, sizeof ude.ede32);
     ds->bufsize = sizeof ude.ede32;
   }
-
-  if (de.vl != kUndefinedLength && de.vl % 2 != 0)
-    return -kDicmOddDefinedLength;
 
   if (is_tag_pixeldata(ude.ede32.utag.tag) &&
       ude.ede32.uvl.vl == kUndefinedLength) {
