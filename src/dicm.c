@@ -232,6 +232,8 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     buf_into_dataelement(&sreader->dataset, current_state, &de);
 
     assert(de.vl != kUndefinedLength);
+    if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
+
     if (get_deflenitem(ds) != kUndefinedLength) {
       // are we processing a defined length Item ?
       set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
@@ -288,6 +290,8 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, current_state, &de);
 
+    assert(de.vl != kUndefinedLength);
+    if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
     assert(sreader->curdepos == 0);
     dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
     assert(sreader->curdepos == de.vl);
@@ -296,6 +300,8 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, current_state, &de);
     if (de.vl != kUndefinedLength) {
+      if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
+
       // defined length SQ
       if (get_deflenitem(ds) != kUndefinedLength) {
         // are we processing a defined length Item ?
