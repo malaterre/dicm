@@ -90,17 +90,6 @@ enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
     // 1. Sequence of Fragments
     if (sequenceoffragments >= 0) {
       assert(is_tag_end_sq(ude.ide.utag.tag));
-      ds->sequenceoffragments = -1;
-
-      if (get_deflenitem(ds) != kUndefinedLength) {
-        // are we processing a defined length Item ?
-        set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4);
-      }
-      if (get_deflensq(ds) != kUndefinedLength) {
-        // are we processing a defined length SQ ?
-        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
-      }
-      assert(is_tag_end_sq(ude.ide.utag.tag));
       return kSequenceOfFragmentsDelimitationItem;
     }
 
