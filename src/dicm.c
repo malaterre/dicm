@@ -292,7 +292,35 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
-  } else {
+  } else if (current_state == kSequenceOfItems ) {
+    struct _dataelement de;
+    buf_into_dataelement(&sreader->dataset, current_state, &de);
+    if (de.vl != kUndefinedLength) {
+      // defined length SQ
+      if (get_deflenitem(ds) != kUndefinedLength) {
+        // are we processing a defined length Item ?
+        set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
+      }
+      if (get_deflensq(ds) != kUndefinedLength) {
+        // are we processing a defined length SQ ?
+        set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
+      }
+      set_deflensq(ds, de.vl);
+    } else {
+      pushsqlevel(ds);
+    }
+  } else if (current_state == kSequenceOfFragments) {
+    assert(ds->sequenceoffragments == -1);
+    ds->sequenceoffragments = 0;
+    if (get_deflenitem(ds) != kUndefinedLength) {
+      // are we processing a defined length Item ?
+      set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + 4);
+    }
+    if (get_deflensq(ds) != kUndefinedLength) {
+      // are we processing a defined length SQ ?
+      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + 4);
+    }
+
   }
 
   struct _filemetaset *fms = &sreader->filemetaset;

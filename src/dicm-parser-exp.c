@@ -157,34 +157,12 @@ enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
   if (is_tag_pixeldata(ude.ede32.utag.tag) &&
       ude.ede32.uvl.vl == kUndefinedLength) {
     if (unlikely(ude.ede32.uvr.vr.vr != kOB)) return -kEncapsulatedPixelDataIsNotOB;
-    assert(sequenceoffragments == -1);
-    ds->sequenceoffragments = 0;
-    if (get_deflenitem(ds) != kUndefinedLength) {
-      // are we processing a defined length Item ?
-      set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + 4);
-    }
-    if (get_deflensq(ds) != kUndefinedLength) {
-      // are we processing a defined length SQ ?
-      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + 4);
-    }
 
     return kSequenceOfFragments;
   } else if (ude.ede32.uvr.vr.vr == kSQ &&
              ude.ede32.uvl.vl == kUndefinedLength) {
-    pushsqlevel(ds);
     return kSequenceOfItems;
   } else if (ude.ede32.uvr.vr.vr == kSQ) {
-    // defined length SQ
-    if (get_deflenitem(ds) != kUndefinedLength) {
-      // are we processing a defined length Item ?
-      set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
-    }
-    if (get_deflensq(ds) != kUndefinedLength) {
-      // are we processing a defined length SQ ?
-      set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
-    }
-    set_deflensq(ds, ude.ede32.uvl.vl);
-
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)) {
     return kDataElement;
