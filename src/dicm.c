@@ -215,6 +215,17 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   const struct _dicm_options *options = &sreader->options;
   struct _dataset *ds = &sreader->dataset;
 
+  if (stream_filemetaelements) {
+    if (current_state == kFileMetaElement) {
+      struct _filemetaelement de;
+      buf_into_filemetaelement(&sreader->filemetaset, current_state, &de);
+      assert(sreader->curdepos == 0);
+      dicm_sreader_pull_filemetaelement_value(sreader, &de, NULL, de.vl);
+      assert(sreader->curdepos == de.vl);
+      sreader->curdepos = 0;
+    }
+  }
+
   // make sure to flush remaining bits from a dataelement
   if (current_state == kDataElement) {
     struct _dataelement de;
@@ -281,14 +292,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
-  } else if (current_state == kFileMetaElement) {
-    assert(stream_filemetaelements);
-    struct _filemetaelement de;
-    buf_into_filemetaelement(&sreader->filemetaset, current_state, &de );
-    assert(sreader->curdepos == 0);
-    dicm_sreader_pull_filemetaelement_value(sreader, &de, NULL, de.vl);
-    assert(sreader->curdepos == de.vl);
-    sreader->curdepos = 0;
+  } else {
   }
 
   struct _filemetaset *fms = &sreader->filemetaset;
