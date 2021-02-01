@@ -10,9 +10,17 @@ set(CMAKE_C_EXTENSIONS OFF)
 #message(${dicm_VERSION_PATCH})
 
 add_subdirectory(src)
-add_subdirectory(examples)
+
+find_path(DICM_TEST_DATA_ROOT "input-group.dcm"
+  PATHS $ENV{DICM_TEST_DATA_ROOT}
+  ${PROJECT_SOURCE_DIR}/../dicm-test-data
+  NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
+  )
+mark_as_advanced(DICM_TEST_DATA_ROOT)
+
 
 # need to be at top-level
 enable_testing()
 
+add_subdirectory(examples)
 add_subdirectory(tests)

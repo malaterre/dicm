@@ -30,11 +30,7 @@
 #include <stdio.h>
 #include <string.h>
 
-/**
- * Implementation detail. All the work will simply parse the file structure. No
- * work will be done to byte swap the Data Element Tag or VR
- */
-int read_explicit(struct _src *src, struct _dataset *ds) {
+static enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   union {
     byte_t bytes[12];
@@ -45,23 +41,6 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   assert(sizeof(ude) == 12);
   char *buf = ds->buffer;
 
-  // For defined length Item and Defined length SQ we need to create synthetic
-  // Delimitation Item. Handle those pseudo event here:
-  if (get_deflenitem(ds) == get_curdeflenitem(ds)) {
-    // End of Defined Length Item
-    reset_cur_defined_length_item(ds);
-    return kItemDelimitationItem;
-  } else if (get_deflensq(ds) == get_curdeflensq(ds)) {
-    // End of Defined Length Sequence
-    reset_cur_defined_length_sequence(ds);
-    return kSequenceOfItemsDelimitationItem;
-  } else if (ds->grouplen == ds->curgrouplen) {
-    ds->curgroup = 0; // reset
-    ds->grouplen = kUndefinedLength;
-    ds->curgrouplen = 0;
-
-    return kEndGroupDataElement;
-  }
   const int sequenceoffragments = ds->sequenceoffragments;
 
   size_t ret = src->ops->read(src, ude.bytes, 8);
@@ -245,6 +224,32 @@ int read_explicit(struct _src *src, struct _dataset *ds) {
   }
   assert(0);
   return -kInvalidTag;
+}
+
+/**
+ * Implementation detail. All the work will simply parse the file structure. No
+ * work will be done to byte swap the Data Element Tag or VR
+ */
+int read_explicit(struct _src *src, struct _dataset *ds) {
+  // For defined length Item and Defined length SQ we need to create synthetic
+  // Delimitation Item. Handle those pseudo event here:
+  if (get_deflenitem(ds) == get_curdeflenitem(ds)) {
+    // End of Defined Length Item
+    reset_cur_defined_length_item(ds);
+    return kItemDelimitationItem;
+  } else if (get_deflensq(ds) == get_curdeflensq(ds)) {
+    // End of Defined Length Sequence
+    reset_cur_defined_length_sequence(ds);
+    return kSequenceOfItemsDelimitationItem;
+  } else if (ds->grouplen == ds->curgrouplen) {
+    ds->curgroup = 0; // reset
+    ds->grouplen = kUndefinedLength;
+    ds->curgrouplen = 0;
+
+    return kEndGroupDataElement;
+  }
+  const enum state s = read_explicit_impl(src, ds);
+  return s;
 }
 
 int read_fme(struct _src *src, struct _filemetaset *ds) {
