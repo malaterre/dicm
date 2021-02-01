@@ -451,17 +451,56 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     } else {
       pushsqlevel(ds);
     }
-  } else if (sreader->current_state == kSequenceOfFragmentsDelimitationItem) {
-      ds->sequenceoffragments = -1;
+  } else if (sreader->current_state == kItem) {
+    struct _dataelement de;
+    buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
 
-      if (get_deflenitem(ds) != kUndefinedLength) {
-        // are we processing a defined length Item ?
-        set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4);
-      }
       if (get_deflensq(ds) != kUndefinedLength) {
         // are we processing a defined length SQ ?
         set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
       }
+      pushitemlevel(ds);
+      if (de.vl != kUndefinedLength) {
+        set_deflenitem(ds, de.vl);
+      }
+
+  } else if (sreader->current_state == kItemDelimitationItem) {
+      assert(get_deflenitem(ds) == kUndefinedLength);
+      popitemlevel(ds);
+      if (get_deflensq(ds) != kUndefinedLength) {
+        // are we processing a defined length SQ ?
+        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
+      }
+  } else if (sreader->current_state == kSequenceOfItemsDelimitationItem) {
+      assert(get_deflensq(ds) == kUndefinedLength);
+      popsqlevel(ds);
+  } else if (sreader->current_state == kBasicOffsetTable ||
+             sreader->current_state == kFragment) {
+    struct _dataelement de;
+    buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
+
+    ds->sequenceoffragments++;
+
+    if (get_deflenitem(ds) != kUndefinedLength) {
+      // are we processing a defined length Item ?
+      set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + de.vl);
+    }
+    if (get_deflensq(ds) != kUndefinedLength) {
+      // are we processing a defined length SQ ?
+      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + de.vl);
+    }
+
+  } else if (sreader->current_state == kSequenceOfFragmentsDelimitationItem) {
+    ds->sequenceoffragments = -1;
+
+    if (get_deflenitem(ds) != kUndefinedLength) {
+      // are we processing a defined length Item ?
+      set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4);
+    }
+    if (get_deflensq(ds) != kUndefinedLength) {
+      // are we processing a defined length SQ ?
+      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
+    }
   } else if (sreader->current_state == kBasicOffsetTable ||
              sreader->current_state == kFragment) {
     struct _dataelement de;
