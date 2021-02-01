@@ -187,15 +187,6 @@ enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
 
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)) {
-    assert(de.vl != kUndefinedLength);
-    if (get_deflenitem(ds) != kUndefinedLength) {
-      // are we processing a defined length Item ?
-      set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
-    }
-    if (get_deflensq(ds) != kUndefinedLength) {
-      // are we processing a defined length SQ ?
-      set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
-    }
     return kDataElement;
   }
   assert(0);
