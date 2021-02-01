@@ -209,16 +209,16 @@ int dicm_read_explicit(struct _src *src, struct _dataset *ds, const struct _dicm
 
 static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
-  const int current_state = sreader->current_state;
+  const int previous_current_state = sreader->current_state;
   const bool stream_filemetaelements = sreader->options.stream_filemetaelements;
   const bool group_length = sreader->options.group_length;
   const struct _dicm_options *options = &sreader->options;
   struct _dataset *ds = &sreader->dataset;
 
   if (stream_filemetaelements) {
-    if (current_state == kFileMetaElement) {
+    if (previous_current_state == kFileMetaElement) {
       struct _filemetaelement de;
-      buf_into_filemetaelement(&sreader->filemetaset, current_state, &de);
+      buf_into_filemetaelement(&sreader->filemetaset, previous_current_state, &de);
       assert(sreader->curdepos == 0);
       dicm_sreader_pull_filemetaelement_value(sreader, &de, NULL, de.vl);
       assert(sreader->curdepos == de.vl);
@@ -227,9 +227,9 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   }
 
   // make sure to flush remaining bits from a dataelement
-  if (current_state == kDataElement) {
+  if (previous_current_state == kDataElement) {
     struct _dataelement de;
-    buf_into_dataelement(&sreader->dataset, current_state, &de);
+    buf_into_dataelement(&sreader->dataset, previous_current_state, &de);
 
     assert(de.vl != kUndefinedLength);
     if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
@@ -286,9 +286,9 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       assert(sreader->curdepos == de.vl);
       sreader->curdepos = 0;
     }
-  } else if (current_state == kBasicOffsetTable || current_state == kFragment) {
+  } else if (previous_current_state == kBasicOffsetTable || previous_current_state == kFragment) {
     struct _dataelement de;
-    buf_into_dataelement(&sreader->dataset, current_state, &de);
+    buf_into_dataelement(&sreader->dataset, previous_current_state, &de);
 
     assert(de.vl != kUndefinedLength);
     if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
@@ -296,43 +296,12 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
-  } else if (current_state == kSequenceOfItems ) {
-    struct _dataelement de;
-    buf_into_dataelement(&sreader->dataset, current_state, &de);
-    if (de.vl != kUndefinedLength) {
-      if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
-
-      // defined length SQ
-      if (get_deflenitem(ds) != kUndefinedLength) {
-        // are we processing a defined length Item ?
-        set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
-      }
-      if (get_deflensq(ds) != kUndefinedLength) {
-        // are we processing a defined length SQ ?
-        set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
-      }
-      set_deflensq(ds, de.vl);
-    } else {
-      pushsqlevel(ds);
-    }
-  } else if (current_state == kSequenceOfFragments) {
-    assert(ds->sequenceoffragments == -1);
-    ds->sequenceoffragments = 0;
-    if (get_deflenitem(ds) != kUndefinedLength) {
-      // are we processing a defined length Item ?
-      set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + 4);
-    }
-    if (get_deflensq(ds) != kUndefinedLength) {
-      // are we processing a defined length SQ ?
-      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + 4);
-    }
-
   }
 
   struct _filemetaset *fms = &sreader->filemetaset;
 
   assert(!src->ops->at_end(src));
-  switch (current_state) {
+  switch (previous_current_state) {
     case -1:
       sreader->current_state = kStartFileMetaInformation;
       break;
@@ -424,6 +393,39 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     default:
       assert(0);  // Programmer error
   }
+
+  if (sreader->current_state == kSequenceOfFragments) {
+    assert(ds->sequenceoffragments == -1);
+    ds->sequenceoffragments = 0;
+    if (get_deflenitem(ds) != kUndefinedLength) {
+      // are we processing a defined length Item ?
+      set_curdeflenitem(ds, get_curdeflenitem(ds) + 4 + 4 + 4);
+    }
+    if (get_deflensq(ds) != kUndefinedLength) {
+      // are we processing a defined length SQ ?
+      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4 + 4);
+    }
+  } else if (sreader->current_state == kSequenceOfItems ) {
+    struct _dataelement de;
+    buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
+    if (de.vl != kUndefinedLength) {
+      if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
+
+      // defined length SQ
+      if (get_deflenitem(ds) != kUndefinedLength) {
+        // are we processing a defined length Item ?
+        set_curdeflenitem(ds, get_curdeflenitem(ds) + compute_len(&de));
+      }
+      if (get_deflensq(ds) != kUndefinedLength) {
+        // are we processing a defined length SQ ?
+        set_curdeflensq(ds, get_curdeflensq(ds) + compute_len(&de));
+      }
+      set_deflensq(ds, de.vl);
+    } else {
+      pushsqlevel(ds);
+    }
+  }
+
   return sreader->current_state;
 }
 
