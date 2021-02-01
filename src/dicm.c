@@ -30,6 +30,8 @@
 
 struct _dicm_options {
     bool stream_filemetaelements;
+    bool deflenitem;
+    bool deflensq;
     bool group_length;
 };
 
@@ -55,6 +57,9 @@ struct _dicm_sreader *dicm_sreader_init(struct _mem *mem) {
   struct _dicm_sreader *sreader = mem->ops->alloc(mem, sizeof *sreader);
   sreader->mem = mem;
   sreader->options.stream_filemetaelements = false;
+  sreader->options.deflenitem = false;
+  sreader->options.deflensq = false;
+  sreader->options.group_length = false;
   sreader->curdepos = 0;
   sreader->current_state = -1;
   reset_dataset(&sreader->dataset);
@@ -175,25 +180,92 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   return true;
 }
 
+int dicm_read_explicit(struct _src *src, struct _dataset *ds, const struct _dicm_options *options) {
+  const bool deflenitem = options->deflenitem;
+  const bool deflensq = options->deflensq;
+  const bool group_length = options->group_length;
+  // For defined length Item and Defined length SQ we need to create synthetic
+  // Delimitation Item. Handle those pseudo event here:
+  if (get_deflenitem(ds) == get_curdeflenitem(ds)) {
+    // End of Defined Length Item
+    reset_cur_defined_length_item(ds);
+    return kItemDelimitationItem;
+  } else if (get_deflensq(ds) == get_curdeflensq(ds)) {
+    // End of Defined Length Sequence
+    reset_cur_defined_length_sequence(ds);
+    return kSequenceOfItemsDelimitationItem;
+  } else if (group_length && ds->grouplen == ds->curgrouplen) {
+    ds->curgroup = 0; // reset
+    ds->grouplen = kUndefinedLength;
+    ds->curgrouplen = 0;
+
+    return kEndGroupDataElement;
+  }
+  const enum state s = read_explicit_impl(src, ds);
+
+  return s;
+}
+
+
 static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
   const int current_state = sreader->current_state;
   const bool stream_filemetaelements = sreader->options.stream_filemetaelements;
   const bool group_length = sreader->options.group_length;
+  const struct _dicm_options *options = &sreader->options;
   // make sure to flush remaining bits from a dataelement
-  if (current_state == kBasicOffsetTable || current_state == kFragment
-      || current_state == kDataElement) {
+  if (current_state == kBasicOffsetTable || current_state == kFragment ||
+      current_state == kDataElement) {
     struct _dataelement de;
-    buf_into_dataelement(&sreader->dataset, current_state, &de );
-    assert(sreader->curdepos == 0);
-    dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
-    assert(sreader->curdepos == de.vl);
-    sreader->curdepos = 0;
-  }
-  else if (0
-      || current_state == kFileMetaElement /* only when stream_filemetaelements */
-//      || current_state == kFileMetaInformationGroupLength /* only when stream_filemetaelements */
-      ) {
+    buf_into_dataelement(&sreader->dataset, current_state, &de);
+    const uint_fast16_t element = get_element(de.tag);
+    if (element == 0x0) {
+      if (group_length) {
+        union {
+          uint32_t ul;
+          char bytes[4];
+        } group_length;
+        assert(de.vl == 4);
+        dicm_sreader_pull_dataelement_value(sreader, &de, group_length.bytes,
+                                            de.vl);
+        assert(sreader->curdepos == de.vl);
+        sreader->curdepos = 0;
+
+        struct _dataset *ds = &sreader->dataset;
+        assert(ds->curgroup == 0);
+        ds->curgroup = get_group(de.tag);
+        assert(ds->grouplen == kUndefinedLength);
+        ds->grouplen = group_length.ul;
+        // group length include all but the group length element
+        assert(ds->curgrouplen == 0);
+
+        sreader->current_state = kGroupLengthDataElement;
+        return sreader->current_state;
+      } else {
+        // FIXME swallow group length
+        dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
+        assert(sreader->curdepos == de.vl);
+        sreader->curdepos = 0;
+      }
+    } else {
+      if (group_length) {
+        struct _dataset *ds = &sreader->dataset;
+        if (ds->curgroup == get_group(de.tag)) {
+          ds->curgrouplen += compute_len(&de);
+          assert(ds->curgrouplen <= ds->grouplen);
+        }
+      }
+      // not a group length data element:
+      assert(element != 0x0);
+      dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
+      assert(sreader->curdepos == de.vl);
+      sreader->curdepos = 0;
+    }
+  } else if (current_state ==
+             kFileMetaElement /* only when stream_filemetaelements */
+             //      || current_state == kFileMetaInformationGroupLength /* only
+             //      when stream_filemetaelements */
+  ) {
     struct _filemetaelement de;
     buf_into_filemetaelement(&sreader->filemetaset, current_state, &de );
     assert(sreader->curdepos == 0);
@@ -201,7 +273,6 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
   }
-
 
   struct _dataset *ds = &sreader->dataset;
   struct _filemetaset *fms = &sreader->filemetaset;
@@ -243,57 +314,57 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       break;
 
     case kEndFileMetaInformation:
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kDataElement:
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kGroupLengthDataElement:
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kEndGroupDataElement:
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kItem:
       // de->tag = 0;  // FIXME tag ordering handling
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kBasicOffsetTable:
       // de->tag = 0;
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kFragment:
       // de->tag = 0;
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kItemDelimitationItem:
       // de->tag = 0;
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kSequenceOfItemsDelimitationItem:
       // de->tag = 0;
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kSequenceOfFragmentsDelimitationItem:
       // de->tag = 0;
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kSequenceOfItems:
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     case kSequenceOfFragments:
-      sreader->current_state = dicm_read_explicit(src, ds);
+      sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
     default:
