@@ -121,12 +121,6 @@ enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
     }
   }
 
-#if 0
-  if (unlikely(!tag_is_lower(curde, ude.ide.utag.tag))) {
-    return -kDicmOutOfOrder;
-  }
-#endif
-
   // VR16 ?
   if (is_vr16(ude.ede16.uvr.vr)) {
 
