@@ -148,9 +148,6 @@ enum state read_explicit_impl(struct _src *src, struct _dataset *ds) {
     if (unlikely(ude.ede32.uvr.vr.vr != kOB)) return -kEncapsulatedPixelDataIsNotOB;
 
     return kSequenceOfFragments;
-  } else if (ude.ede32.uvr.vr.vr == kSQ &&
-             ude.ede32.uvl.vl == kUndefinedLength) {
-    return kSequenceOfItems;
   } else if (ude.ede32.uvr.vr.vr == kSQ) {
     return kSequenceOfItems;
   } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)) {
