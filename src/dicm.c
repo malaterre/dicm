@@ -216,8 +216,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   struct _dataset *ds = &sreader->dataset;
 
   // make sure to flush remaining bits from a dataelement
-  if (current_state == kBasicOffsetTable || current_state == kFragment ||
-      current_state == kDataElement) {
+  if (current_state == kDataElement) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, current_state, &de);
 
@@ -276,6 +275,14 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       assert(sreader->curdepos == de.vl);
       sreader->curdepos = 0;
     }
+  } else if (current_state == kBasicOffsetTable || current_state == kFragment) {
+    struct _dataelement de;
+    buf_into_dataelement(&sreader->dataset, current_state, &de);
+
+    assert(sreader->curdepos == 0);
+    dicm_sreader_pull_dataelement_value(sreader, &de, NULL, de.vl);
+    assert(sreader->curdepos == de.vl);
+    sreader->curdepos = 0;
   } else if (current_state == kFileMetaElement) {
     assert(stream_filemetaelements);
     struct _filemetaelement de;
