@@ -25,7 +25,7 @@ public class dump {
         try {
             XMLEventReader xmlEventReader = xmlInputFactory.createXMLEventReader(new FileInputStream(fileName));
             while(xmlEventReader.hasNext()) {
-                System.out.println("before" );
+                //System.out.println("before" );
  /*
  *  Bulk reading occur in nextEvent(), not in hasdNext():
 javax.xml.stream.XMLStreamException: ParseError at [row,col]:[15,13]
@@ -36,7 +36,7 @@ Message: Content is not allowed in trailing section.
 	at dump.main(dump.java:20)
  */
                 XMLEvent xmlEvent = xmlEventReader.nextEvent();
-                System.out.println("after" );
+                //System.out.println("after" );
 		switch( xmlEvent.getEventType() ) {
 			case XMLStreamConstants.START_ELEMENT:
 				System.out.println( "START_ELEMENT" );

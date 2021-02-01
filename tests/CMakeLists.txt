@@ -12,3 +12,5 @@ target_link_libraries(dicmtest dicm)
 foreach(name ${TEST_SRCS})
   add_test(NAME ${name} COMMAND dicmtest ${name})
 endforeach()
+
+

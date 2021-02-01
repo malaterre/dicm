@@ -33,6 +33,9 @@ typedef uint16_t vr_t; // FIXME should it be u32 ?
 typedef uint32_t vl_t;
 typedef char byte_t;
 
+typedef struct { vr_t vr; uint16_t reserved; } vr32_t;
+typedef uint16_t vl16_t;
+
 typedef union {
   uint16_t tags[2];
   tag_t tag;
