@@ -276,11 +276,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       assert(sreader->curdepos == de.vl);
       sreader->curdepos = 0;
     }
-  } else if (current_state ==
-             kFileMetaElement /* only when stream_filemetaelements */
-             //      || current_state == kFileMetaInformationGroupLength /* only
-             //      when stream_filemetaelements */
-  ) {
+  } else if (current_state == kFileMetaElement) {
     assert(stream_filemetaelements);
     struct _filemetaelement de;
     buf_into_filemetaelement(&sreader->filemetaset, current_state, &de );
