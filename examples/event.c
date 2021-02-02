@@ -127,22 +127,29 @@ static void event_dataelement(__maybe_unused struct _writer *writer,
 }
 
 const struct _writer_ops event_writer = {
-    .write_file_preamble = event_file_preamble,
+    // FMI
     .write_start_fmi = event_start_fmi,
+    .write_file_preamble = event_file_preamble, // OPT
+    .write_prefix = event_prefix, // OPT
+    .write_fmi_gl = event_fmi_gl, // OPT
+    .write_filemetaelement = event_filemetaelement, // OPT
     .write_end_fmi = event_end_fmi,
-    .write_fmi_gl = event_fmi_gl,
-    .write_prefix = event_prefix,
-    .write_filemetaelement = event_filemetaelement,
+
+    // DataSet:
+    // DataElement
     .write_dataelement = event_dataelement,
-    // .write_start_group = event_start_group,
-    .write_group_gl = event_group_gl,
-    .write_end_group = event_end_group,
+     // Group
+    .write_group_gl = event_group_gl, // OPT
+    .write_end_group = event_end_group, // OPT
+    // SQ
     .write_sequenceofitems = event_sequenceofitems,
-    .write_sequenceoffragments = event_sequenceoffragments,
+    .write_end_sq = event_end_sq,
+    // Item
     .write_item = event_item,
+    .write_end_item = event_end_item,
+    // SQ of Frags
+    .write_sequenceoffragments = event_sequenceoffragments,
     .write_bot = event_bot,
     .write_fragment = event_fragment,
-    .write_end_item = event_end_item,
-    .write_end_sq = event_end_sq,
     .write_end_frags = event_end_frags,
 };
