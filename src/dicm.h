@@ -94,4 +94,5 @@ size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
 
 struct _dataset *dicm_sreader_get_dataset(struct _dicm_sreader *sreader);
 
+/** DICM stream reader */
 typedef struct _dicm_sreader dicm_sreader_t;
