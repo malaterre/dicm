@@ -32,7 +32,7 @@ extern const struct _dst_ops fdst_ops;
 extern struct _mem ansi;
 
 extern const struct _writer_ops default_writer;
-extern const struct _writer_ops event_writer;
+extern const struct _writer_ops json_writer;
 extern const struct _writer_ops dcmdump_writer;
 extern const struct _writer_ops copy_writer;
 
@@ -133,6 +133,8 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
         printf("wotsit: %d\n", next);
     }
   }
+  // FIXME
+  printf("}\n");
 }
 
 int main(int argc, char *argv[]) {
@@ -168,7 +170,7 @@ int main(int argc, char *argv[]) {
     }*/
 
   // writer.ops = &dcmdump_writer;
-  writer.ops = &event_writer;
+  writer.ops = &json_writer;
   // writer.ops = &default_writer;
   // writer.ops = &copy_writer;
   writer.sreader = sreader;
