@@ -50,83 +50,83 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
     int next = dicm_sreader_next(sreader);
     switch (next) {
       case kStartFileMetaInformation:
-        writer->ops->print_start_fmi(writer);
+        writer->ops->write_start_fmi(writer);
         break;
 
       case kFilePreamble:
         if (dicm_sreader_get_file_preamble(sreader, &filepreamble))
-          writer->ops->print_file_preamble(writer, &filepreamble);
+          writer->ops->write_file_preamble(writer, &filepreamble);
         break;
 
       case kDICOMPrefix:
         if (dicm_sreader_get_prefix(sreader, &prefix))
-          writer->ops->print_prefix(writer, &prefix);
+          writer->ops->write_prefix(writer, &prefix);
         break;
 
       case kFileMetaInformationGroupLength:
-        writer->ops->print_fmi_gl(writer, 0);
+        writer->ops->write_fmi_gl(writer, 0);
         break;
 
       case kFileMetaElement:
         if (dicm_sreader_get_filemetaelement(sreader, &fme))
-          writer->ops->print_filemetaelement(writer, &fme);
+          writer->ops->write_filemetaelement(writer, &fme);
         break;
 
       case kEndFileMetaInformation:
-        writer->ops->print_end_fmi(writer);
+        writer->ops->write_end_fmi(writer);
         break;
 
       case kDataElement:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_dataelement(writer, &de);
+          writer->ops->write_dataelement(writer, &de);
         break;
 
       case kGroupLengthDataElement:
-        writer->ops->print_group_gl(writer, &de);
+        writer->ops->write_group_gl(writer, &de);
         break;
 
       case kEndGroupDataElement:
-        writer->ops->print_end_group(writer);
+        writer->ops->write_end_group(writer);
         break;
 
       case kSequenceOfItems:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_sequenceofitems(writer, &de);
+          writer->ops->write_sequenceofitems(writer, &de);
         break;
 
       case kSequenceOfFragments:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_sequenceoffragments(writer, &de);
+          writer->ops->write_sequenceoffragments(writer, &de);
         break;
 
       case kItem:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_item(writer, &de);
+          writer->ops->write_item(writer, &de);
         break;
 
       case kBasicOffsetTable:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_bot(writer, &de);
+          writer->ops->write_bot(writer, &de);
         break;
 
       case kFragment:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_fragment(writer, &de);
+          writer->ops->write_fragment(writer, &de);
         break;
 
       case kItemDelimitationItem:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_end_item(writer, &de);
+          writer->ops->write_end_item(writer, &de);
         break;
 
       case kSequenceOfItemsDelimitationItem:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_end_sq(writer, &de);
+          writer->ops->write_end_sq(writer, &de);
         break;
 
       case kSequenceOfFragmentsDelimitationItem:
         if (dicm_sreader_get_dataelement(sreader, &de))
-          writer->ops->print_end_frags(writer, &de);
+          writer->ops->write_end_frags(writer, &de);
         break;
 
       default:

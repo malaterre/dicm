@@ -32,30 +32,28 @@ struct _writer {
 
 struct _writer_ops {
   // FIXME Should not expose FMI to user API
-  void (*print_start_fmi)(struct _writer *writer);
-  void (*print_end_fmi)(struct _writer *writer);
-  void (*print_fmi_gl)(struct _writer *writer, uint32_t gl);
-  void (*print_file_preamble)(struct _writer *writer,
+  void (*write_start_fmi)(struct _writer *writer);
+  void (*write_end_fmi)(struct _writer *writer);
+  void (*write_fmi_gl)(struct _writer *writer, uint32_t gl);
+  void (*write_file_preamble)(struct _writer *writer,
                               const struct _dicm_filepreamble *fp);
-  void (*print_prefix)(struct _writer *writer,
+  void (*write_prefix)(struct _writer *writer,
                        const struct _dicm_prefix *prefix);
-  void (*print_filemetaelement)(struct _writer *writer,
+  void (*write_filemetaelement)(struct _writer *writer,
                                 const struct _filemetaelement *de);
-  // FIXME, simplify with a single function ???
-  // void (*write)(int state, const struct _dataset *ds);
-  void (*print_dataelement)(struct _writer *writer,
+  void (*write_dataelement)(struct _writer *writer,
                             const struct _dataelement *de);
-  void (*print_end_group)(struct _writer *writer);
-  void (*print_group_gl)(struct _writer *writer, uint32_t gl);
-  void (*print_sequenceofitems)(struct _writer *writer,
+  void (*write_end_group)(struct _writer *writer);
+  void (*write_group_gl)(struct _writer *writer, uint32_t gl);
+  void (*write_sequenceofitems)(struct _writer *writer,
                                 const struct _dataelement *de);
-  void (*print_sequenceoffragments)(struct _writer *writer,
+  void (*write_sequenceoffragments)(struct _writer *writer,
                                     const struct _dataelement *de);
-  void (*print_item)(struct _writer *writer, const struct _dataelement *de);
-  void (*print_bot)(struct _writer *writer, const struct _dataelement *de);
-  void (*print_fragment)(struct _writer *writer, const struct _dataelement *de);
-  void (*print_end_item)(struct _writer *writer, const struct _dataelement *de);
-  void (*print_end_sq)(struct _writer *writer, const struct _dataelement *de);
-  void (*print_end_frags)(struct _writer *writer,
+  void (*write_item)(struct _writer *writer, const struct _dataelement *de);
+  void (*write_bot)(struct _writer *writer, const struct _dataelement *de);
+  void (*write_fragment)(struct _writer *writer, const struct _dataelement *de);
+  void (*write_end_item)(struct _writer *writer, const struct _dataelement *de);
+  void (*write_end_sq)(struct _writer *writer, const struct _dataelement *de);
+  void (*write_end_frags)(struct _writer *writer,
                           const struct _dataelement *de);
 };

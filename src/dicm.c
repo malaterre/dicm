@@ -35,7 +35,7 @@ struct _dicm_options {
     bool group_length;
 };
 
-/** stream reader */
+/** DICM stream reader */
 struct _dicm_sreader {
   struct _mem *mem;
   struct _src *src;
@@ -43,11 +43,6 @@ struct _dicm_sreader {
   struct _filemetaset filemetaset;  // current filemeta
 
   struct _dicm_options options;
-#if 0
-  struct _dicm_filepreamble filepreamble;
-  struct _dicm_prefix prefix;
-  struct _filemetaelement fme;
-#endif
 
   uint32_t curdepos;
   enum state current_state;

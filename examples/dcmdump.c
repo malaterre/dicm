@@ -30,7 +30,7 @@ static unsigned int dcmdump_level = 0;
 static unsigned int first_dataelement = 0;
 
 #ifdef FIXME
-static void print_with_indent(int indent, const char *string) {
+static void write_with_indent(int indent, const char *string) {
   printf("%*s%s", indent, "", string);
 }
 #endif
@@ -48,7 +48,7 @@ static void dcmdump_file_preamble(
 static void dcmdump_prefix(__maybe_unused struct _writer *writer,
                            __maybe_unused const struct _dicm_prefix *prefix) {}
 
-static void print_ob(char *str, const char *buf, size_t len) {
+static void write_ob(char *str, const char *buf, size_t len) {
   char *pstr = str;
   for (unsigned int i = 0; i < len; ++i) {
     if (i != 0) {
@@ -60,7 +60,7 @@ static void print_ob(char *str, const char *buf, size_t len) {
   }
 }
 
-static void print_ow(char *str, const char *buf, size_t len) {
+static void write_ow(char *str, const char *buf, size_t len) {
   char *pstr = str;
   for (unsigned int i = 0; i < len; i += 2) {
     if (i != 0) {
@@ -74,7 +74,7 @@ static void print_ow(char *str, const char *buf, size_t len) {
   }
 }
 
-static void print_dataelement(struct _writer *writer,
+static void write_dataelement(struct _writer *writer,
                               const struct _dataelement *de) {
   char str[512];
   char buf[64];
@@ -95,9 +95,9 @@ static void print_dataelement(struct _writer *writer,
     }
   } else if (de->vr == kOB || de->vr == kOW) {
     if (de->vr == kOB)
-      print_ob(str, buf, len);
+      write_ob(str, buf, len);
     else if (de->vr == kOW)
-      print_ow(str, buf, len);
+      write_ow(str, buf, len);
     str[65] = '.';
     str[66] = '.';
     str[67] = '.';
@@ -114,7 +114,7 @@ static void print_dataelement(struct _writer *writer,
 
 static void dcmdump_filemetaelement(struct _writer *writer,
                                     const struct _filemetaelement *fme) {
-  print_dataelement(writer, (const struct _dataelement *)fme);
+  write_dataelement(writer, (const struct _dataelement *)fme);
 }
 
 static void dcmdump_item(__maybe_unused struct _writer *writer,
@@ -194,20 +194,20 @@ static void dcmdump_dataelement(struct _writer *writer,
     printf("# Used TransferSyntax: RLE Lossless\n");
     first_dataelement = 1;
   }
-  print_dataelement(writer, de);
+  write_dataelement(writer, de);
 }
 
 const struct _writer_ops dcmdump_writer = {
-    .print_file_preamble = dcmdump_file_preamble,
-    .print_prefix = dcmdump_prefix,
-    .print_filemetaelement = dcmdump_filemetaelement,
-    .print_dataelement = dcmdump_dataelement,
-    .print_sequenceofitems = dcmdump_sequenceofitems,
-    .print_sequenceoffragments = dcmdump_sequenceoffragments,
-    .print_item = dcmdump_item,
-    .print_bot = dcmdump_bot,
-    .print_fragment = dcmdump_fragment,
-    .print_end_item = dcmdump_end_item,
-    .print_end_sq = dcmdump_end_sq,
-    .print_end_frags = dcmdump_end_frags,
+    .write_file_preamble = dcmdump_file_preamble,
+    .write_prefix = dcmdump_prefix,
+    .write_filemetaelement = dcmdump_filemetaelement,
+    .write_dataelement = dcmdump_dataelement,
+    .write_sequenceofitems = dcmdump_sequenceofitems,
+    .write_sequenceoffragments = dcmdump_sequenceoffragments,
+    .write_item = dcmdump_item,
+    .write_bot = dcmdump_bot,
+    .write_fragment = dcmdump_fragment,
+    .write_end_item = dcmdump_end_item,
+    .write_end_sq = dcmdump_end_sq,
+    .write_end_frags = dcmdump_end_frags,
 };
