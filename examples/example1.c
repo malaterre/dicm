@@ -159,6 +159,10 @@ int main(int argc, char *argv[]) {
     dicm_sreader_stream_filemetaelements(sreader, true);
   else if( strcmp(options, "gl") == 0 ) 
     dicm_sreader_group_length(sreader, true);
+  else if( strcmp(options, "all") == 0 )  {
+    dicm_sreader_stream_filemetaelements(sreader, true);
+    dicm_sreader_group_length(sreader, true);
+}
   /*  if (!dicm_sreader_read_meta_info(sreader)) {
       return EXIT_FAILURE;
     }*/

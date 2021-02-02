@@ -37,6 +37,7 @@ input-group.dcm
 add_test(NAME example1_group_length1 COMMAND example1 "" ${DICM_TEST_DATA_ROOT}/input-group.dcm)
 add_test(NAME example1_group_length2 COMMAND example1 "gl" ${DICM_TEST_DATA_ROOT}/input-group.dcm)
 add_test(NAME example1_group_length3 COMMAND example1 "fme" ${DICM_TEST_DATA_ROOT}/input-group.dcm)
+add_test(NAME example1_group_length4 COMMAND example1 "all" ${DICM_TEST_DATA_ROOT}/input-group.dcm)
 
 foreach(DICOM_FILE ${DICOM_FILES})
   add_test(NAME example1_${DICOM_FILE} COMMAND example1 "" ${DICM_TEST_DATA_ROOT}/${DICOM_FILE})
