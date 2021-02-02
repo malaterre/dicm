@@ -37,6 +37,7 @@ typedef enum {
           DICM_MESSAGE(kDicmInvalidVR,
                        "Value Representation if non-ASCII uppercase (A-Z only)")
               DICM_MESSAGE(kDicmReservedNotZero, "Reserved for VR32 should be 0")
+              DICM_MESSAGE(kPixelDataIsVR16, "Pixel Data is encoded on VR 16")
               DICM_MESSAGE(kEncapsulatedPixelDataIsNotOB, "Encapsulated Pixel Data is not OB")
               DICM_MESSAGE(kDicmOddDefinedLength, "Defined Length is Odd")
                   DICM_MESSAGE(kNotEnoughData, "Not enough bytes could be read from source.")

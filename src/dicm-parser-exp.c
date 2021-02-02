@@ -88,29 +88,29 @@ int read_explicit_impl(struct _src *src, struct _dataset *ds) {
   if (is_vr16(ude.ede16.uvr.vr)) {
     memcpy(buf, ude.bytes, sizeof ude.ede16);
     ds->bufsize = sizeof ude.ede16;
-  } else {
-    // padding must be set to zero
-    if (unlikely(ude.ede32.uvr.vr.reserved != 0)) return -kDicmReservedNotZero;
 
-    ret = src->ops->read(src, ude.ede32.uvl.bytes, 4);
-    if (unlikely(ret < 4)) return -kNotEnoughData;
-
-    memcpy(buf, ude.bytes, sizeof ude.ede32);
-    ds->bufsize = sizeof ude.ede32;
+    return kDataElement;
   }
+  // else
+  // padding must be set to zero
+  if (unlikely(ude.ede32.uvr.vr.reserved != 0)) return -kDicmReservedNotZero;
+
+  ret = src->ops->read(src, ude.ede32.uvl.bytes, 4);
+  if (unlikely(ret < 4)) return -kNotEnoughData;
+
+  memcpy(buf, ude.bytes, sizeof ude.ede32);
+  ds->bufsize = sizeof ude.ede32;
 
   if (is_tag_pixeldata(ude.ede32.utag.tag) &&
       ude.ede32.uvl.vl == kUndefinedLength) {
-    if (unlikely(ude.ede32.uvr.vr.vr != kOB)) return -kEncapsulatedPixelDataIsNotOB;
 
     return kSequenceOfFragments;
-  } else if (ude.ede32.uvr.vr.vr == kSQ) {
+  } else if (ude.ede32.uvr.vr.vr == kSQ ||
+             ude.ede32.uvl.vl == kUndefinedLength) {
     return kSequenceOfItems;
-  } else if (likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)) {
-    return kDataElement;
   }
-  assert( 0);
-  return -kInvalidTag;
+  // likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)
+  return kDataElement;
 }
 
 int read_fme(struct _src *src, struct _filemetaset *ds) {
