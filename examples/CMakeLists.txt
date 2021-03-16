@@ -9,9 +9,19 @@ copy.c
 add_executable(example1 example1.c
 default.c
 event.c
+json.c
 dcmdump.c
 )
 target_link_libraries(example1 dicm dicm-default)
+
+add_executable(dicm2json dicm2json.c
+default.c
+json.c
+json.c
+dcmdump.c
+)
+target_link_libraries(dicm2json dicm dicm-default)
+
 
 set(DICOM_FILES
 exp-defsq.dcm
