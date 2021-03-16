@@ -143,10 +143,10 @@ const struct _writer_ops event_writer = {
     .write_end_group = event_end_group, // OPT
     // SQ
     .write_sequenceofitems = event_sequenceofitems,
-    .write_end_sq = event_end_sq,
+    .write_end_sq = event_end_sq, // (OPT)
     // Item
     .write_item = event_item,
-    .write_end_item = event_end_item,
+    .write_end_item = event_end_item, // (OPT)
     // SQ of Frags
     .write_sequenceoffragments = event_sequenceoffragments,
     .write_bot = event_bot,
