@@ -23,11 +23,10 @@
 #include "dicm-private.h"
 #include <stdio.h>
 
-static const char * prefix = NULL;
+static const char * separator = NULL;
 
-static void print_prefix() {
-  if( prefix ) printf(prefix);
-  else prefix = ",\n";
+static void print_separator() {
+  if( separator ) printf(separator);
 }
 static void json_start_fmi(__maybe_unused struct _writer *writer) {
 }
@@ -63,9 +62,9 @@ static void json_filemetaelement(
 
 static void json_item(__maybe_unused struct _writer *writer,
                        __maybe_unused const struct _dataelement *de) {
- print_prefix();
+ print_separator();
   printf("{\n");
-prefix = NULL;
+separator = NULL;
 }
 
 static void json_bot(__maybe_unused struct _writer *writer,
@@ -83,40 +82,43 @@ printf("}\n");
 
 static void json_end_sq(__maybe_unused struct _writer *writer,
                          __maybe_unused const struct _dataelement *de) {
-printf("]}\n");
+printf("]\n");
+printf("}\n");
+separator = ",\n";
 }
 
 static void json_end_frags(__maybe_unused struct _writer *writer,
                             __maybe_unused const struct _dataelement *de) {
-  printf("]}\n");
+  printf("]\n");
 }
 
 static void json_sequenceofitems(
     __maybe_unused struct _writer *writer,
     __maybe_unused const struct _dataelement *de) {
-print_prefix();
+print_separator();
   printf("\"%04x%04x\": {\n \"vr\": \"%.2s\",\n \"Value\": [\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr) );
-prefix = NULL;
+separator = NULL;
 }
 
 static void json_sequenceoffragments(
     __maybe_unused struct _writer *writer,
     __maybe_unused const struct _dataelement *de) {
 //  printf("[\n");
-print_prefix();
+print_separator();
   printf("\"%04x%04x\": {\n \"vr\": \"%.2s\",\n \"Value\": [\n", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr) );
-prefix = NULL;
+separator = NULL;
 }
 
 static void json_dataelement(__maybe_unused struct _writer *writer,
                               __maybe_unused const struct _dataelement *de) {
-print_prefix();
+print_separator();
   const char value[] = "123";
   printf("\"%04x%04x\": {\n \"vr\": \"%.2s\",\n \"Value\": [%s]\n}", (unsigned int)get_group(de->tag),
          (unsigned int)get_element(de->tag), get_vr(de->vr), value );
 
+separator = ",\n";
 }
 
 const struct _writer_ops json_writer = {
