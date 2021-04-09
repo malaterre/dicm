@@ -133,6 +133,8 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
         printf("wotsit: %d\n", next);
     }
   }
+  // FIXME
+  printf("}\n");
 }
 
 int main(int argc, char *argv[]) {
