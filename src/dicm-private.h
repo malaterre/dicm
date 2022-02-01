@@ -27,6 +27,7 @@
 #include <stdint.h> /* uint16_t */
 
 enum state {
+#if 0
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html#table_7.1-1
   kStartFileMetaInformation = 0,
   /**
@@ -46,9 +47,11 @@ enum state {
    */
   kFileMetaElement,
   kEndFileMetaInformation,
-  kDataElement,  // Implicit or Explicit
-  kGroupLengthDataElement,  // PS 3.5 §7.2
-  kEndGroupDataElement,
+#endif
+#if 0
+  kDataElement,             // Implicit or Explicit
+  //kGroupLengthDataElement,  // PS 3.5 §7.2
+  //kEndGroupDataElement,
   kSequenceOfItems,
   kSequenceOfFragments,
   kItem,                                 // (FFFE,E000)
@@ -57,10 +60,21 @@ enum state {
   kSequenceOfItemsDelimitationItem,      // (FFFE,E0DD)
   kSequenceOfFragmentsDelimitationItem,  // (FFFE,E0DD)
   kBasicOffsetTable,  // First Item in a Sequence of Fragments
+#endif
+  kStartModel = 0,
+  kEndModel,
+  kStartAttribute,
+  kEndAttribute,
+  kValue,
+  kStartFragment,
+  kEndFragment,
+  kStartItem,
+  kEndItem,
+  kStartSequence,
+  kEndSequence,
 };
 
 #define _DICM_POISON(replacement) error__use_##replacement##_instead
-#define fseek _DICM_POISON(fseeko)
-#define ftell _DICM_POISON(ftello)
+//#define fseek _DICM_POISON(fseeko)
+//#define ftell _DICM_POISON(ftello)
 #define strtod _DICM_POISON(_dicm_parse_double)
-

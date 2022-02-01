@@ -21,9 +21,9 @@
 
 #pragma once
 
-#include "dicm-private.h"
 #include "dicm-de.h"
 #include "dicm-io.h"
+#include "dicm-private.h"
 
 #include <assert.h>
 
@@ -32,7 +32,8 @@
 #define MAKE_TAG2(group, element) (element << 16u | group)
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define SWAP_TAG(t) t.tag = MAKE_TAG((unsigned int)t.tags[0], (unsigned int)t.tags[1])
+#define SWAP_TAG(t) \
+  t.tag = MAKE_TAG((unsigned int)t.tags[0], (unsigned int)t.tags[1])
 #else
 #define SWAP_TAG(t)                \
   t.tags[0] = bswap_16(t.tags[0]); \
@@ -54,8 +55,10 @@
 #endif
 
 // Full list of VRs as of DICOM 2017a
-enum VR {
-  kINVALID = 0, /* Item, Item Delimitation Item & Sequence Delimitation Item */
+typedef uint16_t vr16_t;
+enum VR16_enum {
+  kINVALID =
+      0x0000, /* Item, Item Delimitation Item & Sequence Delimitation Item */
   kAE = MAKE_VR('A', 'E'),
   kAS = MAKE_VR('A', 'S'),
   kAT = MAKE_VR('A', 'T'),
@@ -97,7 +100,8 @@ enum {
 };
 
 static inline bool is_vr16(const vr_t vr) {
-  switch (vr) {
+  const vr16_t vr16 = MAKE_VR(vr[0], vr[1]);
+  switch (vr16) {
     case kAE:
     case kAS:
     case kAT:
@@ -125,7 +129,8 @@ static inline bool is_vr16(const vr_t vr) {
 }
 
 static inline bool is_vr32(const vr_t vr) {
-  switch (vr) {
+  const vr16_t vr16 = MAKE_VR(vr[0], vr[1]);
+  switch (vr16) {
     case kAE:
     case kAS:
     case kAT:
@@ -312,11 +317,11 @@ struct _ide {
   uvl_t uvl;
 };  // implicit data element. 8 bytes
 
-int read_filepreamble(struct _src *src, struct _filemetaset *ds);
-int read_prefix(struct _src *src, struct _filemetaset *ds);
-int read_explicit_impl(struct _src *src, struct _dataset *ds);
+DICM_EXPORT int read_filepreamble(struct dicm_io *src, struct _filemetaset *ds);
+int read_prefix(struct dicm_io *src, struct _filemetaset *ds);
+int read_explicit_impl(struct dicm_io *src, struct _dataset *ds);
 
-int read_fme(struct _src *src, struct _filemetaset *ds);
+int read_fme(struct dicm_io *src, struct _filemetaset *ds);
 int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
                          struct _dataelement *de);
 int buf_into_filemetaelement(const struct _filemetaset *ds,

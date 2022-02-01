@@ -1,6 +1,6 @@
 #pragma once
 
-#include "dicm-mem.h"
+#include "dicm-features.h"
 
 struct _log {
   const struct _log_ops *ops;
@@ -21,8 +21,8 @@ struct _log_ops {
   int (*fini)(struct _log *log);
 };
 
-void log_errno(log_level_t llevel);
+DICM_EXPORT void log_errno(log_level_t llevel, int errnum);
 
-void set_global_logger(struct _log *log);
+DICM_EXPORT void set_global_logger(struct _log *log);
 
 extern struct _log *global_log;

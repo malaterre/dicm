@@ -25,28 +25,36 @@
 
 static void copy_file_preamble(struct _writer *writer,
                                const struct _dicm_filepreamble *fp) {
-  struct _dst *dst = writer->dst;
-  dst->ops->write(dst, fp->data, sizeof fp->data);
+  struct dicm_io *dst = writer->dst;
+  // dst->ops->write(dst, fp->data, sizeof fp->data);
+  int err = dicm_io_write(dst, fp->data, sizeof fp->data);
+  assert(err == 0);
 }
 
 static void copy_prefix(struct _writer *writer,
                         const struct _dicm_prefix *prefix) {
-  struct _dst *dst = writer->dst;
-  dst->ops->write(dst, prefix->data, sizeof prefix->data);
+  struct dicm_io *dst = writer->dst;
+  // dst->ops->write(dst, prefix->data, sizeof prefix->data);
+  int err = dicm_io_write(dst, prefix->data, sizeof prefix->data);
+  assert(err == 0);
 }
 
 static void copy(struct _writer *writer, const struct _dataelement *de) {
   struct _dicm_sreader *sreader = writer->sreader;
-  struct _dst *dst = writer->dst;
+  struct dicm_io *dst = writer->dst;
   struct _dataset *dataset = dicm_sreader_get_dataset(sreader);
-  dst->ops->write(dst, dataset->buffer, dataset->bufsize);
+  // dst->ops->write(dst, dataset->buffer, dataset->bufsize);
+  int err = dicm_io_write(dst, dataset->buffer, dataset->bufsize);
+  assert(err == 0);
 
   if (de->vl != kUndefinedLength) {
     char buf[4096];
     size_t len;
     while ((len = dicm_sreader_pull_dataelement_value(sreader, de, buf,
                                                       sizeof buf))) {
-      dst->ops->write(dst, buf, len);
+      // dst->ops->write(dst, buf, len);
+      err = dicm_io_write(dst, buf, len);
+      assert(err == 0);
     }
   }
 }

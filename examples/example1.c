@@ -29,7 +29,6 @@
 extern struct _log dlog;
 extern const struct _src_ops fsrc_ops;
 extern const struct _dst_ops fdst_ops;
-extern struct _mem ansi;
 
 extern const struct _writer_ops default_writer;
 extern const struct _writer_ops event_writer;
@@ -49,6 +48,7 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
   while (dicm_sreader_hasnext(sreader)) {
     int next = dicm_sreader_next(sreader);
     switch (next) {
+#if 0
       case kStartFileMetaInformation:
         writer->ops->write_start_fmi(writer);
         break;
@@ -75,7 +75,7 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
       case kEndFileMetaInformation:
         writer->ops->write_end_fmi(writer);
         break;
-
+#endif
       case kDataElement:
         if (dicm_sreader_get_dataelement(sreader, &de))
           writer->ops->write_dataelement(writer, &de);
@@ -153,16 +153,16 @@ int main(int argc, char *argv[]) {
   fsrc.ops->open(&fsrc, filename);
   fdst.ops->open(&fdst, "output.dcm");
 
-  sreader = dicm_sreader_init(&ansi);
+  sreader = dicm_sreader_init();
   dicm_sreader_set_src(sreader, &fsrc);
-  if( strcmp(options, "fme") == 0 ) 
+  if (strcmp(options, "fme") == 0) {
     dicm_sreader_stream_filemetaelements(sreader, true);
-  else if( strcmp(options, "gl") == 0 ) 
+  } else if (strcmp(options, "gl") == 0) {
     dicm_sreader_group_length(sreader, true);
-  else if( strcmp(options, "all") == 0 )  {
+  } else if (strcmp(options, "all") == 0) {
     dicm_sreader_stream_filemetaelements(sreader, true);
     dicm_sreader_group_length(sreader, true);
-}
+  }
   /*  if (!dicm_sreader_read_meta_info(sreader)) {
       return EXIT_FAILURE;
     }*/
