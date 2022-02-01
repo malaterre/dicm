@@ -4,6 +4,9 @@ add_library(
   mem-ansi.c
   # log4c.c
   dlog.c file.c copy.c)
+  target_compile_definitions(dicm-default
+  PRIVATE
+  $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>)
 add_executable(example1 example1.c default.c event.c json.c dcmdump.c)
 target_link_libraries(example1 dicm dicm-default)
 

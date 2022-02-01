@@ -4,9 +4,8 @@ set(dicm_SRCS dicm-de.c dicm-log.c dicm-parser.c dicm-parser-exp.c dicm-uid.c
 add_library(dicm SHARED ${dicm_SRCS})
 
 # https://interrupt.memfault.com/blog/best-and-worst-gcc-clang-compiler-flags
-target_compile_options(
-  dicm
-  PRIVATE -Wall
+set(flags
+-Wall
           -Wextra
           # -Werror
           -Wshadow
@@ -19,3 +18,11 @@ target_compile_options(
           -Wstack-usage=512
           -Wconversion
           -Wunused-parameter)
+
+target_compile_options(
+  dicm
+  PRIVATE 
+  # clang/gcc warnings:
+  "$<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:GNU>>:${flags}>"
+  # MSVC warnings:
+          "$<$<C_COMPILER_ID:MSVC>:/W4>")
