@@ -27,7 +27,7 @@ public class dump {
             while(xmlEventReader.hasNext()) {
                 //System.out.println("before" );
  /*
- *  Bulk reading occur in nextEvent(), not in hasdNext():
+ *  Bulk reading occur in nextEvent(), not in hasNext():
 javax.xml.stream.XMLStreamException: ParseError at [row,col]:[15,13]
 Message: Content is not allowed in trailing section.
 	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLStreamReaderImpl.next(XMLStreamReaderImpl.java:652)
