@@ -1,23 +1,18 @@
 cmake_minimum_required(VERSION 3.14)
-project(dicm 
+project(
+  dicm
   VERSION 0.0.1
-  LANGUAGES C
-)
+  LANGUAGES C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_EXTENSIONS OFF)
-#message(${dicm_VERSION_MAJOR})
-#message(${dicm_VERSION_MINOR})
-#message(${dicm_VERSION_PATCH})
 
 add_subdirectory(src)
 
-find_path(DICM_TEST_DATA_ROOT "input-group.dcm"
-  PATHS $ENV{DICM_TEST_DATA_ROOT}
-  ${PROJECT_SOURCE_DIR}/../dicm-test-data
-  NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH
-  )
+find_path(
+  DICM_TEST_DATA_ROOT "input-group.dcm"
+  PATHS $ENV{DICM_TEST_DATA_ROOT} ${PROJECT_SOURCE_DIR}/../dicm-test-data
+  NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
 mark_as_advanced(DICM_TEST_DATA_ROOT)
-
 
 # need to be at top-level
 enable_testing()
