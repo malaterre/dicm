@@ -11,3 +11,5 @@ foreach(name ${TEST_SRCS})
   get_filename_component(testname ${name} NAME_WE)
   add_test(NAME ${testname} COMMAND dicmtest ${testname})
 endforeach()
+
+add_executable(check check.c)
