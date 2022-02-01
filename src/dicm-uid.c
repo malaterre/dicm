@@ -64,10 +64,11 @@ static inline char base11(char in) {
 }
 
 static inline char invbase11(char in) {
-  if (in == 0xf)
+  if (in == 0xf) {
     return 0x0;
-  else if (in == 0xa)
+  } else if (in == 0xa) {
     return '.';
+  }
   assert(in >= 0x0 && in <= 0x9);
   return '0' + in;
 }

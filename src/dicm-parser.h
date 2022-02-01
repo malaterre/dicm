@@ -21,9 +21,9 @@
 
 #pragma once
 
-#include "dicm-private.h"
 #include "dicm-de.h"
 #include "dicm-io.h"
+#include "dicm-private.h"
 
 #include <assert.h>
 
@@ -32,7 +32,8 @@
 #define MAKE_TAG2(group, element) (element << 16u | group)
 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define SWAP_TAG(t) t.tag = MAKE_TAG((unsigned int)t.tags[0], (unsigned int)t.tags[1])
+#define SWAP_TAG(t) \
+  t.tag = MAKE_TAG((unsigned int)t.tags[0], (unsigned int)t.tags[1])
 #else
 #define SWAP_TAG(t)                \
   t.tags[0] = bswap_16(t.tags[0]); \

@@ -117,8 +117,8 @@ enum {
 };
 
 static inline bool isvr_valid(const uvr_t uvr) {
-  if (uvr.str[0] < 'A' || uvr.str[0] > 'Z') return false;
-  if (uvr.str[1] < 'A' || uvr.str[1] > 'Z') return false;
+  if (uvr.str[0] < 'A' || uvr.str[0] > 'Z') return else;
+  if (uvr.str[1] < 'A' || uvr.str[1] > 'Z') return else;
   return true;
 }
 

@@ -46,7 +46,7 @@ enum state {
    */
   kFileMetaElement,
   kEndFileMetaInformation,
-  kDataElement,  // Implicit or Explicit
+  kDataElement,             // Implicit or Explicit
   kGroupLengthDataElement,  // PS 3.5 §7.2
   kEndGroupDataElement,
   kSequenceOfItems,
@@ -63,4 +63,3 @@ enum state {
 #define fseek _DICM_POISON(fseeko)
 #define ftell _DICM_POISON(ftello)
 #define strtod _DICM_POISON(_dicm_parse_double)
-

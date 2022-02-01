@@ -103,7 +103,6 @@ int read_explicit_impl(struct _src *src, struct _dataset *ds) {
 
   if (is_tag_pixeldata(ude.ede32.utag.tag) &&
       ude.ede32.uvl.vl == kUndefinedLength) {
-
     return kSequenceOfFragments;
   } else if (ude.ede32.uvr.vr.vr == kSQ ||
              ude.ede32.uvl.vl == kUndefinedLength) {

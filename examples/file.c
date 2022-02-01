@@ -44,7 +44,7 @@ static bool fsrc_open(struct _src *src, const char *fspec) {
 static bool fsrc_close(struct _src *src) {
   if (src == NULL || src->data == NULL) return false;
   FILE *stream = src->data;
-  assert( ferror(stream) == 0 );
+  assert(ferror(stream) == 0);
   const bool ret = fclose(stream) == 0;
   src->data = NULL;
   return ret;
@@ -52,7 +52,7 @@ static bool fsrc_close(struct _src *src) {
 
 static size_t fsrc_read(struct _src *src, void *buf, size_t bsize) {
   if (src == NULL || src->data == NULL) return 0;
-  assert( ferror(src->data) == 0 );
+  assert(ferror(src->data) == 0);
   const size_t read = fread(buf, 1, bsize, src->data);
   /* fread() does not distinguish between end-of-file and error, and callers
    * must use feof(3) and ferror(3) to determine which occurred. */
@@ -60,12 +60,12 @@ static size_t fsrc_read(struct _src *src, void *buf, size_t bsize) {
 }
 
 static bool fsrc_at_end(struct _src *src) {
-  assert( ferror(src->data) == 0 );
+  assert(ferror(src->data) == 0);
   return feof(src->data);
 }
 
 static bool fsrc_seek(struct _src *src, offset_t offset) {
-  assert( ferror(src->data) == 0 );
+  assert(ferror(src->data) == 0);
   const bool ret = fseeko(src->data, offset, SEEK_CUR) == 0;
   return ret;
 }

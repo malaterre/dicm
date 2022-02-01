@@ -157,14 +157,14 @@ int main(int argc, char *argv[]) {
 
   sreader = dicm_sreader_init(&ansi);
   dicm_sreader_set_src(sreader, &fsrc);
-  if( strcmp(options, "fme") == 0 ) 
+  if (strcmp(options, "fme") == 0) {
     dicm_sreader_stream_filemetaelements(sreader, true);
-  else if( strcmp(options, "gl") == 0 ) 
+  } else if (strcmp(options, "gl") == 0) {
     dicm_sreader_group_length(sreader, true);
-  else if( strcmp(options, "all") == 0 )  {
+  } else if (strcmp(options, "all") == 0) {
     dicm_sreader_stream_filemetaelements(sreader, true);
     dicm_sreader_group_length(sreader, true);
-}
+  }
   /*  if (!dicm_sreader_read_meta_info(sreader)) {
       return EXIT_FAILURE;
     }*/

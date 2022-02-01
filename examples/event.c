@@ -39,7 +39,7 @@ static void event_fmi_gl(__maybe_unused struct _writer *writer,
 }
 
 static void event_group_gl(__maybe_unused struct _writer *writer,
-                         __maybe_unused uint32_t gl) {
+                           __maybe_unused uint32_t gl) {
   printf("kGroupLengthDataElement\n");
 }
 
@@ -129,24 +129,24 @@ static void event_dataelement(__maybe_unused struct _writer *writer,
 const struct _writer_ops event_writer = {
     // FMI
     .write_start_fmi = event_start_fmi,
-    .write_file_preamble = event_file_preamble, // OPT
-    .write_prefix = event_prefix, // OPT
-    .write_fmi_gl = event_fmi_gl, // OPT
-    .write_filemetaelement = event_filemetaelement, // OPT
+    .write_file_preamble = event_file_preamble,      // OPT
+    .write_prefix = event_prefix,                    // OPT
+    .write_fmi_gl = event_fmi_gl,                    // OPT
+    .write_filemetaelement = event_filemetaelement,  // OPT
     .write_end_fmi = event_end_fmi,
 
     // DataSet:
     // DataElement
     .write_dataelement = event_dataelement,
-     // Group
-    .write_group_gl = event_group_gl, // OPT
-    .write_end_group = event_end_group, // OPT
+    // Group
+    .write_group_gl = event_group_gl,    // OPT
+    .write_end_group = event_end_group,  // OPT
     // SQ
     .write_sequenceofitems = event_sequenceofitems,
-    .write_end_sq = event_end_sq, // (OPT)
+    .write_end_sq = event_end_sq,  // (OPT)
     // Item
     .write_item = event_item,
-    .write_end_item = event_end_item, // (OPT)
+    .write_end_item = event_end_item,  // (OPT)
     // SQ of Frags
     .write_sequenceoffragments = event_sequenceoffragments,
     .write_bot = event_bot,

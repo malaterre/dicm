@@ -90,16 +90,17 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   memcpy(ude.bytes, buf, bufsize);
   SWAP_TAG(ude.ide.utag);
 
-  assert(current_state !=
+  assert(
+      current_state !=
           kFileMetaElement /* should only occur when stream_filemetaelements */
-      && current_state != kFileMetaInformationGroupLength );
+      && current_state != kFileMetaInformationGroupLength);
 
   if (current_state ==
           kFileMetaElement /* should only occur when stream_filemetaelements */
-      || current_state == kFileMetaInformationGroupLength
-      || current_state == kDataElement || current_state == kSequenceOfItems
-      || current_state == kGroupLengthDataElement
-      || current_state == kSequenceOfFragments) {
+      || current_state == kFileMetaInformationGroupLength ||
+      current_state == kDataElement || current_state == kSequenceOfItems ||
+      current_state == kGroupLengthDataElement ||
+      current_state == kSequenceOfFragments) {
     if (bufsize == 12) {
       de->tag = ude.ede32.utag.tag;
       de->vr = ude.ede32.uvr.vr.vr;
@@ -139,7 +140,8 @@ int buf_into_filemetaelement(const struct _filemetaset *ds,
   memcpy(ude.bytes, buf, bufsize);
   SWAP_TAG(ude.ede32.utag);
 
-  if (current_state == kFileMetaElement || current_state == kFileMetaInformationGroupLength) {
+  if (current_state == kFileMetaElement ||
+      current_state == kFileMetaInformationGroupLength) {
     if (bufsize == 12) {
       fme->tag = ude.ede32.utag.tag;
       fme->vr = ude.ede32.uvr.vr.vr;
@@ -156,4 +158,3 @@ int buf_into_filemetaelement(const struct _filemetaset *ds,
   }
   return 0;
 }
-

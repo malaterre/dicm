@@ -29,17 +29,17 @@
 #include <string.h> /* memset */
 
 struct _dicm_options {
-    bool stream_filemetaelements;
-    bool deflenitem;
-    bool deflensq;
-    bool group_length;
+  bool stream_filemetaelements;
+  bool deflenitem;
+  bool deflensq;
+  bool group_length;
 };
 
 /** DICM stream reader */
 struct _dicm_sreader {
   struct _mem *mem;
   struct _src *src;
-  struct _dataset dataset;  // current dataset
+  struct _dataset dataset;          // current dataset
   struct _filemetaset filemetaset;  // current filemeta
 
   struct _dicm_options options;
@@ -66,13 +66,13 @@ void dicm_sreader_set_src(struct _dicm_sreader *sreader, struct _src *src) {
   sreader->src = src;
 }
 
-void dicm_sreader_stream_filemetaelements(struct _dicm_sreader *sreader, bool stream_filemetaelements)
-{
+void dicm_sreader_stream_filemetaelements(struct _dicm_sreader *sreader,
+                                          bool stream_filemetaelements) {
   sreader->options.stream_filemetaelements = stream_filemetaelements;
 }
 
-void dicm_sreader_group_length(struct _dicm_sreader *sreader, bool group_length)
-{
+void dicm_sreader_group_length(struct _dicm_sreader *sreader,
+                               bool group_length) {
   sreader->options.group_length = group_length;
 }
 
@@ -95,7 +95,8 @@ size_t dicm_sreader_pull_filemetaelement_value(
   }
 }
 
-static inline uint32_t get_filemetaeelement_length(const struct _filemetaelement *fme) {
+static inline uint32_t get_filemetaeelement_length(
+    const struct _filemetaelement *fme) {
   assert(fme->vl != kUndefinedLength);
   if (is_vr16(fme->vr)) {
     return 4 /* tag */ + 4 /* VR/VL */ + fme->vl /* VL */;
@@ -108,7 +109,7 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   struct _dicm_prefix prefix;
   struct _filemetaelement fme;
   struct _src *src = sreader->src;
-//  struct _dataset *ds = &sreader->dataset;
+  //  struct _dataset *ds = &sreader->dataset;
   struct _filemetaset *fms = &sreader->filemetaset;
 
   int next = read_filepreamble(src, fms);
@@ -125,8 +126,7 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   next = read_prefix(src, fms);
   sreader->current_state = next;
   assert(next == kDICOMPrefix);
-  if (next == kDICOMPrefix)
-    dicm_sreader_get_prefix(sreader, &prefix);
+  if (next == kDICOMPrefix) dicm_sreader_get_prefix(sreader, &prefix);
 
   next = read_fme(src, fms);
 #if 0
@@ -136,7 +136,7 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   sreader->current_state = next;
   assert(next == kFileMetaInformationGroupLength);
   if (next == kFileMetaInformationGroupLength)
-   dicm_sreader_get_filemetaelement(sreader, &fme);
+    dicm_sreader_get_filemetaelement(sreader, &fme);
 
   union {
     uint32_t ul;
@@ -175,7 +175,8 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
   return true;
 }
 
-int check_defined_length(struct _src *src, struct _dataset *ds, const struct _dicm_options *options) {
+int check_defined_length(struct _src *src, struct _dataset *ds,
+                         const struct _dicm_options *options) {
   const bool deflenitem = options->deflenitem;
   const bool deflensq = options->deflensq;
   const bool group_length = options->group_length;
@@ -190,7 +191,7 @@ int check_defined_length(struct _src *src, struct _dataset *ds, const struct _di
     reset_cur_defined_length_sequence(ds);
     return kSequenceOfItemsDelimitationItem;
   } else if (group_length && ds->grouplen == ds->curgrouplen) {
-    ds->curgroup = 0; // reset
+    ds->curgroup = 0;  // reset
     ds->grouplen = kUndefinedLength;
     ds->curgrouplen = 0;
 
@@ -199,7 +200,8 @@ int check_defined_length(struct _src *src, struct _dataset *ds, const struct _di
   return -1;
 }
 
-int dicm_read_explicit(struct _src *src, struct _dataset *ds, const struct _dicm_options *options) {
+int dicm_read_explicit(struct _src *src, struct _dataset *ds,
+                       const struct _dicm_options *options) {
   const bool deflenitem = options->deflenitem;
   const bool deflensq = options->deflensq;
   const bool group_length = options->group_length;
@@ -207,7 +209,6 @@ int dicm_read_explicit(struct _src *src, struct _dataset *ds, const struct _dicm
 
   return s;
 }
-
 
 static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   struct _src *src = sreader->src;
@@ -220,7 +221,8 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   if (stream_filemetaelements) {
     if (previous_current_state == kFileMetaElement) {
       struct _filemetaelement de;
-      buf_into_filemetaelement(&sreader->filemetaset, previous_current_state, &de);
+      buf_into_filemetaelement(&sreader->filemetaset, previous_current_state,
+                               &de);
       assert(sreader->curdepos == 0);
       dicm_sreader_pull_filemetaelement_value(sreader, &de, NULL, de.vl);
       assert(sreader->curdepos == de.vl);
@@ -263,10 +265,9 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     case kSequenceOfItems:
       fake_current_state = check_defined_length(src, ds, options);
       break;
-    default:
-      ;
+    default:;
   }
-  if( fake_current_state > 0 ) {
+  if (fake_current_state > 0) {
     sreader->current_state = fake_current_state;
     return sreader->current_state;
   }
@@ -278,9 +279,9 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       break;
 
     case kStartFileMetaInformation:
-      if (stream_filemetaelements)
+      if (stream_filemetaelements) {
         sreader->current_state = read_filepreamble(src, fms);
-      else {
+      } else {
         dicm_sreader_read_meta_info(sreader);
         assert(sreader->current_state == kEndFileMetaInformation);
       }
@@ -450,25 +451,25 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
 
-      if (get_deflensq(ds) != kUndefinedLength) {
-        // are we processing a defined length SQ ?
-        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
-      }
-      pushitemlevel(ds);
-      if (de.vl != kUndefinedLength) {
-        set_deflenitem(ds, de.vl);
-      }
+    if (get_deflensq(ds) != kUndefinedLength) {
+      // are we processing a defined length SQ ?
+      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
+    }
+    pushitemlevel(ds);
+    if (de.vl != kUndefinedLength) {
+      set_deflenitem(ds, de.vl);
+    }
 
   } else if (sreader->current_state == kItemDelimitationItem) {
-      assert(get_deflenitem(ds) == kUndefinedLength);
-      popitemlevel(ds);
-      if (get_deflensq(ds) != kUndefinedLength) {
-        // are we processing a defined length SQ ?
-        set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
-      }
+    assert(get_deflenitem(ds) == kUndefinedLength);
+    popitemlevel(ds);
+    if (get_deflensq(ds) != kUndefinedLength) {
+      // are we processing a defined length SQ ?
+      set_curdeflensq(ds, get_curdeflensq(ds) + 4 + 4);
+    }
   } else if (sreader->current_state == kSequenceOfItemsDelimitationItem) {
-      assert(get_deflensq(ds) == kUndefinedLength);
-      popsqlevel(ds);
+    assert(get_deflensq(ds) == kUndefinedLength);
+    popsqlevel(ds);
   } else if (sreader->current_state == kBasicOffsetTable ||
              sreader->current_state == kFragment) {
     struct _dataelement de;
@@ -545,7 +546,8 @@ bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
   const bool stream_filemetaelements = sreader->options.stream_filemetaelements;
   if (sreader->current_state != kDataElement &&
       (stream_filemetaelements && sreader->current_state != kFileMetaElement) &&
-//      (stream_filemetaelements && sreader->current_state != kFileMetaInformationGroupLength) &&
+      //      (stream_filemetaelements && sreader->current_state !=
+      //      kFileMetaInformationGroupLength) &&
       sreader->current_state != kSequenceOfItems &&
       sreader->current_state != kSequenceOfFragments &&
       sreader->current_state != kItem &&

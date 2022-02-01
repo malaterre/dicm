@@ -22,18 +22,21 @@
 
 #include "dicm-features.h"
 
-#include <stdint.h>
+#include <assert.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
-#include <assert.h>
 
 typedef uint32_t tag_t;
-typedef uint16_t vr_t; // FIXME should it be u32 ?
+typedef uint16_t vr_t;  // FIXME should it be u32 ?
 typedef uint32_t vl_t;
 typedef char byte_t;
 
-typedef struct { vr_t vr; uint16_t reserved; } vr32_t;
+typedef struct {
+  vr_t vr;
+  uint16_t reserved;
+} vr32_t;
 typedef uint16_t vl16_t;
 
 typedef union {
@@ -46,7 +49,10 @@ typedef union {
 } uvr_t;
 typedef union {
   byte_t bytes[4];
-  struct { vr_t vr; uint16_t reserved; } vr;
+  struct {
+    vr_t vr;
+    uint16_t reserved;
+  } vr;
 } uvr32_t;
 typedef union {
   byte_t bytes[4];
@@ -105,7 +111,7 @@ struct _dataset {
   vl_t curgrouplen;
 
   // Fragments are easier to handle since they cannot be nested
-  int sequenceoffragments; // -1: none, 0: BasicOffsetTable, >0: Fragment
+  int sequenceoffragments;  // -1: none, 0: BasicOffsetTable, >0: Fragment
   // defined length Item:
   int _levelitem;
 #define MAX_LEVEL_ITEM 10
@@ -123,18 +129,15 @@ enum {
   kUndefinedLength = (vl_t)-1,
 };
 
-
-static inline void pushsqlevel(struct _dataset *ds)
-{
-  assert( ds->_levelsq < MAX_LEVEL_SQ);
+static inline void pushsqlevel(struct _dataset *ds) {
+  assert(ds->_levelsq < MAX_LEVEL_SQ);
   ds->_levelsq++;
-  assert( ds->_levelsq >= 0);
+  assert(ds->_levelsq >= 0);
 }
 
-static inline void popsqlevel(struct _dataset *ds)
-{
-  assert( ds->_levelsq < MAX_LEVEL_SQ);
-  assert( ds->_levelsq >= 0);
+static inline void popsqlevel(struct _dataset *ds) {
+  assert(ds->_levelsq < MAX_LEVEL_SQ);
+  assert(ds->_levelsq >= 0);
   ds->_levelsq--;
 }
 
@@ -147,60 +150,51 @@ static inline void reset_defined_length_sequence(struct _dataset *ds) {
 }
 
 static inline void reset_cur_defined_length_sequence(struct _dataset *ds) {
-  assert( ds->_deflensq[ds->_levelsq] != kUndefinedLength );
+  assert(ds->_deflensq[ds->_levelsq] != kUndefinedLength);
   ds->_deflensq[ds->_levelsq] = kUndefinedLength;
   ds->_curdeflensq[ds->_levelsq] = 0;
   popsqlevel(ds);
 }
 
-
-static inline void set_deflensq(struct _dataset *ds, vl_t len)
-{
+static inline void set_deflensq(struct _dataset *ds, vl_t len) {
   pushsqlevel(ds);
-  assert( ds->_deflensq[ds->_levelsq] == kUndefinedLength );
+  assert(ds->_deflensq[ds->_levelsq] == kUndefinedLength);
   ds->_deflensq[ds->_levelsq] = len;
 }
 
-static inline vl_t get_deflensq(struct _dataset *ds)
-{
-  if( ds->_levelsq == -1 ) return kUndefinedLength;
-  assert( ds->_levelsq >= 0 );
-  assert( ds->_levelsq < MAX_LEVEL_SQ );
+static inline vl_t get_deflensq(struct _dataset *ds) {
+  if (ds->_levelsq == -1) return kUndefinedLength;
+  assert(ds->_levelsq >= 0);
+  assert(ds->_levelsq < MAX_LEVEL_SQ);
   return ds->_deflensq[ds->_levelsq];
 }
 
-
-static inline void set_curdeflensq(struct _dataset *ds, vl_t len)
-{
-  assert( ds->_levelsq >= 0 );
-  assert( ds->_levelsq < MAX_LEVEL_SQ );
-  assert( ds->_curdeflensq[ds->_levelsq] <= ds->_deflensq[ds->_levelsq] );
+static inline void set_curdeflensq(struct _dataset *ds, vl_t len) {
+  assert(ds->_levelsq >= 0);
+  assert(ds->_levelsq < MAX_LEVEL_SQ);
+  assert(ds->_curdeflensq[ds->_levelsq] <= ds->_deflensq[ds->_levelsq]);
   ds->_curdeflensq[ds->_levelsq] = len;
-  assert( ds->_curdeflensq[ds->_levelsq] <= ds->_deflensq[ds->_levelsq] );
+  assert(ds->_curdeflensq[ds->_levelsq] <= ds->_deflensq[ds->_levelsq]);
 }
 
-static inline vl_t get_curdeflensq(struct _dataset *ds)
-{
-  if( ds->_levelsq == -1 ) return 0;
-  assert( ds->_levelsq >= 0 );
-  assert( ds->_levelsq < MAX_LEVEL_SQ );
+static inline vl_t get_curdeflensq(struct _dataset *ds) {
+  if (ds->_levelsq == -1) return 0;
+  assert(ds->_levelsq >= 0);
+  assert(ds->_levelsq < MAX_LEVEL_SQ);
   return ds->_curdeflensq[ds->_levelsq];
 }
 #undef MAX_LEVEL_SQ
-static inline void pushitemlevel(struct _dataset *ds)
-{
-  assert( ds->_levelitem < MAX_LEVEL_ITEM);
+static inline void pushitemlevel(struct _dataset *ds) {
+  assert(ds->_levelitem < MAX_LEVEL_ITEM);
   ds->_levelitem++;
-  assert( ds->_levelitem >= 0);
+  assert(ds->_levelitem >= 0);
 }
 
-static inline void popitemlevel(struct _dataset *ds)
-{
-  assert( ds->_levelitem < MAX_LEVEL_ITEM);
-  assert( ds->_levelitem >= 0);
+static inline void popitemlevel(struct _dataset *ds) {
+  assert(ds->_levelitem < MAX_LEVEL_ITEM);
+  assert(ds->_levelitem >= 0);
   ds->_levelitem--;
 }
-
 
 static inline void reset_defined_length_item(struct _dataset *ds) {
   ds->_levelitem = -1;
@@ -210,42 +204,36 @@ static inline void reset_defined_length_item(struct _dataset *ds) {
   }
 }
 static inline void reset_cur_defined_length_item(struct _dataset *ds) {
-  assert( ds->_deflenitem[ds->_levelitem] != kUndefinedLength );
+  assert(ds->_deflenitem[ds->_levelitem] != kUndefinedLength);
   ds->_deflenitem[ds->_levelitem] = kUndefinedLength;
   ds->_curdeflenitem[ds->_levelitem] = 0;
   popitemlevel(ds);
 }
 
-
-static inline void set_deflenitem(struct _dataset *ds, vl_t len)
-{
-  assert( ds->_deflenitem[ds->_levelitem] == kUndefinedLength );
+static inline void set_deflenitem(struct _dataset *ds, vl_t len) {
+  assert(ds->_deflenitem[ds->_levelitem] == kUndefinedLength);
   ds->_deflenitem[ds->_levelitem] = len;
 }
 
-static inline vl_t get_deflenitem(struct _dataset *ds)
-{
-  if( ds->_levelitem == -1 ) return kUndefinedLength;
-  assert( ds->_levelitem >= 0 );
-  assert( ds->_levelitem < MAX_LEVEL_ITEM );
+static inline vl_t get_deflenitem(struct _dataset *ds) {
+  if (ds->_levelitem == -1) return kUndefinedLength;
+  assert(ds->_levelitem >= 0);
+  assert(ds->_levelitem < MAX_LEVEL_ITEM);
   return ds->_deflenitem[ds->_levelitem];
 }
 
-
-static inline void set_curdeflenitem(struct _dataset *ds, vl_t len)
-{
-  assert( ds->_levelitem >= 0 );
-  assert( ds->_levelitem < MAX_LEVEL_ITEM);
-  assert( ds->_curdeflenitem[ds->_levelitem] <= ds->_deflenitem[ds->_levelitem] );
+static inline void set_curdeflenitem(struct _dataset *ds, vl_t len) {
+  assert(ds->_levelitem >= 0);
+  assert(ds->_levelitem < MAX_LEVEL_ITEM);
+  assert(ds->_curdeflenitem[ds->_levelitem] <= ds->_deflenitem[ds->_levelitem]);
   ds->_curdeflenitem[ds->_levelitem] = len;
-  assert( ds->_curdeflenitem[ds->_levelitem] <= ds->_deflenitem[ds->_levelitem] );
+  assert(ds->_curdeflenitem[ds->_levelitem] <= ds->_deflenitem[ds->_levelitem]);
 }
 
-static inline vl_t get_curdeflenitem(struct _dataset *ds)
-{
-  if( ds->_levelitem == -1 ) return 0;
-  assert( ds->_levelitem >= 0 );
-  assert( ds->_levelitem < MAX_LEVEL_ITEM );
+static inline vl_t get_curdeflenitem(struct _dataset *ds) {
+  if (ds->_levelitem == -1) return 0;
+  assert(ds->_levelitem >= 0);
+  assert(ds->_levelitem < MAX_LEVEL_ITEM);
   return ds->_curdeflenitem[ds->_levelitem];
 }
 
@@ -261,9 +249,8 @@ struct _filemetaset {
   vl_t curfmelen;
 };
 
-
 static inline void reset_dataset(struct _dataset *ds) {
-  ds->curgroup = 0; // uint_fast16_t
+  ds->curgroup = 0;  // uint_fast16_t
   ds->grouplen = kUndefinedLength;
   ds->curgrouplen = 0;
   reset_defined_length_item(ds);
@@ -293,7 +280,7 @@ bool dicm_de_is_end_sq(const struct _dataelement *de);
 bool dicm_de_is_encapsulated_pixel_data(const struct _dataelement *de);
 bool dicm_de_is_sq(const struct _dataelement *de);
 
-//void dicm_de_flush(struct _dataelement *de);
- 
+// void dicm_de_flush(struct _dataelement *de);
+
 typedef struct _dataelement dataelement_t;
 typedef struct _filemetaelement filemetaelement_t;
