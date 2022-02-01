@@ -5,24 +5,23 @@ add_library(dicm SHARED ${dicm_SRCS})
 
 # https://interrupt.memfault.com/blog/best-and-worst-gcc-clang-compiler-flags
 set(flags
--Wall
-          -Wextra
-          # -Werror
-          -Wshadow
-          -Wdouble-promotion
-          -Wformat=2
-          -Wformat-truncation
-          -Wundef
-          -fno-common
-          # -fstack-usage
-          -Wstack-usage=512
-          -Wconversion
-          -Wunused-parameter)
+    -Wall
+    -Wextra
+    # -Werror
+    -Wshadow
+    -Wdouble-promotion
+    -Wformat=2
+    -Wformat-truncation
+    -Wundef
+    -fno-common
+    # -fstack-usage
+    -Wstack-usage=512
+    -Wconversion
+    -Wunused-parameter)
 
 target_compile_options(
   dicm
-  PRIVATE 
-  # clang/gcc warnings:
-  "$<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:GNU>>:${flags}>"
-  # MSVC warnings:
+  PRIVATE # clang/gcc warnings:
+          "$<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:GNU>>:${flags}>"
+          # MSVC warnings:
           "$<$<C_COMPILER_ID:MSVC>:/W4>")
