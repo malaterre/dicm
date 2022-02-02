@@ -38,7 +38,9 @@ static inline uint_fast16_t get_group(tag_t tag) {
 static inline uint_fast16_t get_element(tag_t tag) {
   return (uint16_t)(tag & (uint16_t)0xffff);
 }
-
+static inline const char * get_vr(vr_t vr) {
+  return vr;
+}
 struct _dataelement {
   tag_t tag;
   vr_t vr;
