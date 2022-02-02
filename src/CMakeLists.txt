@@ -1,7 +1,10 @@
+include(GenerateExportHeader)
+
 set(dicm_SRCS dicm-de.c dicm-log.c dicm-parser.c dicm-parser-exp.c dicm-uid.c
               dicm.c)
 
 add_library(dicm SHARED ${dicm_SRCS})
+generate_export_header(dicm)
 
 # https://interrupt.memfault.com/blog/best-and-worst-gcc-clang-compiler-flags
 set(flags
