@@ -26,7 +26,7 @@ static inline uval_t get_val_impl(struct opaque *opaque) {
 }
 
 struct opaque {
-  int:0;
+  int : 0;
 };
 
 #define get_val(val) get_val_impl(val).bytes

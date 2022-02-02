@@ -44,7 +44,6 @@
 #error sorry
 #endif
 
-
 //#define DOSWAP
 
 // strnlen requires >= 200809

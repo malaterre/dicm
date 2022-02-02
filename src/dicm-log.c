@@ -32,7 +32,11 @@ void set_global_logger(struct _log *log) { global_log = log; }
 
 void log_errno(log_level_t llevel) {
   char buf[1024];
-  //strerror_r(errno, buf, sizeof buf);
-  strerror_s(buf, sizeof buf, errno );
+#ifdef _MSC_VER
+// https://stackoverflow.com/questions/17960423/what-is-the-oldest-version-of-gcc-glibc-that-supports-the-strerrorlen-s-and-stre
+  strerror_s(buf, sizeof buf, errno);
+#else
+  strerror_r(errno, buf, sizeof buf);
+#endif
   global_log->ops->msg(global_log, llevel, buf);
 }
