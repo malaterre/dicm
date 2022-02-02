@@ -21,6 +21,7 @@
 #pragma once
 
 #include "dicm-features.h"
+#include "dicm-public.h"
 
 #include <assert.h>
 #include <stdbool.h>
@@ -28,10 +29,6 @@
 #include <stdint.h>
 #include <string.h>
 
-typedef uint32_t tag_t;
-typedef uint16_t vr_t;  // FIXME should it be u32 ?
-typedef uint32_t vl_t;
-typedef char byte_t;
 
 typedef struct {
   vr_t vr;
@@ -62,39 +59,6 @@ typedef union {
   byte_t bytes[2];
   uint16_t vl16;
 } uvl16_t;
-
-static inline uint_fast16_t get_group(tag_t tag) {
-  return (uint16_t)(tag >> 16);
-}
-static inline uint_fast16_t get_element(tag_t tag) {
-  return (uint16_t)(tag & (uint16_t)0xffff);
-}
-
-// FIXME remove uvr_t from API
-static inline uvr_t get_vr_impl(vr_t vr) {
-  uvr_t ret;
-  ret.vr = vr;
-  return ret;
-}
-
-#define get_vr(vr) get_vr_impl(vr).bytes
-
-struct _dataelement {
-  tag_t tag;
-  vr_t vr;
-  /*
-   * Implementation design. VL is part of the dataelement, since there is a
-   * tight relation in between VR and VL.
-   */
-  vl_t vl;
-};
-
-// FIXME copy paste of _dataelement
-struct _filemetaelement {
-  tag_t tag;
-  vr_t vr;
-  vl_t vl;
-};
 
 // Define the minimal dataset info structure with a max nesting level of one to
 // parse defined length SQ + defined length item.
@@ -282,5 +246,4 @@ bool dicm_de_is_sq(const struct _dataelement *de);
 
 // void dicm_de_flush(struct _dataelement *de);
 
-typedef struct _dataelement dataelement_t;
-typedef struct _filemetaelement filemetaelement_t;
+

@@ -56,7 +56,7 @@
 
 // Full list of VRs as of DICOM 2017a
 enum VR {
-  kINVALID = 0, /* Item, Item Delimitation Item & Sequence Delimitation Item */
+  kINVALID = 0x0000, /* Item, Item Delimitation Item & Sequence Delimitation Item */
   kAE = MAKE_VR('A', 'E'),
   kAS = MAKE_VR('A', 'S'),
   kAT = MAKE_VR('A', 'T'),
