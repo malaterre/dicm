@@ -26,16 +26,24 @@
 #define __maybe_unused __attribute__((__unused__))
 #define __must_check __attribute__((__warn_unused_result__))
 #define __packed __attribute__((packed))
+
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
 #elif _MSC_VER
 #define __maybe_unused
 #define __must_check
 #define __packed
+
+#define likely(x) (x)
+#define unlikely(x) (x)
+
+#define _CRT_SECURE_NO_WARNINGS
+
 #else
 #error sorry
 #endif
 
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
 
 //#define DOSWAP
 
