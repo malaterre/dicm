@@ -30,9 +30,7 @@ static void print_separator() {
 }
 static void json_start_fmi(DICM_UNUSED struct _writer *writer) {}
 
-static void json_end_fmi(DICM_UNUSED struct _writer *writer) {
-  printf("{\n");
-}
+static void json_end_fmi(DICM_UNUSED struct _writer *writer) { printf("{\n"); }
 
 static void json_fmi_gl(DICM_UNUSED struct _writer *writer,
                         DICM_UNUSED uint32_t gl) {}

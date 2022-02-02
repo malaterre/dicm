@@ -104,9 +104,8 @@ static void event_end_frags(DICM_UNUSED struct _writer *writer,
   printf("kSequenceOfFragmentsDelimitationItem\n");
 }
 
-static void event_sequenceofitems(
-    DICM_UNUSED struct _writer *writer,
-    DICM_UNUSED const struct _dataelement *de) {
+static void event_sequenceofitems(DICM_UNUSED struct _writer *writer,
+                                  DICM_UNUSED const struct _dataelement *de) {
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kSequenceOfItems %u\n", de->vl);
   ++event_level;

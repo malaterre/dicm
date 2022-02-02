@@ -37,62 +37,65 @@ struct _dicm_prefix {
   byte_t data[4];
 };
 
-struct _dicm_sreader *dicm_sreader_init(struct _mem *mem);
+DICM_EXPORT struct _dicm_sreader *dicm_sreader_init(struct _mem *mem);
 
-void dicm_sreader_set_src(struct _dicm_sreader *sreader, struct _src *src);
+DICM_EXPORT void dicm_sreader_set_src(struct _dicm_sreader *sreader,
+                                      struct _src *src);
 
-void dicm_sreader_stream_filemetaelements(struct _dicm_sreader *sreader,
-                                          bool stream_filemetaelements);
-void dicm_sreader_group_length(struct _dicm_sreader *sreader,
-                               bool group_length);
+DICM_EXPORT void dicm_sreader_stream_filemetaelements(
+    struct _dicm_sreader *sreader, bool stream_filemetaelements);
+DICM_EXPORT void dicm_sreader_group_length(struct _dicm_sreader *sreader,
+                                           bool group_length);
 
 /**
  * Read file meta info (preamble, prefix, file meta elements)
  */
-DICM_CHECK_RETURN bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader);
+DICM_CHECK_RETURN bool dicm_sreader_read_meta_info(
+    struct _dicm_sreader *sreader);
 
-int dicm_sreader_fini(struct _dicm_sreader *sreader);
+DICM_EXPORT int dicm_sreader_fini(struct _dicm_sreader *sreader);
 
 /**
  * Indicate whether or not there is a next dataelement
  */
-DICM_CHECK_RETURN bool dicm_sreader_hasnext(struct _dicm_sreader *sreader);
+DICM_EXPORT DICM_CHECK_RETURN bool dicm_sreader_hasnext(
+    struct _dicm_sreader *sreader);
 
 /**
  * Move to next dataelement
  */
-int dicm_sreader_next(struct _dicm_sreader *sreader);
+DICM_EXPORT int dicm_sreader_next(struct _dicm_sreader *sreader);
 
 /**
  * Return DICOM File Preamble
  */
-DICM_CHECK_RETURN bool dicm_sreader_get_file_preamble(
+DICM_EXPORT DICM_CHECK_RETURN bool dicm_sreader_get_file_preamble(
     struct _dicm_sreader *sreader, struct _dicm_filepreamble *filepreamble);
 
 /**
  * Return DICOM Prefix
  */
-DICM_CHECK_RETURN bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
-                                          struct _dicm_prefix *prefix);
+DICM_EXPORT DICM_CHECK_RETURN bool dicm_sreader_get_prefix(
+    struct _dicm_sreader *sreader, struct _dicm_prefix *prefix);
 
 /**
  * Return current filedataelement
  */
-DICM_CHECK_RETURN bool dicm_sreader_get_filemetaelement(
+DICM_EXPORT DICM_CHECK_RETURN bool dicm_sreader_get_filemetaelement(
     struct _dicm_sreader *sreader, struct _filemetaelement *fme);
 
 /**
  * Return current dataelement
  */
-DICM_CHECK_RETURN bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
-                                               struct _dataelement *de);
+DICM_EXPORT DICM_CHECK_RETURN bool dicm_sreader_get_dataelement(
+    struct _dicm_sreader *sreader, struct _dataelement *de);
 
 /**
  * Return current dataelement value.
  */
-size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
-                                           const struct _dataelement *de,
-                                           char *buf, size_t buflen);
+DICM_EXPORT size_t dicm_sreader_pull_dataelement_value(
+    struct _dicm_sreader *sreader, const struct _dataelement *de, char *buf,
+    size_t buflen);
 
 struct _dataset *dicm_sreader_get_dataset(struct _dicm_sreader *sreader);
 
