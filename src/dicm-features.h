@@ -23,6 +23,7 @@
 //#include <stdbool.h>
 
 #ifdef __GNUC__
+
 #define __maybe_unused __attribute__((__unused__))
 #define __must_check __attribute__((__warn_unused_result__))
 #define __packed __attribute__((packed))

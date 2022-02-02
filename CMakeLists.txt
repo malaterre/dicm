@@ -9,8 +9,11 @@ set(CMAKE_C_EXTENSIONS OFF)
 # good default for executables:
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+# only expose shared option to advanced users:
+mark_as_advanced(BUILD_SHARED_LIBS)
 # Define visibility settings globally (for now?)
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_C_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 include(GNUInstallDirs)
