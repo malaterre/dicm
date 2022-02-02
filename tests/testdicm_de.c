@@ -31,7 +31,7 @@ struct opaque {
 
 #define get_val(val) get_val_impl(val).bytes
 
-int testdicm_de(__maybe_unused int argc, __maybe_unused char *argv[]) {
+int testdicm_de(DICM_UNUSED int argc, DICM_UNUSED char *argv[]) {
   printf("tag_t: %lu\n", sizeof(tag_t));
   printf("vr_t: %lu\n", sizeof(vr_t));
   printf("vl_t: %lu\n", sizeof(vl_t));

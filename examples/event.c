@@ -25,79 +25,79 @@
 
 static unsigned int event_level = 0;
 
-static void event_start_fmi(__maybe_unused struct _writer *writer) {
+static void event_start_fmi(DICM_UNUSED struct _writer *writer) {
   printf("kStartFileMetaInformation\n");
 }
 
-static void event_end_fmi(__maybe_unused struct _writer *writer) {
+static void event_end_fmi(DICM_UNUSED struct _writer *writer) {
   printf("kEndFileMetaInformation\n");
 }
 
-static void event_fmi_gl(__maybe_unused struct _writer *writer,
-                         __maybe_unused uint32_t gl) {
+static void event_fmi_gl(DICM_UNUSED struct _writer *writer,
+                         DICM_UNUSED uint32_t gl) {
   printf("kFileMetaInformationGroupLength\n");
 }
 
-static void event_group_gl(__maybe_unused struct _writer *writer,
-                           __maybe_unused uint32_t gl) {
+static void event_group_gl(DICM_UNUSED struct _writer *writer,
+                           DICM_UNUSED uint32_t gl) {
   printf("kGroupLengthDataElement\n");
 }
 
-static void event_end_group(__maybe_unused struct _writer *writer) {
+static void event_end_group(DICM_UNUSED struct _writer *writer) {
   printf("kEndGroupDataElement\n");
 }
 
 static void event_file_preamble(
-    __maybe_unused struct _writer *writer,
-    __maybe_unused const struct _dicm_filepreamble *fp) {
+    DICM_UNUSED struct _writer *writer,
+    DICM_UNUSED const struct _dicm_filepreamble *fp) {
   printf("kFilePreamble\n");
 }
 
-static void event_prefix(__maybe_unused struct _writer *writer,
-                         __maybe_unused const struct _dicm_prefix *prefix) {
+static void event_prefix(DICM_UNUSED struct _writer *writer,
+                         DICM_UNUSED const struct _dicm_prefix *prefix) {
   printf("kPrefix\n");
 }
 
 static void event_filemetaelement(
-    __maybe_unused struct _writer *writer,
-    __maybe_unused const struct _filemetaelement *fme) {
+    DICM_UNUSED struct _writer *writer,
+    DICM_UNUSED const struct _filemetaelement *fme) {
   printf("kFileMetaElement\n");
 }
 
-static void event_item(__maybe_unused struct _writer *writer,
-                       __maybe_unused const struct _dataelement *de) {
+static void event_item(DICM_UNUSED struct _writer *writer,
+                       DICM_UNUSED const struct _dataelement *de) {
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kItem %u\n", de->vl);
 }
 
-static void event_bot(__maybe_unused struct _writer *writer,
-                      __maybe_unused const struct _dataelement *de) {
+static void event_bot(DICM_UNUSED struct _writer *writer,
+                      DICM_UNUSED const struct _dataelement *de) {
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kBasicOffsetTable\n");
 }
 
-static void event_fragment(__maybe_unused struct _writer *writer,
-                           __maybe_unused const struct _dataelement *de) {
+static void event_fragment(DICM_UNUSED struct _writer *writer,
+                           DICM_UNUSED const struct _dataelement *de) {
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kFragment\n");
 }
 
-static void event_end_item(__maybe_unused struct _writer *writer,
-                           __maybe_unused const struct _dataelement *de) {
+static void event_end_item(DICM_UNUSED struct _writer *writer,
+                           DICM_UNUSED const struct _dataelement *de) {
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kItemDelimitationItem\n");
 }
 
-static void event_end_sq(__maybe_unused struct _writer *writer,
-                         __maybe_unused const struct _dataelement *de) {
+static void event_end_sq(DICM_UNUSED struct _writer *writer,
+                         DICM_UNUSED const struct _dataelement *de) {
   assert(event_level > 0);
   --event_level;
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kSequenceOfItemsDelimitationItem\n");
 }
 
-static void event_end_frags(__maybe_unused struct _writer *writer,
-                            __maybe_unused const struct _dataelement *de) {
+static void event_end_frags(DICM_UNUSED struct _writer *writer,
+                            DICM_UNUSED const struct _dataelement *de) {
   assert(event_level > 0);
   --event_level;
   if (event_level) printf("%*c", 2 * event_level, ' ');
@@ -105,23 +105,23 @@ static void event_end_frags(__maybe_unused struct _writer *writer,
 }
 
 static void event_sequenceofitems(
-    __maybe_unused struct _writer *writer,
-    __maybe_unused const struct _dataelement *de) {
+    DICM_UNUSED struct _writer *writer,
+    DICM_UNUSED const struct _dataelement *de) {
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kSequenceOfItems %u\n", de->vl);
   ++event_level;
 }
 
 static void event_sequenceoffragments(
-    __maybe_unused struct _writer *writer,
-    __maybe_unused const struct _dataelement *de) {
+    DICM_UNUSED struct _writer *writer,
+    DICM_UNUSED const struct _dataelement *de) {
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kSequenceOfFragments\n");
   ++event_level;
 }
 
-static void event_dataelement(__maybe_unused struct _writer *writer,
-                              __maybe_unused const struct _dataelement *de) {
+static void event_dataelement(DICM_UNUSED struct _writer *writer,
+                              DICM_UNUSED const struct _dataelement *de) {
   if (event_level) printf("%*c", 2 * event_level, ' ');
   printf("kDataElement\n");
 }

@@ -25,7 +25,7 @@
 
 static unsigned int default_level = 0;
 
-static void default_file_preamble(__maybe_unused struct _writer *writer,
+static void default_file_preamble(DICM_UNUSED struct _writer *writer,
                                   const struct _dicm_filepreamble *fp) {
   const char *buf = fp->data;
   for (int i = 0; i < 128; ++i) {
@@ -34,50 +34,50 @@ static void default_file_preamble(__maybe_unused struct _writer *writer,
   printf("\n");
 }
 
-static void default_prefix(__maybe_unused struct _writer *writer,
+static void default_prefix(DICM_UNUSED struct _writer *writer,
                            const struct _dicm_prefix *prefix) {
   const char *buf = prefix->data;
   printf("%.4s\n", buf);
 }
 
-static void default_filemetaelement(__maybe_unused struct _writer *writer,
+static void default_filemetaelement(DICM_UNUSED struct _writer *writer,
                                     const struct _filemetaelement *fme) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(fme->tag),
          (unsigned int)get_element(fme->tag), get_vr(fme->vr), fme->vl);
 }
 
-static void default_item(__maybe_unused struct _writer *writer,
-                         __maybe_unused const struct _dataelement *de) {
+static void default_item(DICM_UNUSED struct _writer *writer,
+                         DICM_UNUSED const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void default_bot(__maybe_unused struct _writer *writer,
-                        __maybe_unused const struct _dataelement *de) {
+static void default_bot(DICM_UNUSED struct _writer *writer,
+                        DICM_UNUSED const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void default_fragment(__maybe_unused struct _writer *writer,
-                             __maybe_unused const struct _dataelement *de) {
+static void default_fragment(DICM_UNUSED struct _writer *writer,
+                             DICM_UNUSED const struct _dataelement *de) {
   printf(">>\n");
 }
 
-static void default_end_item(__maybe_unused struct _writer *writer,
-                             __maybe_unused const struct _dataelement *de) {}
+static void default_end_item(DICM_UNUSED struct _writer *writer,
+                             DICM_UNUSED const struct _dataelement *de) {}
 
-static void default_end_sq(__maybe_unused struct _writer *writer,
-                           __maybe_unused const struct _dataelement *de) {
+static void default_end_sq(DICM_UNUSED struct _writer *writer,
+                           DICM_UNUSED const struct _dataelement *de) {
   assert(default_level > 0);
   --default_level;
 }
 
-static void default_end_frags(__maybe_unused struct _writer *writer,
-                              __maybe_unused const struct _dataelement *de) {
+static void default_end_frags(DICM_UNUSED struct _writer *writer,
+                              DICM_UNUSED const struct _dataelement *de) {
   assert(default_level > 0);
   --default_level;
 }
 
-static void default_sequenceofitems(__maybe_unused struct _writer *writer,
+static void default_sequenceofitems(DICM_UNUSED struct _writer *writer,
                                     const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
@@ -85,7 +85,7 @@ static void default_sequenceofitems(__maybe_unused struct _writer *writer,
   ++default_level;
 }
 
-static void default_sequenceoffragments(__maybe_unused struct _writer *writer,
+static void default_sequenceoffragments(DICM_UNUSED struct _writer *writer,
                                         const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),
@@ -93,7 +93,7 @@ static void default_sequenceoffragments(__maybe_unused struct _writer *writer,
   ++default_level;
 }
 
-static void default_dataelement(__maybe_unused struct _writer *writer,
+static void default_dataelement(DICM_UNUSED struct _writer *writer,
                                 const struct _dataelement *de) {
   if (default_level) printf("%*c", 1 << default_level, ' ');
   printf("%04x,%04x %.2s %d\n", (unsigned int)get_group(de->tag),

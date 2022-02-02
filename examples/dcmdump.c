@@ -36,8 +36,8 @@ static void write_with_indent(int indent, const char *string) {
 #endif
 
 static void dcmdump_file_preamble(
-    __maybe_unused struct _writer *writer,
-    __maybe_unused const struct _dicm_filepreamble *fp) {
+    DICM_UNUSED struct _writer *writer,
+    DICM_UNUSED const struct _dicm_filepreamble *fp) {
   printf("\n");
   printf("# Dicom-File-Format\n");
   printf("\n");
@@ -45,8 +45,8 @@ static void dcmdump_file_preamble(
   printf("# Used TransferSyntax: Little Endian Explicit\n");
 }
 
-static void dcmdump_prefix(__maybe_unused struct _writer *writer,
-                           __maybe_unused const struct _dicm_prefix *prefix) {}
+static void dcmdump_prefix(DICM_UNUSED struct _writer *writer,
+                           DICM_UNUSED const struct _dicm_prefix *prefix) {}
 
 static void write_ob(char *str, const char *buf, size_t len) {
   char *pstr = str;
@@ -117,32 +117,32 @@ static void dcmdump_filemetaelement(struct _writer *writer,
   write_dataelement(writer, (const struct _dataelement *)fme);
 }
 
-static void dcmdump_item(__maybe_unused struct _writer *writer,
-                         __maybe_unused const struct _dataelement *de) {
+static void dcmdump_item(DICM_UNUSED struct _writer *writer,
+                         DICM_UNUSED const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf(
       "(fffe,e000) na (Item with undefined length #=)        # u/l, 1 Item\n");
   ++dcmdump_level;
 }
 
-static void dcmdump_bot(__maybe_unused struct _writer *writer,
-                        __maybe_unused const struct _dataelement *de) {
+static void dcmdump_bot(DICM_UNUSED struct _writer *writer,
+                        DICM_UNUSED const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf(
       "(fffe,e000) pi (no value available)                     #   0, 1 "
       "Item\n");
 }
 
-static void dcmdump_fragment(__maybe_unused struct _writer *writer,
-                             __maybe_unused const struct _dataelement *de) {
+static void dcmdump_fragment(DICM_UNUSED struct _writer *writer,
+                             DICM_UNUSED const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf(
       "(fffe,e000) pi (no value available)                     #   0, 1 "
       "Item\n");
 }
 
-static void dcmdump_end_item(__maybe_unused struct _writer *writer,
-                             __maybe_unused const struct _dataelement *de) {
+static void dcmdump_end_item(DICM_UNUSED struct _writer *writer,
+                             DICM_UNUSED const struct _dataelement *de) {
   assert(dcmdump_level > 0);
   --dcmdump_level;
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
@@ -151,8 +151,8 @@ static void dcmdump_end_item(__maybe_unused struct _writer *writer,
       "ItemDelimitationItem\n");
 }
 
-static void dcmdump_end_sq(__maybe_unused struct _writer *writer,
-                           __maybe_unused const struct _dataelement *de) {
+static void dcmdump_end_sq(DICM_UNUSED struct _writer *writer,
+                           DICM_UNUSED const struct _dataelement *de) {
   assert(dcmdump_level > 0);
   --dcmdump_level;
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
@@ -161,8 +161,8 @@ static void dcmdump_end_sq(__maybe_unused struct _writer *writer,
       "SequenceDelimitationItem\n");
 }
 
-static void dcmdump_end_frags(__maybe_unused struct _writer *writer,
-                              __maybe_unused const struct _dataelement *de) {
+static void dcmdump_end_frags(DICM_UNUSED struct _writer *writer,
+                              DICM_UNUSED const struct _dataelement *de) {
   assert(dcmdump_level > 0);
   --dcmdump_level;
   printf(
@@ -170,7 +170,7 @@ static void dcmdump_end_frags(__maybe_unused struct _writer *writer,
       "SequenceDelimitationItem\n");
 }
 
-static void dcmdump_sequenceofitems(__maybe_unused struct _writer *writer,
+static void dcmdump_sequenceofitems(DICM_UNUSED struct _writer *writer,
                                     const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf("(%04x,%04x) %.2s %d\n", (unsigned int)get_group(de->tag),
@@ -178,7 +178,7 @@ static void dcmdump_sequenceofitems(__maybe_unused struct _writer *writer,
   ++dcmdump_level;
 }
 
-static void dcmdump_sequenceoffragments(__maybe_unused struct _writer *writer,
+static void dcmdump_sequenceoffragments(DICM_UNUSED struct _writer *writer,
                                         const struct _dataelement *de) {
   if (dcmdump_level) printf("%*c", 1 << dcmdump_level, ' ');
   printf("(%04x,%04x) %.2s %d\n", (unsigned int)get_group(de->tag),

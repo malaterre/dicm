@@ -28,63 +28,63 @@ static const char *separator = NULL;
 static void print_separator() {
   if (separator) printf(separator);
 }
-static void json_start_fmi(__maybe_unused struct _writer *writer) {}
+static void json_start_fmi(DICM_UNUSED struct _writer *writer) {}
 
-static void json_end_fmi(__maybe_unused struct _writer *writer) {
+static void json_end_fmi(DICM_UNUSED struct _writer *writer) {
   printf("{\n");
 }
 
-static void json_fmi_gl(__maybe_unused struct _writer *writer,
-                        __maybe_unused uint32_t gl) {}
+static void json_fmi_gl(DICM_UNUSED struct _writer *writer,
+                        DICM_UNUSED uint32_t gl) {}
 
-static void json_group_gl(__maybe_unused struct _writer *writer,
-                          __maybe_unused uint32_t gl) {}
+static void json_group_gl(DICM_UNUSED struct _writer *writer,
+                          DICM_UNUSED uint32_t gl) {}
 
-static void json_end_group(__maybe_unused struct _writer *writer) {}
+static void json_end_group(DICM_UNUSED struct _writer *writer) {}
 
 static void json_file_preamble(
-    __maybe_unused struct _writer *writer,
-    __maybe_unused const struct _dicm_filepreamble *fp) {}
+    DICM_UNUSED struct _writer *writer,
+    DICM_UNUSED const struct _dicm_filepreamble *fp) {}
 
-static void json_prefix(__maybe_unused struct _writer *writer,
-                        __maybe_unused const struct _dicm_prefix *prefix) {}
+static void json_prefix(DICM_UNUSED struct _writer *writer,
+                        DICM_UNUSED const struct _dicm_prefix *prefix) {}
 
 static void json_filemetaelement(
-    __maybe_unused struct _writer *writer,
-    __maybe_unused const struct _filemetaelement *fme) {}
+    DICM_UNUSED struct _writer *writer,
+    DICM_UNUSED const struct _filemetaelement *fme) {}
 
-static void json_item(__maybe_unused struct _writer *writer,
-                      __maybe_unused const struct _dataelement *de) {
+static void json_item(DICM_UNUSED struct _writer *writer,
+                      DICM_UNUSED const struct _dataelement *de) {
   print_separator();
   printf("{\n");
   separator = NULL;
 }
 
-static void json_bot(__maybe_unused struct _writer *writer,
-                     __maybe_unused const struct _dataelement *de) {}
+static void json_bot(DICM_UNUSED struct _writer *writer,
+                     DICM_UNUSED const struct _dataelement *de) {}
 
-static void json_fragment(__maybe_unused struct _writer *writer,
-                          __maybe_unused const struct _dataelement *de) {}
+static void json_fragment(DICM_UNUSED struct _writer *writer,
+                          DICM_UNUSED const struct _dataelement *de) {}
 
-static void json_end_item(__maybe_unused struct _writer *writer,
-                          __maybe_unused const struct _dataelement *de) {
+static void json_end_item(DICM_UNUSED struct _writer *writer,
+                          DICM_UNUSED const struct _dataelement *de) {
   printf("}\n");
 }
 
-static void json_end_sq(__maybe_unused struct _writer *writer,
-                        __maybe_unused const struct _dataelement *de) {
+static void json_end_sq(DICM_UNUSED struct _writer *writer,
+                        DICM_UNUSED const struct _dataelement *de) {
   printf("]\n");
   printf("}\n");
   separator = ",\n";
 }
 
-static void json_end_frags(__maybe_unused struct _writer *writer,
-                           __maybe_unused const struct _dataelement *de) {
+static void json_end_frags(DICM_UNUSED struct _writer *writer,
+                           DICM_UNUSED const struct _dataelement *de) {
   printf("]\n");
 }
 
-static void json_sequenceofitems(__maybe_unused struct _writer *writer,
-                                 __maybe_unused const struct _dataelement *de) {
+static void json_sequenceofitems(DICM_UNUSED struct _writer *writer,
+                                 DICM_UNUSED const struct _dataelement *de) {
   print_separator();
   printf("\"%04x%04x\": {\n \"vr\": \"%.2s\",\n \"Value\": [\n",
          (unsigned int)get_group(de->tag), (unsigned int)get_element(de->tag),
@@ -93,8 +93,8 @@ static void json_sequenceofitems(__maybe_unused struct _writer *writer,
 }
 
 static void json_sequenceoffragments(
-    __maybe_unused struct _writer *writer,
-    __maybe_unused const struct _dataelement *de) {
+    DICM_UNUSED struct _writer *writer,
+    DICM_UNUSED const struct _dataelement *de) {
   //  printf("[\n");
   print_separator();
   printf("\"%04x%04x\": {\n \"vr\": \"%.2s\",\n \"Value\": [\n",
@@ -103,8 +103,8 @@ static void json_sequenceoffragments(
   separator = NULL;
 }
 
-static void json_dataelement(__maybe_unused struct _writer *writer,
-                             __maybe_unused const struct _dataelement *de) {
+static void json_dataelement(DICM_UNUSED struct _writer *writer,
+                             DICM_UNUSED const struct _dataelement *de) {
   print_separator();
   const char value[] = "123";
   printf("\"%04x%04x\": {\n \"vr\": \"%.2s\",\n \"Value\": [%s]\n}",

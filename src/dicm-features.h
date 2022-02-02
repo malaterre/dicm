@@ -24,7 +24,7 @@
 
 #ifdef __GNUC__
 
-#define __maybe_unused __attribute__((__unused__))
+#define DICM_UNUSED __attribute__((__unused__))
 #define __must_check __attribute__((__warn_unused_result__))
 #define __packed __attribute__((packed))
 
@@ -32,7 +32,7 @@
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 #elif _MSC_VER
-#define __maybe_unused
+#define DICM_UNUSED
 #define __must_check
 #define __packed
 
