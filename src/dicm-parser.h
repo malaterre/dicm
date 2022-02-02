@@ -57,7 +57,8 @@
 // Full list of VRs as of DICOM 2017a
 typedef uint16_t vr16_t;
 enum VR16_enum {
-  kINVALID = 0x0000, /* Item, Item Delimitation Item & Sequence Delimitation Item */
+  kINVALID =
+      0x0000, /* Item, Item Delimitation Item & Sequence Delimitation Item */
   kAE = MAKE_VR('A', 'E'),
   kAS = MAKE_VR('A', 'S'),
   kAT = MAKE_VR('A', 'T'),

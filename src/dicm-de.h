@@ -29,7 +29,6 @@
 #include <stdint.h>
 #include <string.h>
 
-
 typedef struct {
   vr_t vr;
   uint16_t reserved;
@@ -245,5 +244,3 @@ bool dicm_de_is_encapsulated_pixel_data(const struct _dataelement *de);
 bool dicm_de_is_sq(const struct _dataelement *de);
 
 // void dicm_de_flush(struct _dataelement *de);
-
-

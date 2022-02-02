@@ -41,7 +41,7 @@ struct _writer_ops {
                        const struct _dicm_prefix *prefix);
   void (*write_filemetaelement)(struct _writer *writer,
                                 const struct _filemetaelement *de);
-// DataSet:
+  // DataSet:
   void (*write_dataelement)(struct _writer *writer,
                             const struct _dataelement *de);
   void (*write_end_group)(struct _writer *writer);
