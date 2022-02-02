@@ -147,7 +147,8 @@ int read_fme(struct _src *src, struct _filemetaset *ds) {
   dataelement_t de;
   if (is_vr16(ude.ede16.uvr.vr)) {
     de.tag = ude.ede16.utag.tag;
-    de.vr = ude.ede16.uvr.vr;
+    de.vr[0] = ude.ede16.uvr.vr[0];
+    de.vr[1] = ude.ede16.uvr.vr[1];
     de.vl = ude.ede16.uvl.vl16;
 
     memcpy(buf, ude.bytes, sizeof ude.ede16);
@@ -160,7 +161,8 @@ int read_fme(struct _src *src, struct _filemetaset *ds) {
     if (unlikely(ret < 4)) return -kNotEnoughData;
 
     de.tag = ude.ede32.utag.tag;
-    de.vr = ude.ede32.uvr.vr.vr;
+    de.vr[0] = ude.ede32.uvr.vr.vr[0];
+    de.vr[1] = ude.ede32.uvr.vr.vr[1];
     de.vl = ude.ede32.uvl.vl;
 
     memcpy(buf, ude.bytes, sizeof ude.ede32);

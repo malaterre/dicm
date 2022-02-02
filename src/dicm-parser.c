@@ -103,11 +103,13 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
       current_state == kSequenceOfFragments) {
     if (bufsize == 12) {
       de->tag = ude.ede32.utag.tag;
-      de->vr = ude.ede32.uvr.vr.vr;
+      de->vr[0] = ude.ede32.uvr.vr.vr[0];
+      de->vr[1] = ude.ede32.uvr.vr.vr[1];
       de->vl = ude.ede32.uvl.vl;
     } else if (bufsize == 8) {
       de->tag = ude.ede16.utag.tag;
-      de->vr = ude.ede16.uvr.vr;
+      de->vr[0] = ude.ede16.uvr.vr[0];
+      de->vr[1] = ude.ede16.uvr.vr[1];
       de->vl = ude.ede16.uvl.vl16;
     } else {
       assert(0);
@@ -119,7 +121,8 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
            current_state == kSequenceOfItemsDelimitationItem ||
            current_state == kSequenceOfFragmentsDelimitationItem);
     de->tag = ude.ide.utag.tag;
-    de->vr = kINVALID;
+    de->vr[0] = kINVALID;
+    de->vr[1] = kINVALID;
     de->vl = ude.ide.uvl.vl;
   }
   return 0;
@@ -144,11 +147,13 @@ int buf_into_filemetaelement(const struct _filemetaset *ds,
       current_state == kFileMetaInformationGroupLength) {
     if (bufsize == 12) {
       fme->tag = ude.ede32.utag.tag;
-      fme->vr = ude.ede32.uvr.vr.vr;
+      fme->vr[0] = ude.ede32.uvr.vr.vr[0];
+      fme->vr[1] = ude.ede32.uvr.vr.vr[1];
       fme->vl = ude.ede32.uvl.vl;
     } else if (bufsize == 8) {
       fme->tag = ude.ede16.utag.tag;
-      fme->vr = ude.ede16.uvr.vr;
+      fme->vr[0] = ude.ede16.uvr.vr[0];
+      fme->vr[1] = ude.ede16.uvr.vr[1];
       fme->vl = ude.ede16.uvl.vl16;
     } else {
       assert(0);

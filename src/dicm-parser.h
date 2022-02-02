@@ -55,7 +55,8 @@
 #endif
 
 // Full list of VRs as of DICOM 2017a
-enum VR {
+typedef uint16_t vr16_t;
+enum VR16_enum {
   kINVALID = 0x0000, /* Item, Item Delimitation Item & Sequence Delimitation Item */
   kAE = MAKE_VR('A', 'E'),
   kAS = MAKE_VR('A', 'S'),
@@ -98,7 +99,8 @@ enum {
 };
 
 static inline bool is_vr16(const vr_t vr) {
-  switch (vr) {
+  const vr16_t vr16 = MAKE_VR(vr[0], vr[1]);
+  switch (vr16) {
     case kAE:
     case kAS:
     case kAT:
@@ -126,7 +128,8 @@ static inline bool is_vr16(const vr_t vr) {
 }
 
 static inline bool is_vr32(const vr_t vr) {
-  switch (vr) {
+  const vr16_t vr16 = MAKE_VR(vr[0], vr[1]);
+  switch (vr16) {
     case kAE:
     case kAS:
     case kAT:
