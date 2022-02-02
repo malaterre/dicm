@@ -26,7 +26,7 @@
 
 #define DICM_UNUSED __attribute__((__unused__))
 #define DICM_CHECK_RETURN __attribute__((__warn_unused_result__))
-#define __packed __attribute__((packed))
+#define DICM_PACKED __attribute__((packed))
 
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
@@ -34,7 +34,7 @@
 #elif _MSC_VER
 #define DICM_UNUSED
 #define DICM_CHECK_RETURN
-#define __packed
+#define DICM_PACKED
 
 #define likely(x) (x)
 #define unlikely(x) (x)
