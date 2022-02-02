@@ -313,7 +313,7 @@ struct _ide {
   uvl_t uvl;
 };  // implicit data element. 8 bytes
 
-int read_filepreamble(struct _src *src, struct _filemetaset *ds);
+DICM_EXPORT int read_filepreamble(struct _src *src, struct _filemetaset *ds);
 int read_prefix(struct _src *src, struct _filemetaset *ds);
 int read_explicit_impl(struct _src *src, struct _dataset *ds);
 
