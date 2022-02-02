@@ -6,8 +6,9 @@ add_library(
   dlog.c file.c copy.c)
 target_compile_definitions(
   dicm-default PRIVATE $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>)
+target_link_libraries(dicm-default dicm)
 add_executable(example1 example1.c default.c event.c json.c dcmdump.c)
-target_link_libraries(example1 dicm dicm-default)
+target_link_libraries(example1 dicm-default)
 
 add_executable(dicm2json dicm2json.c default.c json.c json.c dcmdump.c)
 target_link_libraries(dicm2json dicm dicm-default)
