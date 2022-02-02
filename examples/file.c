@@ -18,6 +18,7 @@
  *  <http://www.gnu.org/licenses/>.
  *
  */
+#define _LARGEFILE_SOURCE
 #define _FILE_OFFSET_BITS 64
 
 #include "dicm-io.h"
@@ -66,12 +67,12 @@ static bool fsrc_at_end(struct _src *src) {
 
 static bool fsrc_seek(struct _src *src, offset_t offset) {
   assert(ferror(src->data) == 0);
-  const bool ret = fseeko(src->data, offset, SEEK_CUR) == 0;
+  const bool ret = fseek(src->data, offset, SEEK_CUR) == 0;
   return ret;
 }
 
 static offset_t fsrc_tell(struct _src *src) {
-  offset_t ret = ftello(src->data);
+  offset_t ret = ftell(src->data);
   if (ret == (offset_t)-1) {
     log_errno(debug);
   }
