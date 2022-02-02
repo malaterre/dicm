@@ -48,3 +48,5 @@
 
 // strnlen requires >= 200809
 #define _POSIX_C_SOURCE 200809L
+
+#include "dicm_export.h"

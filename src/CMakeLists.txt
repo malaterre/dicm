@@ -5,6 +5,7 @@ set(dicm_SRCS dicm-de.c dicm-log.c dicm-parser.c dicm-parser-exp.c dicm-uid.c
 
 add_library(dicm SHARED ${dicm_SRCS})
 generate_export_header(dicm)
+target_include_directories(dicm PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
 # https://interrupt.memfault.com/blog/best-and-worst-gcc-clang-compiler-flags
 set(flags
