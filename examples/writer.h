@@ -26,7 +26,7 @@
 
 struct _writer {
   const struct _writer_ops *ops;
-  struct _dicm_sreader *sreader;  // data
+  struct _dicm_sreader *sreader;  // FIXME this is bad!!
   struct _dst *dst;
 };
 
