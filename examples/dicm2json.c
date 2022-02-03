@@ -49,6 +49,7 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
   while (dicm_sreader_hasnext(sreader)) {
     int next = dicm_sreader_next(sreader);
     switch (next) {
+#if 0
       case kStartFileMetaInformation:
         writer->ops->write_start_fmi(writer);
         break;
@@ -75,7 +76,7 @@ void process_writer(struct _writer *writer, dicm_sreader_t *sreader) {
       case kEndFileMetaInformation:
         writer->ops->write_end_fmi(writer);
         break;
-
+#endif
       case kDataElement:
         if (dicm_sreader_get_dataelement(sreader, &de))
           writer->ops->write_dataelement(writer, &de);

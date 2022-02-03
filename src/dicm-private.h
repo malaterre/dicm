@@ -27,6 +27,7 @@
 #include <stdint.h> /* uint16_t */
 
 enum state {
+#if 0
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part10/chapter_7.html#table_7.1-1
   kStartFileMetaInformation = 0,
   /**
@@ -46,6 +47,7 @@ enum state {
    */
   kFileMetaElement,
   kEndFileMetaInformation,
+#endif
   kDataElement,             // Implicit or Explicit
   kGroupLengthDataElement,  // PS 3.5 §7.2
   kEndGroupDataElement,

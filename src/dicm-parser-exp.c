@@ -111,7 +111,7 @@ int read_explicit_impl(struct _src *src, struct _dataset *ds) {
   // likely(tag_get_group(ude.ede32.utag.tag) >= 0x0008)
   return kDataElement;
 }
-
+#if 0
 int read_fme(struct _src *src, struct _filemetaset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   union {
@@ -209,3 +209,4 @@ int read_fme(struct _src *src, struct _filemetaset *ds) {
   assert(0);
   return -kInvalidTag;
 }
+#endif

@@ -55,6 +55,7 @@ bool dicm_de_is_sq(const struct _dataelement *de) {
   return false;
 }
 
+#if 0
 int read_filepreamble(struct _src *src, struct _filemetaset *ds) {
   char *buf = ds->buffer;
   const size_t size = src->ops->read(src, buf, 128);
@@ -76,6 +77,7 @@ int read_prefix(struct _src *src, struct _filemetaset *ds) {
   ds->bufsize = 4;
   return kDICOMPrefix;
 }
+#endif
 
 int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
                          struct _dataelement *de) {
@@ -90,14 +92,28 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   memcpy(ude.bytes, buf, bufsize);
   SWAP_TAG(ude.ide.utag);
 
+#if 0
   assert(
       current_state !=
-          kFileMetaElement /* should only occur when stream_filemetaelements */
-      && current_state != kFileMetaInformationGroupLength);
+          
+          kFileMetaElement
+          
+           /* should only occur when stream_filemetaelements */
+      
+      && current_state != kFileMetaInformationGroupLength
+     
+      );
+ #endif
 
   if (current_state ==
-          kFileMetaElement /* should only occur when stream_filemetaelements */
-      || current_state == kFileMetaInformationGroupLength ||
+  #if 0
+          kFileMetaElement
+          
+           /* should only occur when stream_filemetaelements */
+      || current_state == kFileMetaInformationGroupLength 
+      ||
+      #endif
+      
       current_state == kDataElement || current_state == kSequenceOfItems ||
       current_state == kGroupLengthDataElement ||
       current_state == kSequenceOfFragments) {
@@ -128,6 +144,7 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
   return 0;
 }
 
+#if 0
 int buf_into_filemetaelement(const struct _filemetaset *ds,
                              enum state current_state,
                              struct _filemetaelement *fme)
@@ -163,3 +180,4 @@ int buf_into_filemetaelement(const struct _filemetaset *ds,
   }
   return 0;
 }
+#endif
