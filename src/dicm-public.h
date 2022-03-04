@@ -39,6 +39,7 @@ static inline uint_fast16_t get_element(tag_t tag) {
   return (uint16_t)(tag & (uint16_t)0xffff);
 }
 static inline const char* get_vr(vr_t vr) { return vr; }
+#if 0
 struct _dataelement {
   tag_t tag;
   vr_t vr;
@@ -59,3 +60,16 @@ struct _filemetaelement {
 
 typedef struct _dataelement dataelement_t;
 typedef struct _filemetaelement filemetaelement_t;
+#else
+#if 0
+struct dicm_data_element {
+  tag_t tag;
+  vr_t vr;
+  /*
+   * Implementation design. VL is part of the dataelement, since there is a
+   * tight relation in between VR and VL.
+   */
+  vl_t vl;
+};
+#endif
+#endif

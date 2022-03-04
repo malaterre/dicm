@@ -35,7 +35,7 @@ int testdicm_de(DICM_UNUSED int argc, DICM_UNUSED char *argv[]) {
   printf("tag_t: %lu\n", sizeof(tag_t));
   printf("vr_t: %lu\n", sizeof(vr_t));
   printf("vl_t: %lu\n", sizeof(vl_t));
-  printf("de: %lu\n", sizeof(struct _dataelement));
+  // printf("de: %lu\n", sizeof(struct _dataelement));
 
   struct {
     utag_t utag;

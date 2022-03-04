@@ -35,8 +35,9 @@ struct _log *global_log = NULL;
 
 void set_global_logger(struct _log *log) { global_log = log; }
 
-void log_errno(log_level_t llevel) {
+void log_errno(log_level_t llevel, int errnum) {
   char buf[1024];
-  strerror_r(errno, buf, sizeof buf);
+  // FIXME: errno may have changed at this point...remove API!!!!
+  strerror_r(errnum, buf, sizeof buf);
   global_log->ops->msg(global_log, llevel, buf);
 }

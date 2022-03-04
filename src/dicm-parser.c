@@ -56,7 +56,7 @@ bool dicm_de_is_sq(const struct _dataelement *de) {
 }
 
 #if 0
-int read_filepreamble(struct _src *src, struct _filemetaset *ds) {
+int read_filepreamble(struct dicm_io *src, struct _filemetaset *ds) {
   char *buf = ds->buffer;
   const size_t size = src->ops->read(src, buf, 128);
   if (unlikely(size < 128)) {
@@ -67,7 +67,7 @@ int read_filepreamble(struct _src *src, struct _filemetaset *ds) {
   return kFilePreamble;
 }
 
-int read_prefix(struct _src *src, struct _filemetaset *ds) {
+int read_prefix(struct dicm_io *src, struct _filemetaset *ds) {
   char *buf = ds->buffer;
   const size_t size = src->ops->read(src, buf, 4);
   if (unlikely(size < 4)) {
@@ -103,18 +103,19 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
       && current_state != kFileMetaInformationGroupLength
      
       );
- #endif
+#endif
 
   if (current_state ==
-  #if 0
+#if 0
           kFileMetaElement
           
            /* should only occur when stream_filemetaelements */
       || current_state == kFileMetaInformationGroupLength 
       ||
-      #endif
-      
-      current_state == kDataElement || current_state == kSequenceOfItems ||
+#endif
+
+          current_state == kDataElement ||
+      current_state == kSequenceOfItems ||
       current_state == kGroupLengthDataElement ||
       current_state == kSequenceOfFragments) {
     if (bufsize == 12) {
@@ -131,15 +132,19 @@ int buf_into_dataelement(const struct _dataset *ds, enum state current_state,
       assert(0);
     }
   } else {
+#if 0
     assert(current_state == kItem || current_state == kBasicOffsetTable ||
            current_state == kFragment ||
            current_state == kItemDelimitationItem ||
            current_state == kSequenceOfItemsDelimitationItem ||
            current_state == kSequenceOfFragmentsDelimitationItem);
+#endif
     de->tag = ude.ide.utag.tag;
     de->vr[0] = kINVALID;
     de->vr[1] = kINVALID;
+#if 0
     de->vl = ude.ide.uvl.vl;
+#endif
   }
   return 0;
 }

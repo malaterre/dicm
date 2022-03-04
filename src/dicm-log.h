@@ -21,7 +21,7 @@ struct _log_ops {
   int (*fini)(struct _log *log);
 };
 
-DICM_EXPORT void log_errno(log_level_t llevel);
+DICM_EXPORT void log_errno(log_level_t llevel, int errnum);
 
 DICM_EXPORT void set_global_logger(struct _log *log);
 

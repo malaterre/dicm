@@ -59,6 +59,36 @@ typedef union {
   uint16_t vl16;
 } uvl16_t;
 
+struct dicm_data_element_key {
+  tag_t tag;
+  vr_t vr;
+  /*
+   * Implementation design. VL is part of the dataelement, since there is a
+   * tight relation in between VR and VL.
+   */
+  vl_t vl;
+};
+
+typedef uint32_t dicm_tag_t;
+typedef uint32_t dicm_vr_t;
+typedef uint32_t dicm_vl_t;
+
+static inline bool is_ascii(dicm_vr_t vr) {
+  switch (vr) {
+    case 0:
+      return true;
+  }
+  return false;
+}
+
+struct dicm_attribute {
+  dicm_tag_t tag;
+  dicm_vr_t vr;
+  dicm_vl_t vl;
+};
+
+static inline const char *get_vr2(dicm_vr_t vr) { return (char *)&vr; }
+
 // Define the minimal dataset info structure with a max nesting level of one to
 // parse defined length SQ + defined length item.
 // Implementation should use tail-recursion optimization to allow processing of

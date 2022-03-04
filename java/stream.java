@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.namespace.QName;
-import javax.xml.stream.XMLEventReader;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamConstants;
@@ -13,7 +13,7 @@ import javax.xml.stream.events.EndElement;
 import javax.xml.stream.events.StartElement;
 import javax.xml.stream.events.XMLEvent;
 
-public class dump {
+public class stream {
 
     public static void main(String[] args) {
         String fileName = args[0];
@@ -23,30 +23,19 @@ public class dump {
     private static void parseXML(String fileName) {
         XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
         try {
-            XMLEventReader xmlEventReader = xmlInputFactory.createXMLEventReader(new FileInputStream(fileName));
-            while(xmlEventReader.hasNext()) {
-                //System.out.println("before" );
- /*
- *  Bulk reading occur in nextEvent(), not in hasNext():
-javax.xml.stream.XMLStreamException: ParseError at [row,col]:[15,13]
-Message: Content is not allowed in trailing section.
-	at java.xml/com.sun.org.apache.xerces.internal.impl.XMLStreamReaderImpl.next(XMLStreamReaderImpl.java:652)
-	at java.xml/com.sun.xml.internal.stream.XMLEventReaderImpl.nextEvent(XMLEventReaderImpl.java:83)
-	at dump.parseXML(dump.java:29)
-	at dump.main(dump.java:20)
- */
-                XMLEvent xmlEvent = xmlEventReader.nextEvent();
-                //System.out.println("after" );
-		switch( xmlEvent.getEventType() ) {
+            XMLStreamReader xmlStreamReader = xmlInputFactory.createXMLStreamReader(new FileInputStream(fileName));
+            while(xmlStreamReader.hasNext()) {
+                int event = xmlStreamReader.next();
+		switch( event ) {
 			case XMLStreamConstants.START_ELEMENT:
-				System.out.println( "START_ELEMENT: " + xmlEvent.asStartElement().getName() );
-				System.out.println( "START_ELEMENT"  );
+				System.out.println( "START_ELEMENT" );
 				break;
 			case XMLStreamConstants.END_ELEMENT:
 				System.out.println( "END_ELEMENT" );
 				break;
 			case XMLStreamConstants.CHARACTERS:
-				System.out.println( "CHARACTERS" );
+				//System.out.println( "CHARACTERS" );
+				System.out.println( "CHARACTERS: "  + xmlStreamReader.getText().length());
 				break;
 			case XMLStreamConstants.ATTRIBUTE:
 				System.out.println( "ATTRIBUTE" );

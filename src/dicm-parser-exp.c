@@ -35,7 +35,7 @@
  * Implementation detail. All the work will simply parse the file structure. No
  * work will be done to byte swap the Data Element Tag or VR
  */
-int read_explicit_impl(struct _src *src, struct _dataset *ds) {
+int read_explicit_impl(struct dicm_io *src, struct _dataset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   union {
     byte_t bytes[12];
@@ -48,8 +48,10 @@ int read_explicit_impl(struct _src *src, struct _dataset *ds) {
 
   const int sequenceoffragments = ds->sequenceoffragments;
 
-  size_t ret = src->ops->read(src, ude.bytes, 8);
-  if (unlikely(ret < 8)) return -kNotEnoughData;
+  // size_t ret = src->ops->read(src, ude.bytes, 8);
+  // if (unlikely(ret < 8)) return -kNotEnoughData;
+  int err = dicm_io_read(src, ude.bytes, 8);
+  if (err) return kNotEnoughData;
 
   if (is_tag_start(ude.ide.utag.tag)) {
     memcpy(buf, ude.bytes, sizeof ude.ide);
@@ -95,8 +97,10 @@ int read_explicit_impl(struct _src *src, struct _dataset *ds) {
   // padding must be set to zero
   if (unlikely(ude.ede32.uvr.vr.reserved != 0)) return -kDicmReservedNotZero;
 
-  ret = src->ops->read(src, ude.ede32.uvl.bytes, 4);
-  if (unlikely(ret < 4)) return -kNotEnoughData;
+  // ret = src->ops->read(src, ude.ede32.uvl.bytes, 4);
+  // if (unlikely(ret < 4)) return -kNotEnoughData;
+  err = dicm_io_read(src, ude.ede32.uvl.bytes, 4);
+  if (unlikely(err)) return kNotEnoughData;
 
   memcpy(buf, ude.bytes, sizeof ude.ede32);
   ds->bufsize = sizeof ude.ede32;
@@ -112,7 +116,7 @@ int read_explicit_impl(struct _src *src, struct _dataset *ds) {
   return kDataElement;
 }
 #if 0
-int read_fme(struct _src *src, struct _filemetaset *ds) {
+int read_fme(struct dicm_io *src, struct _filemetaset *ds) {
   // http://dicom.nema.org/medical/dicom/current/output/chtml/part05/chapter_7.html#sect_7.1.2
   union {
     byte_t bytes[12];

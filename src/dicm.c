@@ -36,9 +36,9 @@ struct _dicm_options {
 };
 
 /** DICM stream reader */
-struct _dicm_sreader {
+struct dicm_sreader {
   struct _mem *mem;
-  struct _src *src;
+  struct dicm_io *src;
   struct _dataset dataset;          // current dataset
   struct _filemetaset filemetaset;  // current filemeta
 
@@ -48,8 +48,8 @@ struct _dicm_sreader {
   enum state current_state;
 };
 
-struct _dicm_sreader *dicm_sreader_init() {
-  struct _dicm_sreader *sreader = malloc(sizeof *sreader);
+int dicm_sreader_create(struct dicm_sreader **pself, struct dicm_io *src) {
+  struct dicm_sreader *sreader = malloc(sizeof *sreader);
   sreader->options.stream_filemetaelements = false;
   sreader->options.deflenitem = false;
   sreader->options.deflensq = false;
@@ -58,10 +58,13 @@ struct _dicm_sreader *dicm_sreader_init() {
   sreader->current_state = -1;
   reset_dataset(&sreader->dataset);
   reset_filemetaset(&sreader->filemetaset);
-  return sreader;
+  // return sreader;
+  return 0;
 }
 
-void dicm_sreader_set_src(struct _dicm_sreader *sreader, struct _src *src) {
+int dicm_sreader_destroy(struct _dicm_sreader *sreader) { return 0; }
+
+void dicm_sreader_set_src(struct _dicm_sreader *sreader, struct dicm_io *src) {
   sreader->src = src;
 }
 
@@ -79,16 +82,19 @@ size_t dicm_sreader_pull_filemetaelement_value(
     struct _dicm_sreader *sreader, const struct _filemetaelement *fme,
     char *buf, size_t buflen) {
   assert(fme->vl != kUndefinedLength);
-  struct _src *src = sreader->src;
+  struct dicm_io *src = sreader->src;
   size_t remaining_len = fme->vl;
   size_t len = buflen < remaining_len ? buflen : remaining_len;
   if (buf) {
-    size_t readlen = src->ops->read(src, buf, len);
-    assert(readlen == len);  // TODO
+    // size_t readlen = src->ops->read(src, buf, len);
+    // assert(readlen == len);  // TODO
+    int err = dicm_io_read(src, buf, len);
+    assert(err == 0);  // TODO
     sreader->curdepos += len;
-    return readlen;
+    return len;
   } else {
-    src->ops->seek(src, len);
+    // src->ops->seek(src, len);
+    assert(0);
     sreader->curdepos += len;
     return len;
   }
@@ -119,7 +125,6 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
 
   if (next == kFilePreamble)
     dicm_sreader_get_file_preamble(sreader, &filepreamble);
-
 
 #if 0
   if (!dicm_sreader_hasnext(sreader)) return false;
@@ -178,8 +183,9 @@ bool dicm_sreader_read_meta_info(struct _dicm_sreader *sreader) {
 }
 #endif
 
-int check_defined_length(struct _src *src, struct _dataset *ds,
+int check_defined_length(struct dicm_io *src, struct _dataset *ds,
                          const struct _dicm_options *options) {
+#if 0
   const bool deflenitem = options->deflenitem;
   const bool deflensq = options->deflensq;
   const bool group_length = options->group_length;
@@ -200,10 +206,11 @@ int check_defined_length(struct _src *src, struct _dataset *ds,
 
     return kEndGroupDataElement;
   }
+#endif
   return -1;
 }
 
-int dicm_read_explicit(struct _src *src, struct _dataset *ds,
+int dicm_read_explicit(struct dicm_io *src, struct _dataset *ds,
                        const struct _dicm_options *options) {
   const bool deflenitem = options->deflenitem;
   const bool deflensq = options->deflensq;
@@ -235,6 +242,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   }
 #endif
 
+#if 0
   // make sure to flush remaining bits from a dataelement
   if (previous_current_state == kBasicOffsetTable ||
       previous_current_state == kDataElement ||
@@ -248,18 +256,19 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     assert(sreader->curdepos == de.vl);
     sreader->curdepos = 0;
   }
+#endif
 
   struct _filemetaset *fms = &sreader->filemetaset;
 
-  assert(!src->ops->at_end(src));
+  // assert(!src->ops->at_end(src));
 
   // fake event handling (defined length stuff):
   int fake_current_state = -1;
   switch (previous_current_state) {
-//    case kEndFileMetaInformation:
+      //    case kEndFileMetaInformation:
     case kDataElement:
-    case kGroupLengthDataElement:
-    case kEndGroupDataElement:
+    // case kGroupLengthDataElement:
+    // case kEndGroupDataElement:
     case kItem:
     case kBasicOffsetTable:
     case kFragment:
@@ -280,7 +289,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
   // actual read
   switch (previous_current_state) {
     case -1:
-      sreader->current_state = kDataElement; // kStartFileMetaInformation;
+      sreader->current_state = kDataElement;  // kStartFileMetaInformation;
       break;
 #if 0
     case kStartFileMetaInformation:
@@ -321,6 +330,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
 
+#if 0
     case kGroupLengthDataElement:
       sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
@@ -328,6 +338,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
     case kEndGroupDataElement:
       sreader->current_state = dicm_read_explicit(src, ds, options);
       break;
+#endif
 
     case kItem:
       // de->tag = 0;  // FIXME tag ordering handling
@@ -371,6 +382,7 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
       assert(0);  // Programmer error
   }
 
+#if 0
   if (sreader->current_state == kDataElement) {
     struct _dataelement de;
     buf_into_dataelement(&sreader->dataset, sreader->current_state, &de);
@@ -509,11 +521,12 @@ static int dicm_sreader_hasnext_impl(struct _dicm_sreader *sreader) {
 
     if (de.vl % 2 != 0) return -kDicmOddDefinedLength;
   }
-
+#endif
   return sreader->current_state;
 }
 
-bool dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
+bool dicm_sreader_hasnext(struct dicm_sreader *sreader) {
+#if 0
   struct _src *src = sreader->src;
   int ret = dicm_sreader_hasnext_impl(sreader);
   if (ret < 0) {
@@ -521,6 +534,8 @@ bool dicm_sreader_hasnext(struct _dicm_sreader *sreader) {
   }
   // printf("ret %d\n", ret);
   return !src->ops->at_end(src);
+#endif
+  return false;
 }
 
 int dicm_sreader_next(struct _dicm_sreader *sreader) {
@@ -544,6 +559,12 @@ bool dicm_sreader_get_prefix(struct _dicm_sreader *sreader,
   return true;
 }
 #endif
+bool dicm_sreader_get_tag(struct _dicm_sreader *sreader, tag_t *tag) {}
+bool dicm_sreader_get_vr(struct _dicm_sreader *sreader, vr_t *vr) {}
+bool dicm_sreader_get_vl(struct _dicm_sreader *sreader, vl_t *vl) {}
+bool dicm_sreader_get_value(struct _dicm_sreader *sreader, void *buf,
+                            vl_t len) {}
+
 bool dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
                                   struct _dataelement *de) {
   // FIXME would be nice to setup an error handler here instead of returning
@@ -587,16 +608,19 @@ size_t dicm_sreader_pull_dataelement_value(struct _dicm_sreader *sreader,
                                            const struct _dataelement *de,
                                            char *buf, size_t buflen) {
   if (de->vl == kUndefinedLength) return kUndefinedLength;
-  struct _src *src = sreader->src;
+  struct dicm_io *src = sreader->src;
   size_t remaining_len = de->vl - sreader->curdepos;
   size_t len = buflen < remaining_len ? buflen : remaining_len;
   if (buf) {
-    size_t readlen = src->ops->read(src, buf, len);
-    assert(readlen == len);  // TODO
-    sreader->curdepos += readlen;
-    return readlen;
+    // size_t readlen = src->ops->read(src, buf, len);
+    // assert(readlen == len);  // TODO
+    int err = dicm_io_read(src, buf, len);
+    assert(err == 0);  // TODO
+    sreader->curdepos += len;
+    return len;
   } else {
-    src->ops->seek(src, len);
+    // src->ops->seek(src, len);
+    assert(0);
     sreader->curdepos += len;
     return len;
   }

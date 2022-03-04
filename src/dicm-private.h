@@ -48,9 +48,10 @@ enum state {
   kFileMetaElement,
   kEndFileMetaInformation,
 #endif
+#if 0
   kDataElement,             // Implicit or Explicit
-  kGroupLengthDataElement,  // PS 3.5 §7.2
-  kEndGroupDataElement,
+  //kGroupLengthDataElement,  // PS 3.5 §7.2
+  //kEndGroupDataElement,
   kSequenceOfItems,
   kSequenceOfFragments,
   kItem,                                 // (FFFE,E000)
@@ -59,6 +60,18 @@ enum state {
   kSequenceOfItemsDelimitationItem,      // (FFFE,E0DD)
   kSequenceOfFragmentsDelimitationItem,  // (FFFE,E0DD)
   kBasicOffsetTable,  // First Item in a Sequence of Fragments
+#endif
+  kStartModel = 0,
+  kEndModel,
+  kStartAttribute,
+  kEndAttribute,
+  kValue,
+  kStartFragment,
+  kEndFragment,
+  kStartItem,
+  kEndItem,
+  kStartSequence,
+  kEndSequence,
 };
 
 #define _DICM_POISON(replacement) error__use_##replacement##_instead
