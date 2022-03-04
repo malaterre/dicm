@@ -1,7 +1,6 @@
 #pragma once
 
 #include "dicm-features.h"
-#include "dicm-mem.h"
 
 struct _log {
   const struct _log_ops *ops;

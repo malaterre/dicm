@@ -29,7 +29,6 @@
 extern struct _log dlog;
 extern const struct _src_ops fsrc_ops;
 extern const struct _dst_ops fdst_ops;
-extern struct _mem ansi;
 
 extern const struct _writer_ops default_writer;
 extern const struct _writer_ops event_writer;
@@ -154,7 +153,7 @@ int main(int argc, char *argv[]) {
   fsrc.ops->open(&fsrc, filename);
   fdst.ops->open(&fdst, "output.dcm");
 
-  sreader = dicm_sreader_init(&ansi);
+  sreader = dicm_sreader_init();
   dicm_sreader_set_src(sreader, &fsrc);
   if (strcmp(options, "fme") == 0) {
     dicm_sreader_stream_filemetaelements(sreader, true);

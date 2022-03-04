@@ -25,7 +25,6 @@
 #include "dicm-errno.h"
 #include "dicm-features.h"
 #include "dicm-io.h"
-#include "dicm-mem.h"
 
 struct _dicm_sreader;
 
@@ -37,7 +36,7 @@ struct _dicm_prefix {
   byte_t data[4];
 };
 
-DICM_EXPORT struct _dicm_sreader *dicm_sreader_init(struct _mem *mem);
+DICM_EXPORT struct _dicm_sreader *dicm_sreader_init();
 
 DICM_EXPORT void dicm_sreader_set_src(struct _dicm_sreader *sreader,
                                       struct _src *src);

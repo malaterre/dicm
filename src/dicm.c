@@ -48,9 +48,8 @@ struct _dicm_sreader {
   enum state current_state;
 };
 
-struct _dicm_sreader *dicm_sreader_init(struct _mem *mem) {
-  struct _dicm_sreader *sreader = mem->ops->alloc(mem, sizeof *sreader);
-  sreader->mem = mem;
+struct _dicm_sreader *dicm_sreader_init() {
+  struct _dicm_sreader *sreader = malloc(sizeof *sreader);
   sreader->options.stream_filemetaelements = false;
   sreader->options.deflenitem = false;
   sreader->options.deflensq = false;
@@ -580,7 +579,7 @@ bool dicm_sreader_get_filemetaelement(struct _dicm_sreader *sreader,
 }
 #endif
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {
-  sreader->mem->ops->free(sreader->mem, sreader);
+  free(sreader);
   return 0;
 }
 

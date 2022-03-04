@@ -1,7 +1,6 @@
 include_directories(${dicm_SOURCE_DIR}/src)
 add_library(
   dicm-default STATIC
-  mem-ansi.c
   # log4c.c
   dlog.c file.c copy.c)
 target_compile_definitions(
