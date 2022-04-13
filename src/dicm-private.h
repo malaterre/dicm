@@ -11,5 +11,3 @@ enum state {
   kDataElement,
   kEndInstance
 };
-
-

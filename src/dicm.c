@@ -4,20 +4,20 @@
 #include "parser.h"
 
 #include <assert.h> /* assert */
-#include <string.h> /* memset */
 #include <stdlib.h> /* malloc/free */
+#include <string.h> /* memset */
 
 /** stream reader */
 struct _dicm_sreader {
   struct _src *src;
   struct _dataelement dataelement;
   enum state current_state;
-  char buffer[128 /*4096*/];  // Minimal amount of memory (preamble is the bigest one ?)
-  size_t bufsizemax;  // = sizeof buffer
+  char buffer[128 /*4096*/];  // Minimal amount of memory (preamble is the
+                              // bigest one ?)
+  size_t bufsizemax;          // = sizeof buffer
 };
 
-struct _dicm_sreader*
-dicm_sreader_init(struct _src *src) {
+struct _dicm_sreader *dicm_sreader_init(struct _src *src) {
   struct _dicm_sreader *sreader = malloc(sizeof *sreader);
   sreader->src = src;
   sreader->current_state = kStartInstance;
@@ -73,7 +73,7 @@ int dicm_sreader_next(struct _dicm_sreader *sreader) {
       if (read_explicit(src, de) == (size_t)-1) {
         sreader->current_state = kEndInstance;
       } else {
-       if (get_group(de->tag) >= 0x8) sreader->current_state = kDataElement;
+        if (get_group(de->tag) >= 0x8) sreader->current_state = kDataElement;
       }
     } break;
 
@@ -94,6 +94,6 @@ int dicm_sreader_get_dataelement(struct _dicm_sreader *sreader,
 }
 
 int dicm_sreader_fini(struct _dicm_sreader *sreader) {
- free(sreader);
- return 0; 
+  free(sreader);
+  return 0;
 }

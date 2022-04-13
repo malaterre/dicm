@@ -15,8 +15,8 @@ enum error {
 };
 
 struct _dicm_sreader;
-//int dicm_sreader_init(struct _dicm_sreader *sreader, struct _src *src);
-struct _dicm_sreader* dicm_sreader_init(struct _src *src);
+// int dicm_sreader_init(struct _dicm_sreader *sreader, struct _src *src);
+struct _dicm_sreader *dicm_sreader_init(struct _src *src);
 int dicm_sreader_hasnext(struct _dicm_sreader *sreader);
 int dicm_sreader_next(struct _dicm_sreader *sreader);
 int dicm_sreader_fini(struct _dicm_sreader *sreader);

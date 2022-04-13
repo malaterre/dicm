@@ -17,9 +17,7 @@ static int fsrc_open(struct _src *src, const char *fspec) {
   return file != NULL;
 }
 
-static int fsrc_close(struct _src *src) {
-  return fclose(src->data);
-}
+static int fsrc_close(struct _src *src) { return fclose(src->data); }
 
 static size_t fsrc_read(struct _src *src, void *buf, size_t bsize) {
   assert(bsize != (size_t)-1);
