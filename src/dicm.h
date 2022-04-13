@@ -1,7 +1,6 @@
 /* SPDX-License-Identifier: LGPLv3 */
 #pragma once
 
-#include "dicm-errno.h"
 #include "dicm-features.h"
 #include "dicm-io.h"
 #include "dicm-private.h"

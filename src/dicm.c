@@ -18,7 +18,6 @@
  *  <http://www.gnu.org/licenses/>.
  *
  */
-#include "dicm-errno.h"
 #include "dicm-private.h"
 #include "reader.h"
 
