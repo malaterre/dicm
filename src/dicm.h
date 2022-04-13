@@ -1,10 +1,11 @@
 /* SPDX-License-Identifier: LGPLv3 */
 #pragma once
 
-#include "dicm-de.h"
 #include "dicm-errno.h"
 #include "dicm-features.h"
 #include "dicm-io.h"
+#include "dicm-private.h"
+#include "dicm-public.h"
 
 // struct _dicm_sreader;
 

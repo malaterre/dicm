@@ -21,23 +21,11 @@
 
 #include "dicm-log.h"
 
-#define _POSIX_C_SOURCE 200112L
+#include <stddef.h>
 
-#include <errno.h>
-#include <string.h>
+static struct dicm_log *global_log; /* zero initialized */
 
-// https://stackoverflow.com/questions/17960423/what-is-the-oldest-version-of-gcc-glibc-that-supports-the-strerrorlen-s-and-stre
-#ifdef _MSC_VER
-#define strerror_r(errno, buf, len) strerror_s(buf, len, errno)
-#endif
-
-struct _log *global_log = NULL;
-
-void set_global_logger(struct _log *log) { global_log = log; }
-
-void log_errno(log_level_t llevel, int errnum) {
-  char buf[1024];
-  // FIXME: errno may have changed at this point...remove API!!!!
-  strerror_r(errnum, buf, sizeof buf);
-  global_log->ops->msg(global_log, llevel, buf);
+void dicm_log_set_global(struct dicm_log *log) { global_log = log; }
+struct dicm_log *dicm_log_get_global(void) {
+  return global_log;
 }

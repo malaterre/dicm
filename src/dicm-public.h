@@ -23,53 +23,23 @@
 
 #include <stdint.h>
 
-// Define the public types that are exposed to the user level:
-typedef char byte_t;
-// Fast access to Tag (group, element)
-typedef uint32_t tag_t;
-// A value representation (upper case ASCII)
-typedef byte_t(vr_t)[2];
-// A value length (-1 means undefined)
-typedef uint32_t vl_t;
+typedef uint32_t dicm_tag_t;
+typedef uint32_t dicm_vr_t;
+typedef uint32_t dicm_vl_t;
 
-static inline uint_fast16_t get_group(tag_t tag) {
+struct dicm_attribute {
+  dicm_tag_t tag;
+  dicm_vr_t vr;
+  dicm_vl_t vl;
+};
+
+/* Convert the integer VR representation into a c-string (ASCII) NULL terminated
+ */
+#define dicm_vr_get_string(vr) ((const char *)&vr)
+
+static inline uint_fast16_t dicm_tag_get_group(dicm_tag_t tag) {
   return (uint16_t)(tag >> 16);
 }
-static inline uint_fast16_t get_element(tag_t tag) {
+static inline uint_fast16_t dicm_tag_get_element(dicm_tag_t tag) {
   return (uint16_t)(tag & (uint16_t)0xffff);
 }
-static inline const char* get_vr(vr_t vr) { return vr; }
-#if 0
-struct _dataelement {
-  tag_t tag;
-  vr_t vr;
-  /*
-   * Implementation design. VL is part of the dataelement, since there is a
-   * tight relation in between VR and VL.
-   */
-  vl_t vl;
-};
-
-// FIXME copy paste of _dataelement so that compiler know this is a different
-// type...(FIXME???)
-struct _filemetaelement {
-  tag_t tag;
-  vr_t vr;
-  vl_t vl;
-};
-
-typedef struct _dataelement dataelement_t;
-typedef struct _filemetaelement filemetaelement_t;
-#else
-#if 0
-struct dicm_data_element {
-  tag_t tag;
-  vr_t vr;
-  /*
-   * Implementation design. VL is part of the dataelement, since there is a
-   * tight relation in between VR and VL.
-   */
-  vl_t vl;
-};
-#endif
-#endif

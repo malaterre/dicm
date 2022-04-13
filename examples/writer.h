@@ -21,8 +21,8 @@
 
 #pragma once
 
-#include "dicm-de.h"
 #include "dicm-features.h"
+#include "dicm-public.h"
 
 #include <stddef.h> /* size_t */
 

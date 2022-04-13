@@ -2,13 +2,11 @@
 
 #include "dicm.h"
 
-#include "dicm-de.h"
 #include "dicm-log.h"
 #include "dicm-private.h"
+#include "dicm-public.h"
 #include "reader.h"
 #include "writer.h"
-
-extern struct _log dlog;
 
 #include <assert.h> /* assert */
 #include <errno.h>  /* errno */
@@ -89,7 +87,10 @@ int main(int argc, char *argv[]) {
   const char *options = argv[1];
   const char *filename = argv[1];
   if (argc > 2) filename = argv[2];
-  set_global_logger(&dlog);
+
+  struct dicm_log *log;
+  dicm_log_create(&log, stderr);
+  dicm_log_set_global(log);
 
   struct dicm_io *src;
   struct dicm_io *dst;
@@ -119,6 +120,10 @@ int main(int argc, char *argv[]) {
   object_destroy(writer);
   object_destroy(src);
   object_destroy(dst);
+
+  dicm_log_msg(2, "log test");
+
+  object_destroy(log);
 
   return EXIT_SUCCESS;
 }

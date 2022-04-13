@@ -89,7 +89,7 @@ int dicm_io_file_create(struct dicm_io **pself, const char *filename,
       return 0;
     }
   }
-  log_errno(debug, errsv);
+  // log_errno(debug, errsv); // FIXME
   *pself = NULL;
   return errsv;
 }
@@ -107,7 +107,7 @@ int dicm_io_stream_create(struct dicm_io **pself, int mode) {
     self->filename = NULL;
     return 0;
   }
-  log_errno(debug, errsv);
+  // log_errno(debug, errsv); // FIXME
   *pself = NULL;
   return errsv;
 }

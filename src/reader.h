@@ -21,9 +21,9 @@
 
 #pragma once
 
-#include "dicm-de.h"
 #include "dicm-features.h"
 #include "dicm-io.h"
+#include "dicm-public.h"
 #include <stdbool.h>
 #include <stddef.h>
 

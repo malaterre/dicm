@@ -22,35 +22,47 @@
 #include "dicm-log.h"
 
 #include <stdio.h>
-// dummy logger
+#include <stdlib.h>
 
-struct _log *dlog_init(struct _mem *mem, const char *fspec) {}
-// void dlog_trace(struct _log *log, const char *msg) {}
-// void dlog_debug(struct _log *log, const char *msg) {
-//  fprintf(stderr, "DEBUG: %s\n", msg);
-//}
-// void dlog_info(struct _log *log, const char *msg) {}
-// void dlog_warn(struct _log *log, const char *msg) {}
-// void dlog_error(struct _log *log, const char *msg) {}
-// void dlog_fatal(struct _log *log, const char *msg) {}
+struct _log {
+  struct dicm_log log;
+  /* data */
+  FILE *stream;
+};
+
+static DICM_CHECK_RETURN int _log_destroy(void *self_) DICM_NONNULL;
+static DICM_CHECK_RETURN int _log_msg(void *self_, int /*log_level_t*/ llevel,
+                                      const char *str) DICM_NONNULL;
+
+static struct log_vtable const g_vtable = {
+    /* object interface */
+    .object = {.fp_destroy = _log_destroy},
+    /* log interface */
+    .log = {.fp_msg = _log_msg}};
+
+int dicm_log_create(struct dicm_log **pself, FILE *stream) {
+  struct _log *self = (struct _log *)malloc(sizeof(*self));
+  if (self) {
+    *pself = &self->log;
+    self->log.vtable = &g_vtable;
+    self->stream = stream;
+    return 0;
+  }
+  *pself = NULL;
+  return 1;
+}
+
+int _log_destroy(void *const self_) {
+  struct _file *self = (struct _file *)self_;
+  free(self);
+  return 0;
+}
+
 static const char *strlevels[] = {"TRACE", "DEBUG", "INFO",
                                   "WARN",  "ERROR", "FATAL"};
 
-void dlog_msg(struct _log *log, log_level_t llevel, const char *msg) {
-  fprintf(stderr, "%s: %s\n", strlevels[llevel], msg);
+int _log_msg(void *const self_, int /*log_level_t*/ llevel, const char *str) {
+  struct _log *self = (struct _log *)self_;
+  fprintf(self->stream, "%s: %s\n", strlevels[llevel], str);
+  return 0;
 }
-int dlog_fini(struct _log *log) {}
-
-static const struct _log_ops dlog_ops = {
-    .init = dlog_init,
-    .msg = dlog_msg,
-    //  .trace = dlog_trace,
-    //  .debug = dlog_debug,
-    //  .info = dlog_info,
-    //  .warn = dlog_warn,
-    //  .error = dlog_error,
-    //  .fatal = dlog_fatal,
-    .fini = dlog_fini,
-};
-
-struct _log dlog = {.ops = &dlog_ops};
