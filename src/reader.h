@@ -12,7 +12,7 @@ struct reader_prv_vtable {
   int (*fp_get_attribute)(void *const, struct dicm_attribute *);
 
   /* kValue: valid for both attribute and fragment */
-  int (*fp_get_value)(void *const, void *, size_t *);
+  int (*fp_read_value)(void *const, void *, size_t *);
 
   /* kFragment */
   int (*fp_get_fragment)(void *const, int *frag_num);
@@ -43,8 +43,8 @@ struct dicm_reader {
 /* common reader interface */
 #define dicm_reader_get_attribute(t, da) \
   ((t)->vtable->reader.fp_get_attribute((t), (da)))
-#define dicm_reader_get_value(t, b, s) \
-  ((t)->vtable->reader.fp_get_value((t), (b), (s)))
+#define dicm_reader_read_value(t, b, s) \
+  ((t)->vtable->reader.fp_read_value((t), (b), (s)))
 #define dicm_reader_get_fragment(t, f) \
   ((t)->vtable->reader.fp_get_fragment((t), (f)))
 #define dicm_reader_get_item(t, i) ((t)->vtable->reader.fp_get_item((t), (i)))

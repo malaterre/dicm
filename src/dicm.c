@@ -24,6 +24,8 @@
 #include <assert.h>
 #include <byteswap.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 static inline bool is_tag_start(const tag_t tag) { return false; }
 static inline bool is_tag_end_item(const tag_t tag) { return false; }
@@ -85,8 +87,8 @@ static DICM_CHECK_RETURN int _dicm_utf8_reader_destroy(void *self_)
 
 static DICM_CHECK_RETURN int _dicm_utf8_reader_get_attribute(
     void *const, struct dicm_attribute *) DICM_NONNULL;
-static DICM_CHECK_RETURN int _dicm_utf8_reader_get_value(void *const, void *,
-                                                         size_t *) DICM_NONNULL;
+static DICM_CHECK_RETURN int _dicm_utf8_reader_read_value(
+    void *const, void *, size_t *) DICM_NONNULL;
 static DICM_CHECK_RETURN int _dicm_utf8_reader_get_fragment(
     void *const, int *frag_num) DICM_NONNULL;
 static DICM_CHECK_RETURN int _dicm_utf8_reader_get_item(
@@ -101,7 +103,7 @@ static struct reader_vtable const g_vtable = {
     .object = {.fp_destroy = _dicm_utf8_reader_destroy},
     /* reader interface */
     .reader = {.fp_get_attribute = _dicm_utf8_reader_get_attribute,
-               .fp_get_value = _dicm_utf8_reader_get_value,
+               .fp_read_value = _dicm_utf8_reader_read_value,
                .fp_get_fragment = _dicm_utf8_reader_get_fragment,
                .fp_get_item = _dicm_utf8_reader_get_item,
                .fp_get_sequence = _dicm_utf8_reader_get_sequence,
@@ -310,7 +312,7 @@ int _dicm_utf8_reader_get_attribute(void *self_, struct dicm_attribute *da) {
   return 0;
 }
 
-int _dicm_utf8_reader_get_value(void *self_, void *b, size_t *s) {
+int _dicm_utf8_reader_read_value(void *self_, void *b, size_t *s) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
   const char *buffer2 = self->buffer2;
   const uint32_t curvallen = self->buf2size;

@@ -36,7 +36,7 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
       case kValue:
         /* FIXME: need a while + size handling */
         size = sizeof buf;
-        dicm_reader_get_value(reader, buf, &size);
+        dicm_reader_read_value(reader, buf, &size);
         dicm_writer_write_value(writer, buf, size);
         break;
 
