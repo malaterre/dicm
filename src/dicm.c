@@ -73,9 +73,13 @@ struct _dicm_utf8_reader {
   enum state current_state;
 
   /* local storage of key */
+#if 0
   ude_t ude;
-
   uint32_t value_length;     /* remaining of value length when state is VALUE */
+#else
+  struct dicm_attribute da;
+#endif
+
   uint32_t value_length_pos; /* current pos in value_length */
 };
 
@@ -148,6 +152,23 @@ static inline bool is_vr16(const struct _vr32 vr) {
   return false;
 }
 
+static void ude2attribute(ude_t *ude, struct dicm_attribute *da) {
+  union {
+    uint32_t t;
+    uint16_t a[2];
+  } u;
+  u.t = ude->ide.tag;
+  da->tag = u.a[0] << 16u | u.a[1];
+  da->vr = 0;                      // trailing \0
+  if (is_vr16(ude->ede32.vr32)) {  // FIXME: improve coding style (vr16!=vr32)
+    memcpy(&da->vr, ude->ede16.vr, 2);
+    da->vl = ude->ede16.vl16.vl;
+  } else {
+    memcpy(&da->vr, ude->ede32.vr32.vr, 2);
+    da->vl = ude->ede32.vl;
+  }
+}
+
 static int dicm_reader_next_impl(const struct dicm_reader *self_) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
   const int current_state = self->current_state;
@@ -174,16 +195,27 @@ static int dicm_reader_next_impl(const struct dicm_reader *self_) {
 
   // VR16 ?
   if (is_vr16(ude.ede32.vr32)) {  // FIXME: improve coding style (vr16!=vr32)
+#if 0
     memcpy(&self->ude, &ude, sizeof ude);
     self->value_length = ude.ede16.vl16.vl;
+#else
+    ude2attribute(&ude, &self->da);
+#endif
     return kStartAttribute;
   }
 
   err = dicm_io_read(src, (char *)ude.bytes + 8, 4);  // FIXME
   assert(err == 0);
 
+#if 0
   memcpy(&self->ude, &ude, sizeof ude);
   self->value_length = ude.ede32.vl;
+#else
+  ude2attribute(&ude, &self->da);
+#endif
+  if (self->da.vr == VR_SQ) {
+    assert(0);
+  }
 
   return kStartAttribute;
 }
@@ -208,7 +240,11 @@ int dicm_reader_next(const struct dicm_reader *self_) {
   } else if (current_state == kEndAttribute) {
     next = dicm_reader_next_impl(self_);
   } else if (current_state == kValue) {
+#if 0
     const uint32_t value_length = self->value_length;
+#else
+    const uint32_t value_length = self->da.vl;
+#endif
     const uint32_t value_length_pos = self->value_length_pos;
     if (value_length == value_length_pos) {
       next = kEndAttribute;
@@ -252,33 +288,31 @@ int _dicm_utf8_reader_destroy(void *self_) {
 
 int _dicm_utf8_reader_get_attribute(void *self_, struct dicm_attribute *da) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
-  union {
-    uint32_t t;
-    uint16_t a[2];
-  } u;
-  u.t = self->ude.ide.tag;
-  da->tag = u.a[0] << 16u | u.a[1];
-  da->vr = 0;  // trailing \0
-  if (is_vr16(
-          self->ude.ede32.vr32)) {  // FIXME: improve coding style (vr16!=vr32)
-    memcpy(&da->vr, self->ude.ede16.vr, 2);
-    da->vl = self->ude.ede16.vl16.vl;
-  } else {
-    memcpy(&da->vr, self->ude.ede32.vr32.vr, 2);
-    da->vl = self->ude.ede32.vl;
-  }
+#if 0
+  ude2attribute( &self->ude,da);
+#else
+  memcpy(da, &self->da, sizeof da);
+#endif
   return 0;
 }
 
 int _dicm_utf8_reader_get_value_length(void *self_, size_t *s) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
+#if 0
   *s = self->value_length;
+#else
+  *s = self->da.vl;
+#endif
   return 0;
 }
 
 int _dicm_utf8_reader_read_value(void *self_, void *b, size_t s) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
+#if 0
   const uint32_t value_length = self->value_length;
+#else
+  const uint32_t value_length = self->da.vl;
+#endif
   const size_t max_length = s;
   const uint32_t to_read =
       max_length < (size_t)value_length ? (uint32_t)max_length : value_length;
@@ -286,7 +320,11 @@ int _dicm_utf8_reader_read_value(void *self_, void *b, size_t s) {
   struct dicm_io *src = self->reader.src;
   int err = dicm_io_read(src, b, to_read);
   self->value_length_pos += to_read;
+#if 0
   assert(self->value_length_pos <= self->value_length);
+#else
+  assert(self->value_length_pos <= self->da.vl);
+#endif
 
   return 0;
 }
