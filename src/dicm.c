@@ -77,10 +77,6 @@ struct _dicm_utf8_reader {
 
   uint32_t value_length;     /* remaining of value length when state is VALUE */
   uint32_t value_length_pos; /* current pos in value_length */
-
-  /* local storage of value */
-  char buffer2[4096 * 4];
-  uint32_t buf2size;
 };
 
 static DICM_CHECK_RETURN int _dicm_utf8_reader_destroy(void *self_)
@@ -122,71 +118,31 @@ bool dicm_reader_hasnext(const struct dicm_reader *self_) {
   return current_state != kEndModel;
 }
 
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-#define MAKE_VR(left, right) (right << 8 | left)
-#else
-#define MAKE_VR(left, right) (left << 8 | right)
-#endif
-
-enum VR16_enum {
-  kAE = MAKE_VR('A', 'E'),
-  kAS = MAKE_VR('A', 'S'),
-  kAT = MAKE_VR('A', 'T'),
-  kCS = MAKE_VR('C', 'S'),
-  kDA = MAKE_VR('D', 'A'),
-  kDS = MAKE_VR('D', 'S'),
-  kDT = MAKE_VR('D', 'T'),
-  kFL = MAKE_VR('F', 'L'),
-  kFD = MAKE_VR('F', 'D'),
-  kIS = MAKE_VR('I', 'S'),
-  kLO = MAKE_VR('L', 'O'),
-  kLT = MAKE_VR('L', 'T'),
-  kOB = MAKE_VR('O', 'B'),
-  kOD = MAKE_VR('O', 'D'),
-  kOF = MAKE_VR('O', 'F'),
-  kOL = MAKE_VR('O', 'L'),
-  kOW = MAKE_VR('O', 'W'),
-  kPN = MAKE_VR('P', 'N'),
-  kSH = MAKE_VR('S', 'H'),
-  kSL = MAKE_VR('S', 'L'),
-  kSQ = MAKE_VR('S', 'Q'),
-  kSS = MAKE_VR('S', 'S'),
-  kST = MAKE_VR('S', 'T'),
-  kTM = MAKE_VR('T', 'M'),
-  kUC = MAKE_VR('U', 'C'),
-  kUI = MAKE_VR('U', 'I'),
-  kUL = MAKE_VR('U', 'L'),
-  kUN = MAKE_VR('U', 'N'),
-  kUR = MAKE_VR('U', 'R'),
-  kUS = MAKE_VR('U', 'S'),
-  kUT = MAKE_VR('U', 'T'),
-};
-
 static inline bool is_vr16(const struct _vr32 vr) {
   uint16_t val;
   memcpy(&val, vr.vr, sizeof val);
   switch (val) {
-    case kAE:
-    case kAS:
-    case kAT:
-    case kCS:
-    case kDA:
-    case kDS:
-    case kDT:
-    case kFD:
-    case kFL:
-    case kIS:
-    case kLO:
-    case kLT:
-    case kPN:
-    case kSH:
-    case kSL:
-    case kSS:
-    case kST:
-    case kTM:
-    case kUI:
-    case kUL:
-    case kUS:
+    case VR_AE:
+    case VR_AS:
+    case VR_AT:
+    case VR_CS:
+    case VR_DA:
+    case VR_DS:
+    case VR_DT:
+    case VR_FD:
+    case VR_FL:
+    case VR_IS:
+    case VR_LO:
+    case VR_LT:
+    case VR_PN:
+    case VR_SH:
+    case VR_SL:
+    case VR_SS:
+    case VR_ST:
+    case VR_TM:
+    case VR_UI:
+    case VR_UL:
+    case VR_US:
       return true;
   }
   return false;
@@ -231,20 +187,7 @@ static int dicm_reader_next_impl(const struct dicm_reader *self_) {
 
 static int dicm_reader_next_impl2(const struct dicm_reader *self_) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
-#if 0
-  // VALUE
-  char *buf2 = self->buffer2;
-  const uint32_t value_length = self->value_length;
-  const uint32_t max_length = sizeof self->buffer2;
-  const uint32_t to_read =
-      value_length < max_length ? value_length : max_length;
-  struct dicm_io *src = self->reader.src;
-  int err = dicm_io_read(src, buf2, to_read);
-  self->buf2size = to_read;
-  self->value_length -= to_read;
-#else
   self->value_length_pos = 0;
-#endif
 
   return kValue;
 }
@@ -332,13 +275,6 @@ int _dicm_utf8_reader_get_value_length(void *self_, size_t *s) {
 
 int _dicm_utf8_reader_read_value(void *self_, void *b, size_t s) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
-#if 0
-  const char *buffer2 = self->buffer2;
-  const uint32_t curvallen = self->buf2size;
-  assert(*s >= curvallen);
-  memcpy(b, buffer2, curvallen);
-  *s = curvallen;
-#else
   const uint32_t value_length = self->value_length;
   const size_t max_length = s;
   const uint32_t to_read =
@@ -348,7 +284,7 @@ int _dicm_utf8_reader_read_value(void *self_, void *b, size_t s) {
   int err = dicm_io_read(src, b, to_read);
   self->value_length_pos += to_read;
   assert(self->value_length_pos <= self->value_length);
-#endif
+
   return 0;
 }
 int _dicm_utf8_reader_skip_value(void *self_, size_t s) { assert(0); }

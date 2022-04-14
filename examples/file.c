@@ -24,7 +24,7 @@
 #include "dicm-io.h"
 
 #include "dicm-log.h"
-#include "dicm-private.h"
+#include "dicm-public.h"
 
 #include <assert.h> /* assert */
 #include <stdio.h>  /* fopen */

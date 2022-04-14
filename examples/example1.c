@@ -23,7 +23,7 @@
 
 #include "dicm-log.h"
 #include "dicm-parser.h"
-#include "dicm-private.h"
+#include "dicm-public.h"
 #include "writer.h"
 
 extern struct _log dlog;

@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: LGPLv3
 
-#include "dicm.h"
+#include "dicm-public.h"
 
 #include "dicm-log.h"
-#include "dicm-private.h"
-#include "dicm-public.h"
 #include "dicm-reader.h"
 #include "dicm-writer.h"
 
@@ -14,8 +12,8 @@
 #include <stdlib.h> /* EXIT_SUCCESS */
 
 void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
-  char buf[16384 /*4096*/];  // FIXME
-  size_t size = sizeof buf;
+  char buf[4096];
+  size_t size;
   struct dicm_attribute da;
   struct dicm_attribute sq;
   int fragment;
@@ -34,28 +32,15 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         break;
 
       case kValue:
-        /* FIXME: need a while + size handling */
         dicm_reader_get_value_length(reader, &size);
-#if 0
-        const int n = size / sizeof buf;
-        for (int i = 0; i < n; ++i) {
-          dicm_reader_read_value(reader, buf, sizeof buf);
-          dicm_writer_write_value(writer, buf, sizeof buf);
-        }
-        const size_t to_read = size % sizeof buf;
-        if (to_read) {
-          dicm_reader_read_value(reader, buf, to_read);
-          dicm_writer_write_value(writer, buf, to_read);
-        }
-#else
+        /* do/while loop trigger at least one event (even in the case where
+         * value_length is exactly 0) */
         do {
-          const size_t to_read = size < sizeof buf ? size : sizeof buf;
-          dicm_reader_read_value(reader, buf, to_read);
-          dicm_writer_write_value(writer, buf, to_read);
-          size -= to_read;
-
+          const size_t len = size < sizeof buf ? size : sizeof buf;
+          dicm_reader_read_value(reader, buf, len);
+          dicm_writer_write_value(writer, buf, len);
+          size -= len;
         } while (size != 0);
-#endif
         break;
 
       case kStartFragment:
@@ -102,9 +87,7 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
 
 int main(int argc, char *argv[]) {
   if (argc < 2) return EXIT_FAILURE;
-  const char *options = argv[1];
   const char *filename = argv[1];
-  if (argc > 2) filename = argv[2];
 
   struct dicm_log *log;
   dicm_log_create(&log, stderr);
@@ -138,9 +121,6 @@ int main(int argc, char *argv[]) {
   object_destroy(writer);
   object_destroy(src);
   object_destroy(dst);
-
-  dicm_log_msg(2, "log test");
-
   object_destroy(log);
 
   return EXIT_SUCCESS;

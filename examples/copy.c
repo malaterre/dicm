@@ -20,7 +20,7 @@
  */
 #include "writer.h"
 
-#include "dicm-private.h"
+#include "dicm-public.h"
 #include <stdio.h>
 
 static void copy_file_preamble(struct _writer *writer,

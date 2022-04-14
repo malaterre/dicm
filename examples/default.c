@@ -20,7 +20,7 @@
  */
 #include "writer.h"
 
-#include "dicm-private.h"
+#include "dicm-public.h"
 #include <stdio.h>
 
 static unsigned int default_level = 0;

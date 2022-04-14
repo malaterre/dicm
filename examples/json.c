@@ -20,7 +20,7 @@
  */
 #include "dicm-writer.h"
 
-#include "dicm-private.h"
+#include "dicm-public.h"
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>

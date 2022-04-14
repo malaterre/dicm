@@ -3,9 +3,12 @@
 
 #include "dicm-features.h"
 
-#include <stdint.h> /* uint16_t */
+// strnlen requires >= 200809
+#define _POSIX_C_SOURCE 200809L
 
-#define _DICM_POISON(replacement) error__use_##replacement##_instead
+#include <stdint.h> /* uint32_t */
+
+#define _DICM_POISON(replacement) error_use_##replacement##_instead
 //#define fseek _DICM_POISON(fseeko)
 //#define ftell _DICM_POISON(ftello)
 #define strtod _DICM_POISON(_dicm_parse_double)

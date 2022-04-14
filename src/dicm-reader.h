@@ -20,8 +20,7 @@ struct reader_prv_vtable {
   int (*fp_get_fragment)(void *const, int *frag_num);
 
   /* kItem */
-  int (*fp_get_item)(void *const,
-                     int *item_num); /* FIXME: prefer dicm_item_t */
+  int (*fp_get_item)(void *const, int *item_num);
 
   /* kSequence: valid for SQ and Pixel Data,OB,u/l */
   int (*fp_get_sequence)(void *const, struct dicm_attribute *);
