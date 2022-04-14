@@ -35,9 +35,27 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
 
       case kValue:
         /* FIXME: need a while + size handling */
-        size = sizeof buf;
-        dicm_reader_read_value(reader, buf, &size);
-        dicm_writer_write_value(writer, buf, size);
+        dicm_reader_get_value_length(reader, &size);
+#if 0
+        const int n = size / sizeof buf;
+        for (int i = 0; i < n; ++i) {
+          dicm_reader_read_value(reader, buf, sizeof buf);
+          dicm_writer_write_value(writer, buf, sizeof buf);
+        }
+        const size_t to_read = size % sizeof buf;
+        if (to_read) {
+          dicm_reader_read_value(reader, buf, to_read);
+          dicm_writer_write_value(writer, buf, to_read);
+        }
+#else
+        do {
+          const size_t to_read = size < sizeof buf ? size : sizeof buf;
+          dicm_reader_read_value(reader, buf, to_read);
+          dicm_writer_write_value(writer, buf, to_read);
+          size -= to_read;
+
+        } while (size != 0);
+#endif
         break;
 
       case kStartFragment:

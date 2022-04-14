@@ -75,7 +75,8 @@ struct _dicm_utf8_reader {
   /* local storage of key */
   ude_t ude;
 
-  uint32_t value_length; /* remaining of value length when state is VALUE */
+  uint32_t value_length;     /* remaining of value length when state is VALUE */
+  uint32_t value_length_pos; /* current pos in value_length */
 
   /* local storage of value */
   char buffer2[4096 * 4];
@@ -87,8 +88,12 @@ static DICM_CHECK_RETURN int _dicm_utf8_reader_destroy(void *self_)
 
 static DICM_CHECK_RETURN int _dicm_utf8_reader_get_attribute(
     void *const, struct dicm_attribute *) DICM_NONNULL;
-static DICM_CHECK_RETURN int _dicm_utf8_reader_read_value(
-    void *const, void *, size_t *) DICM_NONNULL;
+static DICM_CHECK_RETURN int _dicm_utf8_reader_get_value_length(
+    void *const, size_t *) DICM_NONNULL;
+static DICM_CHECK_RETURN int _dicm_utf8_reader_read_value(void *const, void *,
+                                                          size_t) DICM_NONNULL;
+static DICM_CHECK_RETURN int _dicm_utf8_reader_skip_value(void *const,
+                                                          size_t) DICM_NONNULL;
 static DICM_CHECK_RETURN int _dicm_utf8_reader_get_fragment(
     void *const, int *frag_num) DICM_NONNULL;
 static DICM_CHECK_RETURN int _dicm_utf8_reader_get_item(
@@ -103,7 +108,9 @@ static struct reader_vtable const g_vtable = {
     .object = {.fp_destroy = _dicm_utf8_reader_destroy},
     /* reader interface */
     .reader = {.fp_get_attribute = _dicm_utf8_reader_get_attribute,
+               .fp_get_value_length = _dicm_utf8_reader_get_value_length,
                .fp_read_value = _dicm_utf8_reader_read_value,
+               .fp_skip_value = _dicm_utf8_reader_skip_value,
                .fp_get_fragment = _dicm_utf8_reader_get_fragment,
                .fp_get_item = _dicm_utf8_reader_get_item,
                .fp_get_sequence = _dicm_utf8_reader_get_sequence,
@@ -224,6 +231,7 @@ static int dicm_reader_next_impl(const struct dicm_reader *self_) {
 
 static int dicm_reader_next_impl2(const struct dicm_reader *self_) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
+#if 0
   // VALUE
   char *buf2 = self->buffer2;
   const uint32_t value_length = self->value_length;
@@ -234,6 +242,9 @@ static int dicm_reader_next_impl2(const struct dicm_reader *self_) {
   int err = dicm_io_read(src, buf2, to_read);
   self->buf2size = to_read;
   self->value_length -= to_read;
+#else
+  self->value_length_pos = 0;
+#endif
 
   return kValue;
 }
@@ -252,7 +263,8 @@ int dicm_reader_next(const struct dicm_reader *self_) {
     next = dicm_reader_next_impl(self_);
   } else if (current_state == kValue) {
     const uint32_t value_length = self->value_length;
-    if (value_length == 0) {
+    const uint32_t value_length_pos = self->value_length_pos;
+    if (value_length == value_length_pos) {
       next = kEndAttribute;
     } else {
       next = dicm_reader_next_impl2(self_);
@@ -312,15 +324,34 @@ int _dicm_utf8_reader_get_attribute(void *self_, struct dicm_attribute *da) {
   return 0;
 }
 
-int _dicm_utf8_reader_read_value(void *self_, void *b, size_t *s) {
+int _dicm_utf8_reader_get_value_length(void *self_, size_t *s) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
+  *s = self->value_length;
+  return 0;
+}
+
+int _dicm_utf8_reader_read_value(void *self_, void *b, size_t s) {
+  struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
+#if 0
   const char *buffer2 = self->buffer2;
   const uint32_t curvallen = self->buf2size;
   assert(*s >= curvallen);
   memcpy(b, buffer2, curvallen);
   *s = curvallen;
+#else
+  const uint32_t value_length = self->value_length;
+  const size_t max_length = s;
+  const uint32_t to_read =
+      max_length < (size_t)value_length ? (uint32_t)max_length : value_length;
+
+  struct dicm_io *src = self->reader.src;
+  int err = dicm_io_read(src, b, to_read);
+  self->value_length_pos += to_read;
+  assert(self->value_length_pos <= self->value_length);
+#endif
   return 0;
 }
+int _dicm_utf8_reader_skip_value(void *self_, size_t s) { assert(0); }
 
 int _dicm_utf8_reader_get_fragment(void *self_, int *frag_num) { assert(0); }
 
