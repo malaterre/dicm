@@ -19,6 +19,11 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
   int fragment;
   int item;
   char encoding[64];
+
+  /* let's be lazy with base64 */
+  const size_t len3 = (sizeof buf / 3u) * 3u;
+  assert(len3 <= sizeof buf && len3 % 3 == 0);
+
   while (dicm_reader_hasnext(reader)) {
     int next = dicm_reader_next(reader);
     switch (next) {
@@ -36,7 +41,7 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         /* do/while loop trigger at least one event (even in the case where
          * value_length is exactly 0) */
         do {
-          const size_t len = size < sizeof buf ? size : sizeof buf;
+          const size_t len = size < len3 ? size : len3;
           dicm_reader_read_value(reader, buf, len);
           dicm_writer_write_value(writer, buf, len);
           size -= len;

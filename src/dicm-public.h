@@ -74,6 +74,7 @@ enum VALUE_REPRESENTATIONS {
   VR_OD = MAKE_VR('O', 'D'),
   VR_OF = MAKE_VR('O', 'F'),
   VR_OL = MAKE_VR('O', 'L'),
+  VR_OV = MAKE_VR('O', 'V'),
   VR_OW = MAKE_VR('O', 'W'),
   VR_PN = MAKE_VR('P', 'N'),
   VR_SH = MAKE_VR('S', 'H'),
@@ -81,6 +82,7 @@ enum VALUE_REPRESENTATIONS {
   VR_SQ = MAKE_VR('S', 'Q'),
   VR_SS = MAKE_VR('S', 'S'),
   VR_ST = MAKE_VR('S', 'T'),
+  VR_SV = MAKE_VR('S', 'V'),
   VR_TM = MAKE_VR('T', 'M'),
   VR_UC = MAKE_VR('U', 'C'),
   VR_UI = MAKE_VR('U', 'I'),
@@ -89,6 +91,7 @@ enum VALUE_REPRESENTATIONS {
   VR_UR = MAKE_VR('U', 'R'),
   VR_US = MAKE_VR('U', 'S'),
   VR_UT = MAKE_VR('U', 'T'),
+  VR_UV = MAKE_VR('U', 'V'),
 };
 
 /* vl */

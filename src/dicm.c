@@ -162,10 +162,13 @@ static int dicm_reader_next_impl(const struct dicm_reader *self_) {
   }
 
   if (is_tag_start(ude.ide.tag)) {
+    assert(0);
     return kStartAttribute;
   } else if (is_tag_end_item(ude.ide.tag)) {
+    assert(0);
     return kStartAttribute;
   } else if (is_tag_end_sq(ude.ide.tag)) {
+    assert(0);
     return kStartAttribute;
   }
 
