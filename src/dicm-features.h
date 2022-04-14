@@ -37,11 +37,3 @@
 #define _POSIX_C_SOURCE 200809L
 
 #include "dicm_export.h"
-
-/* common object private vtable */
-struct object_prv_vtable {
-  int (*fp_destroy)(void *const) DICM_NONNULL;
-};
-
-/* common object interface */
-#define object_destroy(t) ((t)->vtable->object.fp_destroy((t)))

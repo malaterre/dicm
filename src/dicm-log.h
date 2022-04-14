@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPLv3 */
 #pragma once
 
-#include "dicm-features.h"
+#include "dicm-public.h"
 
 typedef enum { trace = 0, debug, info, warn, error, fatal } log_level_t;
 

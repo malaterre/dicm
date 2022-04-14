@@ -5,8 +5,8 @@
 #include "dicm-log.h"
 #include "dicm-private.h"
 #include "dicm-public.h"
-#include "reader.h"
-#include "writer.h"
+#include "dicm-reader.h"
+#include "dicm-writer.h"
 
 #include <assert.h> /* assert */
 #include <errno.h>  /* errno */

@@ -18,7 +18,7 @@
  *  <http://www.gnu.org/licenses/>.
  *
  */
-#include "writer.h"
+#include "dicm-writer.h"
 
 #include "dicm-private.h"
 #include <assert.h>

@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: LGPLv3 */
 #pragma once
 
+#include "dicm-public.h"
+
 #include <stdbool.h> /* bool */
 #include <stddef.h>  /* size_t */
 #include <stdint.h>  /* int64_t */
-
-#include "dicm-features.h"
 
 /* ftello is signed 64 bits so mimic behavior here: */
 typedef int64_t io_offset;

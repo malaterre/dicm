@@ -19,7 +19,7 @@
  *
  */
 #include "dicm-private.h"
-#include "reader.h"
+#include "dicm-reader.h"
 
 #include <assert.h>
 #include <byteswap.h>
