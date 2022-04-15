@@ -4,6 +4,7 @@
 #include "dicm-features.h"
 #include "dicm_export.h"
 
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -42,6 +43,17 @@ static inline uint_fast16_t dicm_tag_get_group(dicm_tag_t tag) {
 /* Retrieve the element part from a tag */
 static inline uint_fast16_t dicm_tag_get_element(dicm_tag_t tag) {
   return (uint16_t)(tag & 0x0000ffff);
+}
+
+static inline dicm_tag_t dicm_tag_set_group(dicm_tag_t tag,
+                                            uint_fast16_t group) {
+  assert(0);
+  return 0;
+}
+static inline dicm_tag_t dicm_tag_set_element(dicm_tag_t tag,
+                                              uint_fast16_t element) {
+  assert(0);
+  return 0;
 }
 
 /* vr */

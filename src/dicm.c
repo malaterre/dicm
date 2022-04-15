@@ -19,6 +19,7 @@
  *
  */
 #include "dicm-private.h"
+#include "dicm-public.h"
 #include "dicm-reader.h"
 
 #include <assert.h>
@@ -27,9 +28,24 @@
 #include <stdlib.h>
 #include <string.h>
 
-static inline bool is_tag_start(const tag_t tag) { return false; }
-static inline bool is_tag_end_item(const tag_t tag) { return false; }
-static inline bool is_tag_end_sq(const tag_t tag) { return false; }
+#define MAKE_TAG(group, element) (group << 16u | element)
+
+enum {
+  kPixelDataTag = MAKE_TAG(0x7fe0, 0x0010),
+  kStartItemTag = MAKE_TAG(0xfffe, 0xe000),
+  kEndItemTag = MAKE_TAG(0xfffe, 0xe00d),
+  kEndSQItemTag = MAKE_TAG(0xfffe, 0xe0dd),
+};
+
+static inline bool is_tag_start(const tag_t tag) {
+  return tag == kStartItemTag;
+}
+static inline bool is_tag_end_item(const tag_t tag) {
+  return tag == kEndItemTag;
+}
+static inline bool is_tag_end_sq(const tag_t tag) {
+  return tag == kEndSQItemTag;
+}
 
 struct _vl16 {
   uint16_t vl;
@@ -81,6 +97,9 @@ struct _dicm_utf8_reader {
 #endif
 
   uint32_t value_length_pos; /* current pos in value_length */
+
+  /* item */
+  int item_num;
 };
 
 static DICM_CHECK_RETURN int _dicm_utf8_reader_destroy(void *self_)
@@ -153,12 +172,16 @@ static inline bool is_vr16(const struct _vr32 vr) {
 }
 
 static void ude2attribute(ude_t *ude, struct dicm_attribute *da) {
+#if 0
   union {
     uint32_t t;
     uint16_t a[2];
   } u;
   u.t = ude->ide.tag;
   da->tag = u.a[0] << 16u | u.a[1];
+#else
+  da->tag = ude->ide.tag;  // already byte-swapped
+#endif
   da->vr = 0;                      // trailing \0
   if (is_vr16(ude->ede32.vr32)) {  // FIXME: improve coding style (vr16!=vr32)
     memcpy(&da->vr, ude->ede16.vr, 2);
@@ -168,6 +191,12 @@ static void ude2attribute(ude_t *ude, struct dicm_attribute *da) {
     da->vl = ude->ede32.vl;
   }
 }
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define SWAP_TAG(t) t = (t >> 16) | (t >> 16)
+#else
+#error
+#endif
 
 static int dicm_reader_next_impl(const struct dicm_reader *self_) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
@@ -181,16 +210,23 @@ static int dicm_reader_next_impl(const struct dicm_reader *self_) {
   if (err) {
     return kEndModel;
   }
+  // byte-swap tag:
+  {
+    union {
+      uint32_t t;
+      uint16_t a[2];
+    } u;
+    u.t = ude.ide.tag;
+    ude.ide.tag = u.a[0] << 16u | u.a[1];
+  }
 
   if (is_tag_start(ude.ide.tag)) {
-    assert(0);
-    return kStartAttribute;
+    self->item_num++;
+    return kStartItem;
   } else if (is_tag_end_item(ude.ide.tag)) {
-    assert(0);
-    return kStartAttribute;
+    return kEndItem;
   } else if (is_tag_end_sq(ude.ide.tag)) {
-    assert(0);
-    return kStartAttribute;
+    return kEndSequence;
   }
 
   // VR16 ?
@@ -214,7 +250,8 @@ static int dicm_reader_next_impl(const struct dicm_reader *self_) {
   ude2attribute(&ude, &self->da);
 #endif
   if (self->da.vr == VR_SQ) {
-    assert(0);
+    self->item_num = 0;
+    return kStartSequence;
   }
 
   return kStartAttribute;
@@ -251,6 +288,10 @@ int dicm_reader_next(const struct dicm_reader *self_) {
     } else {
       next = dicm_reader_next_impl2(self_);
     }
+  } else if (current_state == kStartSequence) {
+    next = dicm_reader_next_impl(self_);
+  } else if (current_state == kStartItem) {
+    next = dicm_reader_next_impl(self_);
   } else {
     assert(0);
   }
@@ -275,6 +316,7 @@ int dicm_reader_utf8_create(struct dicm_reader **pself, struct dicm_io *src) {
     self->reader.vtable = &g_vtable;
     self->reader.src = src;
     self->current_state = -1;
+    self->item_num = 0;  // item number start at 1, 0 means invalid
     return 0;
   }
   return 1;
@@ -332,7 +374,11 @@ int _dicm_utf8_reader_skip_value(void *self_, size_t s) { assert(0); }
 
 int _dicm_utf8_reader_get_fragment(void *self_, int *frag_num) { assert(0); }
 
-int _dicm_utf8_reader_get_item(void *self_, int *item_num) { assert(0); }
+int _dicm_utf8_reader_get_item(void *self_, int *item_num) {
+  struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
+  *item_num = self->item_num;
+  return 0;
+}
 
 int _dicm_utf8_reader_get_sequence(void *self_, struct dicm_attribute *da) {
   assert(0);
