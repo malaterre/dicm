@@ -11,11 +11,16 @@
 enum state {
   kStartModel = 0,
   kEndModel,
+  /* attribute */
   kStartAttribute,
   kEndAttribute,
   kValue,
+  /* fragment */
   kStartFragment,
   kEndFragment,
+  kStartFragments,
+  kEndFragments,
+  /* item */
   kStartItem,
   kEndItem,
   kStartSequence,
@@ -54,6 +59,25 @@ static inline dicm_tag_t dicm_tag_set_element(dicm_tag_t tag,
                                               uint_fast16_t element) {
   assert(0);
   return 0;
+}
+
+#define MAKE_TAG(group, element) (uint32_t)(group << 16u | element)
+
+enum SPECIAL_TAGS {
+  TAG_PIXELDATA = MAKE_TAG(0x7fe0, 0x0010),
+  TAG_STARTITEM = MAKE_TAG(0xfffe, 0xe000),
+  TAG_ENDITEM = MAKE_TAG(0xfffe, 0xe00d),
+  TAG_ENDSQITEM = MAKE_TAG(0xfffe, 0xe0dd),
+};
+
+static inline bool dicm_tag_is_start_item(const dicm_tag_t tag) {
+  return tag == TAG_STARTITEM;
+}
+static inline bool dicm_tag_is_end_item(const dicm_tag_t tag) {
+  return tag == TAG_ENDITEM;
+}
+static inline bool dicm_tag_is_end_sq_item(const dicm_tag_t tag) {
+  return tag == TAG_ENDSQITEM;
 }
 
 /* vr */
@@ -107,9 +131,20 @@ enum VALUE_REPRESENTATIONS {
 };
 
 /* vl */
+enum VALUE_LENGTHS { VL_UNDEFINED = 0xffffffff };
 
 static inline bool dicm_vl_is_undefined(dicm_vl_t vl) {
-  return vl == 0xffffffff;
+  return vl == VL_UNDEFINED;
+}
+
+/* attribute */
+static inline bool dicm_attribute_is_encapsulated_pixel_data(
+    const struct dicm_attribute *da) {
+  // Make sure Pixel Data is Encapsulated (Sequence of Fragments):
+  if (da->tag == TAG_PIXELDATA && da->vl == VL_UNDEFINED && da->vr == VR_OB) {
+    return true;
+  }
+  return false;
 }
 
 /* item */

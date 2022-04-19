@@ -28,67 +28,32 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAKE_TAG(group, element) (group << 16u | element)
-
-enum {
-  kPixelDataTag = MAKE_TAG(0x7fe0, 0x0010),
-  kStartItemTag = MAKE_TAG(0xfffe, 0xe000),
-  kEndItemTag = MAKE_TAG(0xfffe, 0xe00d),
-  kEndSQItemTag = MAKE_TAG(0xfffe, 0xe0dd),
-};
-
-static inline bool is_tag_start(const tag_t tag) {
-  return tag == kStartItemTag;
-}
-static inline bool is_tag_end_item(const tag_t tag) {
-  return tag == kEndItemTag;
-}
-static inline bool is_tag_end_sq(const tag_t tag) {
-  return tag == kEndSQItemTag;
-}
-
-struct _vl16 {
-  uint16_t vl;
-};
-struct _vr32 {
-  vr_t vr;
-  uint16_t reserved;
-};
 struct _ede32 {
-  tag_t tag;
-  struct _vr32 vr32;
-  vl_t vl;
+  uint32_t tag;
+  uint32_t vr;
+  uint32_t vl;
 };  // explicit data element. 12 bytes
 
 struct _ede16 {
-  tag_t tag;
-  vr_t vr;
-  struct _vl16 vl16;
-};  // explicit data element, VR 16. 8 bytes
+  uint32_t tag;
+  uint16_t vr16;
+  uint16_t vl16;
+};  // explicit data element, VR/VL 16. 8 bytes
 
 struct _ide {
-  tag_t tag;
-  vl_t vl;
+  uint32_t tag;
+  uint32_t vl;
 };  // implicit data element. 8 bytes
 
-typedef union _ude {
+union _ude {
   uint32_t bytes[4];    // 16 bytes, 32bits aligned
   struct _ede32 ede32;  // explicit data element (12 bytes)
   struct _ede16 ede16;  // explicit data element (8 bytes)
   struct _ide ide;      // implicit data element (8 bytes)
-} ude_t;
+};
 
-#if 0
-bool dicm_item_reader_hasnext(const struct dicm_item_reader *self) {
-  const int current_state = self->current_state;
-  return current_state != kEndModel;
-}
-#endif
-
-static inline bool is_vr16(const struct _vr32 vr) {
-  uint16_t val;
-  memcpy(&val, vr.vr, sizeof val);
-  switch (val) {
+static inline bool _is_vr16(const uint32_t vr) {
+  switch (vr) {
     case VR_AE:
     case VR_AS:
     case VR_AT:
@@ -115,88 +80,85 @@ static inline bool is_vr16(const struct _vr32 vr) {
   return false;
 }
 
-static void ude2attribute(ude_t *ude, struct dicm_attribute *da) {
-#if 0
-  union {
-    uint32_t t;
-    uint16_t a[2];
-  } u;
-  u.t = ude->ide.tag;
-  da->tag = u.a[0] << 16u | u.a[1];
-#else
-  da->tag = ude->ide.tag;  // already byte-swapped
-#endif
-  da->vr = 0;                      // trailing \0
-  if (is_vr16(ude->ede32.vr32)) {  // FIXME: improve coding style (vr16!=vr32)
-    memcpy(&da->vr, ude->ede16.vr, 2);
-    da->vl = ude->ede16.vl16.vl;
-  } else {
-    memcpy(&da->vr, ude->ede32.vr32.vr, 2);
-    da->vl = ude->ede32.vl;
-  }
-}
-
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #define SWAP_TAG(t) t = (t >> 16) | (t >> 16)
 #else
 #error
 #endif
 
-int dicm_item_reader_next_impl(struct dicm_item_reader *self,
-                               struct dicm_io *src) {
-  ude_t ude;
+static inline uint32_t _ide_get_tag(union _ude *ude) {
+  // byte-swap tag:
+  union {
+    uint32_t t;
+    uint16_t a[2];
+  } u;
+  u.t = ude->ide.tag;
+  return (uint32_t)(u.a[0] << 16u | u.a[1]);
+}
+static inline uint32_t _ede16_get_vr(union _ude *ude) {
+  return ude->ede16.vr16;
+}
+static inline uint32_t _ede16_get_vl(union _ude *ude) {
+  return ude->ede16.vl16;
+}
+static inline uint32_t _ede32_get_vl(union _ude *ude) { return ude->ede32.vl; }
+
+int _item_reader_next_impl(struct dicm_item_reader *self, struct dicm_io *src) {
+  union _ude ude;
   _Static_assert(16 == sizeof(ude), "16 bytes");
-  memset(ude.bytes, 0, 16);  // FIXME
+  _Static_assert(12 == sizeof(struct _ede32), "12 bytes");
+  _Static_assert(8 == sizeof(struct _ede16), "8 bytes");
+  _Static_assert(8 == sizeof(struct _ide), "8 bytes");
   int err = dicm_io_read(src, ude.bytes, 8);
   if (err) {
     return kEndModel;
   }
-  // byte-swap tag:
-  {
-    union {
-      uint32_t t;
-      uint16_t a[2];
-    } u;
-    u.t = ude.ide.tag;
-    ude.ide.tag = u.a[0] << 16u | u.a[1];
+
+  const dicm_tag_t tag = _ide_get_tag(&ude);
+  self->da.tag = tag;
+  switch (tag) {
+    case TAG_STARTITEM:
+      self->da.vr = VR_NONE;
+      self->da.vl = ude.ide.vl;
+      return kStartItem;
+    case TAG_ENDITEM:
+      self->da.vr = VR_NONE;
+      self->da.vl = ude.ide.vl;
+      return kEndItem;
+    case TAG_ENDSQITEM:
+      self->da.vr = VR_NONE;
+      self->da.vl = ude.ide.vl;
+      return kEndSequence;
   }
 
-  if (is_tag_start(ude.ide.tag)) {
-    return kStartItem;
-  } else if (is_tag_end_item(ude.ide.tag)) {
-    return kEndItem;
-  } else if (is_tag_end_sq(ude.ide.tag)) {
-    return kEndSequence;
-  }
+  const dicm_vr_t vr = _ede16_get_vr(&ude);
+  self->da.vr = vr;
+  if (_is_vr16(vr)) {
+    const dicm_vl_t vl = _ede16_get_vl(&ude);
+    self->da.vl = vl;
 
-  // VR16 ?
-  if (is_vr16(ude.ede32.vr32)) {  // FIXME: improve coding style (vr16!=vr32)
-#if 0
-    memcpy(&self->ude, &ude, sizeof ude);
-    self->value_length = ude.ede16.vl16.vl;
-#else
-    ude2attribute(&ude, &self->da);
-#endif
     return kStartAttribute;
   }
 
+  assert(ude.ede16.vl16 == 0);
+#if 0
   err = dicm_io_read(src, (char *)ude.bytes + 8, 4);  // FIXME
+#else
+  err = dicm_io_read(src, &ude.ede32.vl, 4);
+#endif
   assert(err == 0);
 
-#if 0
-  memcpy(&self->ude, &ude, sizeof ude);
-  self->value_length = ude.ede32.vl;
-#else
-  ude2attribute(&ude, &self->da);
-#endif
-  if (self->da.vr == VR_SQ) {
+  const dicm_vl_t vl = _ede32_get_vl(&ude);
+  self->da.vl = vl;
+  if (vr == VR_SQ || dicm_attribute_is_encapsulated_pixel_data(&self->da)) {
     return kStartSequence;
   }
+  assert(!dicm_vl_is_undefined(self->da.vl));
 
   return kStartAttribute;
 }
 
-int dicm_item_reader_next_impl2(struct dicm_item_reader *self) {
+int _item_reader_next_impl2(struct dicm_item_reader *self) {
   self->value_length_pos = 0;
 
   return kValue;
@@ -206,27 +168,19 @@ int dicm_item_reader_next(struct dicm_item_reader *self, struct dicm_io *src) {
   const enum state current_state = self->current_item_state;
   enum state next;
   if (current_state == kStartAttribute) {
-    next = dicm_item_reader_next_impl2(self);
-  } else if (current_state == kEndAttribute) {
-    next = dicm_item_reader_next_impl(self, src);
+    next = _item_reader_next_impl2(self);
   } else if (current_state == kValue) {
-#if 0
-    const uint32_t value_length = self->value_length;
-#else
-    const uint32_t value_length = self->da.vl;
-#endif
-    const uint32_t value_length_pos = self->value_length_pos;
-    if (value_length == value_length_pos) {
-      next = kEndAttribute;
-    } else {
-      next = dicm_item_reader_next_impl2(self);
-    }
+    // TODO: check user has consumed everything
+    assert(self->da.vl == self->value_length_pos);
+    next = _item_reader_next_impl(self, src);
   } else if (current_state == kStartSequence) {
-    next = dicm_item_reader_next_impl(self, src);
+    next = _item_reader_next_impl(self, src);
+  } else if (current_state == kEndSequence) {
+    next = _item_reader_next_impl(self, src);
   } else if (current_state == kStartItem) {
-    next = dicm_item_reader_next_impl(self, src);
+    next = _item_reader_next_impl(self, src);
   } else if (current_state == kEndItem) {
-    next = dicm_item_reader_next_impl(self, src);
+    next = _item_reader_next_impl(self, src);
   } else {
     assert(0);
   }

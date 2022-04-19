@@ -23,6 +23,7 @@
 #include "dicm-writer.h"
 
 #include <assert.h>
+#include <float.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -305,6 +306,7 @@ static void print_unsigned_very_long(struct _json *self, const void *buf,
   }
 }
 
+// https://stackoverflow.com/questions/16839658/printf-width-specifier-to-maintain-precision-of-floating-point-value
 static void print_float(struct _json *self, const void *buf, size_t len) {
   const float *values = buf;
   const size_t nvalues = len / sizeof(float);
@@ -314,7 +316,9 @@ static void print_float(struct _json *self, const void *buf, size_t len) {
       print_eol(self);
       print_indent(self);
     }
-    printf("%g", values[n]);
+    //    printf("%g", values[n]);
+    //    printf("%.9g", values[n]);
+    printf("%.*g", FLT_DECIMAL_DIG, values[n]);
   }
 }
 
@@ -327,7 +331,9 @@ static void print_double(struct _json *self, const void *buf, size_t len) {
       print_eol(self);
       print_indent(self);
     }
-    printf("%g", values[n]);
+    //    printf("%g", values[n]);
+    //    printf("%.17g", values[n]);
+    printf("%.*g", DBL_DECIMAL_DIG, values[n]);
   }
 }
 
@@ -359,11 +365,13 @@ static void base64_print(const unsigned char *in, size_t len) {
   }
 }
 
-static void print_inline_binary(struct _json *self, const void *buf,
-                                size_t len) {
-  const unsigned char *values = buf;
-  const size_t nvalues = len / sizeof(unsigned char);
-  base64_print(values, nvalues);
+static void print_inline_binary(struct _json *self, const void *buf, size_t len,
+                                bool is_undefined_length) {
+  if (!is_undefined_length) {
+    const unsigned char *values = buf;
+    const size_t nvalues = len / sizeof(unsigned char);
+    base64_print(values, nvalues);
+  }
 }
 
 /* writer */
@@ -406,7 +414,7 @@ int _json_write_value(void *self_, const void *buf, size_t s) {
     print_eol(self);
     return 0;
   }
-  assert(!dicm_vl_is_undefined(self->vl));
+  bool is_undefined_length = dicm_vl_is_undefined(self->vl);
   const dicm_vr_t vr = self->vr;
   const char *debug = dicm_vr_get_string(vr);
   switch (vr) {
@@ -420,19 +428,23 @@ int _json_write_value(void *self_, const void *buf, size_t s) {
     case VR_TM:
     case VR_UC:
     case VR_UI:
+      assert(!is_undefined_length);
       print_with_separator(self, buf, s, true);
       break;
     case VR_DS:
     case VR_IS:
+      assert(!is_undefined_length);
       print_with_separator(self, buf, s, false);
       break;
     case VR_LT: /* cannot be VM 1-N */
     case VR_ST:
     case VR_UR:
     case VR_UT:
+      assert(!is_undefined_length);
       print_no_whitespace(self, buf, s);
       break;
     case VR_PN:
+      assert(!is_undefined_length);
       print_person_name(self, buf, s);
       break;
       /* binary */
@@ -442,40 +454,50 @@ int _json_write_value(void *self_, const void *buf, size_t s) {
     case VR_OL:
     case VR_OV:
     case VR_OW:
-      print_inline_binary(self, buf, s);
+      print_inline_binary(self, buf, s, is_undefined_length);
       break;
     case VR_SL:
+      assert(!is_undefined_length);
       print_signed_long(self, buf, s);
       break;
     case VR_SV:
+      assert(!is_undefined_length);
       print_signed_very_long(self, buf, s);
       break;
     case VR_SS:
+      assert(!is_undefined_length);
       print_signed_short(self, buf, s);
       break;
     case VR_UL:
+      assert(!is_undefined_length);
       print_unsigned_long(self, buf, s);
       break;
     case VR_US:
+      assert(!is_undefined_length);
       print_unsigned_short(self, buf, s);
       break;
     case VR_UV:
+      assert(!is_undefined_length);
       print_unsigned_very_long(self, buf, s);
       break;
     case VR_FL:
+      assert(!is_undefined_length);
       print_float(self, buf, s);
       break;
     case VR_FD:
+      assert(!is_undefined_length);
       print_double(self, buf, s);
       break;
     case VR_AT:
+      assert(!is_undefined_length);
       assert(0);
       break;
     case VR_UN:
+      assert(!is_undefined_length);
       assert(0);
       break;
     case VR_SQ:
-      // assert(0);
+      assert(0);
       break;
     default:
       assert(0);
@@ -485,12 +507,41 @@ int _json_write_value(void *self_, const void *buf, size_t s) {
 }
 int _json_write_start_fragment(void *self, int frag_num) { return 0; }
 int _json_write_end_fragment(void *self) { return 0; }
-int _json_write_start_item(void *self, int item_num) { return 0; }
-int _json_write_end_item(void *self) { return 0; }
-int _json_write_start_sequence(void *self, const struct dicm_attribute *da) {
+int _json_write_start_item(void *self_, int item_num) {
+  struct _json *self = (struct _json *)self_;
+  print_separator(self);
+  if (self->separator) print_indent(self);
+  self->separator = NULL;
+  self->indent_level++;
+  printf("{");
+  print_eol(self);
+
   return 0;
 }
-int _json_write_end_sequence(void *self) { return 0; }
+int _json_write_end_item(void *self_) {
+  struct _json *self = (struct _json *)self_;
+  print_eol(self);
+  self->indent_level--;
+  print_indent(self);
+  printf("}");
+  //  printf("\n");  // end of item
+  return 0;
+}
+int _json_write_start_sequence(void *self_, const struct dicm_attribute *da) {
+  struct _json *self = (struct _json *)self_;
+  _json_write_start_attribute(self_, da);
+  // self->indent_level++;
+  self->separator = NULL;
+
+  return 0;
+}
+int _json_write_end_sequence(void *self_) {
+  struct _json *self = (struct _json *)self_;
+  _json_write_end_attribute(self_);
+  // self->indent_level--;
+
+  return 0;
+}
 int _json_write_start_model(void *self_, const char *encoding) {
   struct _json *self = (struct _json *)self_;
   printf("{");

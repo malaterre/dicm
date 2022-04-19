@@ -16,8 +16,8 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
   size_t size;
   struct dicm_attribute da;
   struct dicm_attribute sq;
-  int fragment;
-  int item;
+  int fragment = -1;
+  int item = 45;
   char encoding[64];
 
   /* let's be lazy with base64 */
@@ -37,15 +37,17 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         break;
 
       case kValue:
-        dicm_reader_get_value_length(reader, &size);
-        /* do/while loop trigger at least one event (even in the case where
-         * value_length is exactly 0) */
-        do {
-          const size_t len = size < len3 ? size : len3;
-          dicm_reader_read_value(reader, buf, len);
-          dicm_writer_write_value(writer, buf, len);
-          size -= len;
-        } while (size != 0);
+        if (true /*fragment == -1*/) {
+          dicm_reader_get_value_length(reader, &size);
+          /* do/while loop trigger at least one event (even in the case where
+           * value_length is exactly 0) */
+          do {
+            const size_t len = size < len3 ? size : len3;
+            dicm_reader_read_value(reader, buf, len);
+            dicm_writer_write_value(writer, buf, len);
+            size -= len;
+          } while (size != 0);
+        }
         break;
 
       case kStartFragment:
@@ -66,12 +68,25 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         dicm_writer_write_end_item(writer);
         break;
 
+      case kStartFragments:
+        fragment = -1;
+        dicm_reader_get_attribute(reader, &da);
+        dicm_writer_write_start_attribute(writer, &da);
+        break;
+
+      case kEndFragments:
+        fragment = -1;
+        dicm_writer_write_end_attribute(writer);
+        break;
+
       case kStartSequence:
+        item = 0;
         dicm_reader_get_attribute(reader, &sq);
         dicm_writer_write_start_sequence(writer, &sq);
         break;
 
       case kEndSequence:
+        item = 0;
         dicm_writer_write_end_sequence(writer);
         break;
 
@@ -86,6 +101,7 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
 
       default:
         printf("wotsit: %d\n", next);
+        assert(0);
     }
   }
 }

@@ -5,6 +5,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct dicm_item_reader {
   /* the current state */
@@ -15,12 +16,6 @@ struct dicm_item_reader {
 
   uint32_t value_length_pos; /* current pos in value_length */
 };
-
-// bool dicm_item_reader_hasnext(const struct dicm_item_reader *self);
-int dicm_item_reader_next_impl(struct dicm_item_reader *self,
-                               struct dicm_io *src);
-
-int dicm_item_reader_next_impl2(struct dicm_item_reader *self);
 
 int dicm_item_reader_next(struct dicm_item_reader *self, struct dicm_io *src);
 
