@@ -130,6 +130,8 @@ enum VALUE_REPRESENTATIONS {
   VR_UV = MAKE_VR('U', 'V'),
 };
 
+bool dicm_vr_is_16(dicm_vr_t vr);
+
 /* vl */
 enum VALUE_LENGTHS { VL_UNDEFINED = 0xffffffff };
 

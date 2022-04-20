@@ -45,11 +45,7 @@ struct _dicm_utf8_reader {
   int item_num;
 
   /* item readers */
-#if 0
-  struct dicm_item_reader item_reader;
-#else
   struct array item_readers;
-#endif
 };
 
 static DICM_CHECK_RETURN int _dicm_utf8_reader_destroy(void *self_)

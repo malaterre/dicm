@@ -60,6 +60,7 @@ struct writer_vtable {
 /* common writer object */
 struct dicm_writer {
   struct writer_vtable const *vtable;
+  struct dicm_io *dst;
 };
 
 /* common writer interface */
@@ -86,4 +87,7 @@ struct dicm_writer {
 #define dicm_writer_write_end_model(t) \
   ((t)->vtable->writer.fp_write_end_model((t)))
 
-int dicm_json_writer_create(struct dicm_writer **pself);
+// int dicm_json_writer_create(struct dicm_writer **pself);
+
+DICM_EXPORT int dicm_writer_utf8_create(struct dicm_writer **pself,
+                                        struct dicm_io *dst);

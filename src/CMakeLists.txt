@@ -1,6 +1,6 @@
 include(GenerateExportHeader)
 
-set(dicm_SRCS dicm-item.c dicm-log.c dicm.c)
+set(dicm_SRCS dicm-item.c dicm-log.c dicm.c dicm-writer.c)
 
 add_library(dicm SHARED ${dicm_SRCS})
 generate_export_header(dicm)
