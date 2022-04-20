@@ -8,13 +8,14 @@
 #include <string.h>
 
 struct dicm_item_reader {
-  /* the current state */
+  /* the current item state */
   enum state current_item_state;
 
   /* the current attribute */
   struct dicm_attribute da;
 
-  uint32_t value_length_pos; /* current pos in value_length */
+  /* current pos in value_length */
+  uint32_t value_length_pos;
 };
 
 int dicm_item_reader_next(struct dicm_item_reader *self, struct dicm_io *src);
@@ -65,8 +66,7 @@ static inline struct dicm_item_reader *array_back(struct array *arr) {
   return item_reader;
 }
 
-static inline struct dicm_item_reader *array_pop_back(struct array *arr) {
+static inline void array_pop_back(struct array *arr) {
+  assert(arr->size);
   arr->size--;
-  struct dicm_item_reader *item_reader = &arr->data[arr->size];
-  return item_reader;
 }

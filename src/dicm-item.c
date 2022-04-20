@@ -103,7 +103,7 @@ static inline uint32_t _ede16_get_vl(union _ude *ude) {
 }
 static inline uint32_t _ede32_get_vl(union _ude *ude) { return ude->ede32.vl; }
 
-int _item_reader_next_impl(struct dicm_item_reader *self, struct dicm_io *src) {
+static int _item_reader_next_impl(struct dicm_item_reader *self, struct dicm_io *src) {
   union _ude ude;
   _Static_assert(16 == sizeof(ude), "16 bytes");
   _Static_assert(12 == sizeof(struct _ede32), "12 bytes");
@@ -158,7 +158,7 @@ int _item_reader_next_impl(struct dicm_item_reader *self, struct dicm_io *src) {
   return kStartAttribute;
 }
 
-int _item_reader_next_impl2(struct dicm_item_reader *self) {
+static int _item_reader_next_impl2(struct dicm_item_reader *self) {
   self->value_length_pos = 0;
 
   return kValue;
