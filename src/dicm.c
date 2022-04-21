@@ -99,6 +99,12 @@ static inline enum ml_state dicm2ml(enum dicm_state dicm_next) {
     case kEndSequence:
       next = kEndArray;
       break;
+    case kStartFragments:
+      next = kStartPixelData;
+      break;
+    case kEndFragments:
+      next = kEndPixelData;
+      break;
     case kStartItem:
       next = kStartObject;
       break;
@@ -129,75 +135,56 @@ int dicm_reader_next(const struct dicm_reader *self_) {
     dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
   } else if (current_state == kStartArray) {
-    struct dicm_item_reader *item_reader0 = array_back(&self->item_readers);
-
-    const bool is_encapsulated_pixel_data =
-        dicm_attribute_is_encapsulated_pixel_data(&item_reader0->da);
-    if (is_encapsulated_pixel_data) {
-      assert(item_reader0->frag_num == 0);
-      assert(item_reader0->current_item_state == kStartSequence);
-      dicm_next = dicm_item_reader_next(item_reader0, self->reader.src);
-      assert(dicm_next == kFragment);
-      next = dicm2ml(dicm_next);
-      assert(next == kStartFragment);
-    } else {
-      struct dicm_item_reader dummy = {};
-      array_push_back(&self->item_readers, &dummy);
-      struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-      item_reader->current_item_state = kStartSequence;
-      item_reader->frag_num = -1;
-      item_reader->item_num = 1;
-      dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
-      next = dicm2ml(dicm_next);
-      assert(next == kStartObject);
-    }
+    struct dicm_item_reader dummy = {};
+    array_push_back(&self->item_readers, &dummy);
+    struct dicm_item_reader *item_reader = array_back(&self->item_readers);
+    item_reader->current_item_state = kStartSequence;
+    item_reader->index.item_num = 1;
+    dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
+    next = dicm2ml(dicm_next);
+    assert(next == kStartObject);
   } else if (current_state == kEndArray) {
     array_pop_back(&self->item_readers);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     item_reader->current_item_state = kEndSequence;
     dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
-#if 0
-  } else if (current_state == kStartFragments) {
+  } else if (current_state == kStartPixelData) {
+    struct dicm_item_reader dummy = {};
+    array_push_back(&self->item_readers, &dummy);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    assert(item_reader->frag_num == -1);
-    item_reader->frag_num = 0;  // frag 0 is bot
-    assert(item_reader->current_item_state == kAttribute);
-    dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
+    item_reader->current_item_state = kStartFragments;
+    item_reader->index.frag_num = 0;
+    dicm_next = dicm_fragment_reader_next(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
-    assert(next == kStartArray);
-    // Convert it manually:
-    next = kStartFragment;
-  } else if (current_state == kEndFragments) {
+    assert(next == kStartFragment);
+  } else if (current_state == kEndPixelData) {
+    array_pop_back(&self->item_readers);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    item_reader->frag_num = -1;  // reset fragment number
-    dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
+    item_reader->current_item_state = kEndFragments;
+    dicm_next = dicm_fragment_reader_next(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
-#endif
   } else if (current_state == kStartFragment) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     assert(item_reader->current_item_state == kFragment);
-    dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
+    dicm_next = dicm_fragment_reader_next(item_reader, self->reader.src);
     assert(dicm_next == kValue);
     next = dicm2ml(dicm_next);
   } else if (current_state == kEndFragment) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     assert(item_reader->current_item_state == kValue);
-    dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
-    if (dicm_next == kFragment) {
-      next = kStartFragment;
-    } else {
-      next = dicm2ml(dicm_next);
-    }
+    dicm_next = dicm_fragment_reader_next(item_reader, self->reader.src);
+    assert(dicm_next == kFragment || dicm_next == kEndFragments);
+    next = dicm2ml(dicm_next);
   } else if (current_state == kBytes) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    const bool is_item = item_reader->da.tag == TAG_STARTITEM;
-
+    const bool is_fragment = item_reader->da.tag == TAG_STARTITEM;
     const uint32_t value_length = item_reader->da.vl;
     const uint32_t value_length_pos = item_reader->value_length_pos;
     if (value_length == value_length_pos) {
-      next = is_item ? kEndFragment : kEndAttribute;
+      next = is_fragment ? kEndFragment : kEndAttribute;
     } else {
+      assert(is_fragment == false);
       dicm_next = dicm_item_reader_next(item_reader, self->reader.src);
       next = dicm2ml(dicm_next);
     }
@@ -229,17 +216,12 @@ int dicm_reader_utf8_create(struct dicm_reader **pself, struct dicm_io *src) {
     *pself = &self->reader;
     self->reader.vtable = &g_vtable;
     self->reader.src = src;
-    array_create(&self->item_readers, 1);  // TODO: is it a good default ?
     self->current_state = -1;
-#if 0
-    self->item_num = 0;   // item number start at 1, 0 means invalid
-    self->frag_num = -1;  // frag 0 is bot
-#else
+    array_create(&self->item_readers, 1);  // TODO: is it a good default ?
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    item_reader->item_num = 0;   // item number start at 1, 0 means invalid
-    item_reader->frag_num = -1;  // frag 0 is bot
+    item_reader->index.item_num = 0;  // item number start at 1, 0 means invalid
+    item_reader->index.frag_num = -1;  // frag 0 is bot
 
-#endif
     return 0;
   }
   return 1;
@@ -286,14 +268,14 @@ int _dicm_utf8_reader_skip_value(void *self_, size_t s) { assert(0); }
 int _dicm_utf8_reader_get_fragment(void *self_, int *frag_num) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
   struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-  *frag_num = item_reader->frag_num;
+  *frag_num = item_reader->index.frag_num;
   return 0;
 }
 
 int _dicm_utf8_reader_get_item(void *self_, int *item_num) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
   struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-  *item_num = item_reader->item_num;
+  *item_num = item_reader->index.item_num;
   return 0;
 }
 

@@ -14,12 +14,12 @@ enum ml_state {
   /* attribute */
   kStartAttribute,
   kEndAttribute,
-  kBytes, /* == kValue */
+  kBytes, /* kValue */
   /* fragment */
   kStartFragment,
   kEndFragment,
-  kStartFragments,
-  kEndFragments,
+  kStartPixelData, /* kStartFragments */
+  kEndPixelData,   /* kEndFragments */
   /* item */
   kStartObject, /* kStartItem */
   kEndObject,   /* kEndItem */
@@ -33,6 +33,8 @@ enum dicm_state {
   kValue,
   /* fragment */
   kFragment,
+  kStartFragments,
+  kEndFragments,
   /* item */
   kStartItem,
   kEndItem,

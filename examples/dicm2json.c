@@ -68,13 +68,13 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         dicm_writer_write_end_item(writer);
         break;
 
-      case kStartFragments:
+      case kStartPixelData:
         fragment = -1;
         dicm_reader_get_attribute(reader, &da);
         dicm_writer_write_start_attribute(writer, &da);
         break;
 
-      case kEndFragments:
+      case kEndPixelData:
         fragment = -1;
         dicm_writer_write_end_attribute(writer);
         break;
