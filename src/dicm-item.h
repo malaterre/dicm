@@ -9,13 +9,19 @@
 
 struct dicm_item_reader {
   /* the current item state */
-  enum state current_item_state;
+  enum dicm_state current_item_state;
 
   /* the current attribute */
   struct dicm_attribute da;
 
   /* current pos in value_length */
   uint32_t value_length_pos;
+
+  /* Fragments: frag number */
+  int frag_num;
+
+  /* SQ: item number */
+  int item_num;
 };
 
 int dicm_item_reader_next(struct dicm_item_reader *self, struct dicm_io *src);

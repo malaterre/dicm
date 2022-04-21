@@ -36,7 +36,7 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         dicm_writer_write_end_attribute(writer);
         break;
 
-      case kValue:
+      case kBytes:
         if (true /*fragment == -1*/) {
           dicm_reader_get_value_length(reader, &size);
           /* do/while loop trigger at least one event (even in the case where
@@ -59,12 +59,12 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         dicm_writer_write_end_fragment(writer);
         break;
 
-      case kStartItem:
+      case kStartObject:
         dicm_reader_get_item(reader, &item);
         dicm_writer_write_start_item(writer, item);
         break;
 
-      case kEndItem:
+      case kEndObject:
         dicm_writer_write_end_item(writer);
         break;
 
@@ -79,13 +79,13 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         dicm_writer_write_end_attribute(writer);
         break;
 
-      case kStartSequence:
+      case kStartArray:
         item = 0;
         dicm_reader_get_attribute(reader, &sq);
         dicm_writer_write_start_sequence(writer, &sq);
         break;
 
-      case kEndSequence:
+      case kEndArray:
         item = 0;
         dicm_writer_write_end_sequence(writer);
         break;

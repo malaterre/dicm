@@ -107,7 +107,8 @@ static inline uint32_t _ede16_get_vr(const union _ude *ude) {
   return ude->ede16.vr16;
 }
 static inline void _ede16_set_vr(union _ude *ude, uint32_t vr) {
-  ude->ede16.vr16 = vr;
+  assert(vr < 0x5A5A);
+  ude->ede16.vr16 = (uint16_t)vr;
 }
 static inline void _ede32_set_vr(union _ude *ude, uint32_t vr) {
   ude->ede32.vr = vr;
@@ -118,7 +119,8 @@ static inline uint32_t _ede16_get_vl(const union _ude *ude) {
 }
 
 static inline void _ede16_set_vl(union _ude *ude, uint32_t vl) {
-  ude->ede16.vl16 = vl;
+  assert(vl <= UINT16_MAX);
+  ude->ede16.vl16 = (uint16_t)vl;
 }
 
 static inline uint32_t _ede32_get_vl(const union _ude *ude) {

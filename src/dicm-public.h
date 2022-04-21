@@ -8,18 +8,31 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-enum state {
+enum ml_state {
   kStartModel = 0,
   kEndModel,
   /* attribute */
   kStartAttribute,
   kEndAttribute,
-  kValue,
+  kBytes, /* == kValue */
   /* fragment */
   kStartFragment,
   kEndFragment,
   kStartFragments,
   kEndFragments,
+  /* item */
+  kStartObject, /* kStartItem */
+  kEndObject,   /* kEndItem */
+  kStartArray,  /* kStartSequence */
+  kEndArray,    /* kEndSequence */
+};
+
+enum dicm_state {
+  /* attribute */
+  kAttribute = 100,
+  kValue,
+  /* fragment */
+  kFragment,
   /* item */
   kStartItem,
   kEndItem,
@@ -50,18 +63,18 @@ static inline uint_fast16_t dicm_tag_get_element(dicm_tag_t tag) {
   return (uint16_t)(tag & 0x0000ffff);
 }
 
+#define MAKE_TAG(group, element) (uint32_t)(group << 16u | element)
+
 static inline dicm_tag_t dicm_tag_set_group(dicm_tag_t tag,
                                             uint_fast16_t group) {
-  assert(0);
-  return 0;
+  const uint_fast16_t element = dicm_tag_get_element(tag);
+  return MAKE_TAG(group, element);
 }
 static inline dicm_tag_t dicm_tag_set_element(dicm_tag_t tag,
                                               uint_fast16_t element) {
-  assert(0);
-  return 0;
+  const uint_fast16_t group = dicm_tag_get_group(tag);
+  return MAKE_TAG(group, element);
 }
-
-#define MAKE_TAG(group, element) (uint32_t)(group << 16u | element)
 
 enum SPECIAL_TAGS {
   TAG_PIXELDATA = MAKE_TAG(0x7fe0, 0x0010),
