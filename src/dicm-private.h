@@ -90,7 +90,7 @@ static inline uint32_t _ide_get_tag(const union _ude *ude) {
   u.t = ude->ide.tag;
   return (uint32_t)(u.a[0] << 16u | u.a[1]);
 }
-static inline void _ide_set_tag(union _ude *ude, uint32_t tag) {
+static inline void _ide_set_tag(union _ude *ude, const uint32_t tag) {
   // byte-swap tag:
   union {
     uint32_t t;
@@ -99,18 +99,18 @@ static inline void _ide_set_tag(union _ude *ude, uint32_t tag) {
   u.t = tag;
   ude->ide.tag = (uint32_t)(u.a[0] << 16u | u.a[1]);
 }
-static inline void _ide_set_vl(union _ude *ude, uint32_t vl) {
+static inline void _ide_set_vl(union _ude *ude, const uint32_t vl) {
   ude->ide.vl = vl;
 }
 
 static inline uint32_t _ede16_get_vr(const union _ude *ude) {
   return ude->ede16.vr16;
 }
-static inline void _ede16_set_vr(union _ude *ude, uint32_t vr) {
+static inline void _ede16_set_vr(union _ude *ude, const uint32_t vr) {
   assert(vr < 0x5A5A);
   ude->ede16.vr16 = (uint16_t)vr;
 }
-static inline void _ede32_set_vr(union _ude *ude, uint32_t vr) {
+static inline void _ede32_set_vr(union _ude *ude, const uint32_t vr) {
   ude->ede32.vr = vr;
 }
 
@@ -118,7 +118,7 @@ static inline uint32_t _ede16_get_vl(const union _ude *ude) {
   return ude->ede16.vl16;
 }
 
-static inline void _ede16_set_vl(union _ude *ude, uint32_t vl) {
+static inline void _ede16_set_vl(union _ude *ude, const uint32_t vl) {
   assert(vl <= UINT16_MAX);
   ude->ede16.vl16 = (uint16_t)vl;
 }
@@ -126,7 +126,7 @@ static inline void _ede16_set_vl(union _ude *ude, uint32_t vl) {
 static inline uint32_t _ede32_get_vl(const union _ude *ude) {
   return ude->ede32.vl;
 }
-static inline void _ede32_set_vl(union _ude *ude, uint32_t vl) {
+static inline void _ede32_set_vl(union _ude *ude, const uint32_t vl) {
   ude->ede32.vl = vl;
 }
 

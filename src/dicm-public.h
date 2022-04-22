@@ -44,21 +44,21 @@ enum dicm_state {
 };
 
 enum dicm_event {
-  kINVALID_DATA2 = 97,
-  kINVALID_DATA = 98,
-  kEOF = 99,
+  EVENT_INVALID_DATA2 = 97,
+  EVENT_INVALID_DATA = 98,
+  EVENT_EOF = 99,
   /* attribute */
-  kAttribute = 100,
-  kValue,
+  EVENT_ATTRIBUTE = 100,
+  EVENT_VALUE,
   /* fragment */
-  kFragment,
-  kStartFragments,
-  kEndFragments,
+  EVENT_FRAGMENT,
+  EVENT_STARTFRAGMENTS,
+  EVENT_ENDFRAGMENTS,
   /* item */
-  kStartItem,
-  kEndItem,
-  kStartSequence,
-  kEndSequence,
+  EVENT_STARTITEM,
+  EVENT_ENDITEM,
+  EVENT_STARTSEQUENCE,
+  EVENT_ENDSEQUENCE,
 };
 
 /* attribute */

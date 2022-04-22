@@ -24,7 +24,7 @@
 #include "dicm-reader.h"
 
 #include <assert.h>
-#include <byteswap.h>
+//#include <byteswap.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,34 +84,34 @@ bool dicm_reader_hasnext(const struct dicm_reader *self_) {
 static inline enum ml_state dicm2ml(enum dicm_event dicm_next) {
   enum ml_state next;
   switch (dicm_next) {
-    case kAttribute:
+    case EVENT_ATTRIBUTE:
       next = kStartAttribute;
       break;
-    case kValue:
+    case EVENT_VALUE:
       next = kBytes;
       break;
-    case kFragment:
+    case EVENT_FRAGMENT:
       next = kStartFragment;
       break;
-    case kStartSequence:
+    case EVENT_STARTSEQUENCE:
       next = kStartArray;
       break;
-    case kEndSequence:
+    case EVENT_ENDSEQUENCE:
       next = kEndArray;
       break;
-    case kStartFragments:
+    case EVENT_STARTFRAGMENTS:
       next = kStartPixelData;
       break;
-    case kEndFragments:
+    case EVENT_ENDFRAGMENTS:
       next = kEndPixelData;
       break;
-    case kStartItem:
+    case EVENT_STARTITEM:
       next = kStartObject;
       break;
-    case kEndItem:
+    case EVENT_ENDITEM:
       next = kEndObject;
       break;
-    case kEOF:
+    case EVENT_EOF:
     case -1:
       next = kEndModel;
       break;
@@ -136,7 +136,7 @@ int dicm_reader_next_event(const struct dicm_reader *self_) {
     dicm_next = dicm_item_reader_next_event(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
   } else if (current_state == kStartArray) {
-    struct dicm_item_reader dummy = {};
+    struct dicm_item_reader dummy; // = {};
     array_push_back(&self->item_readers, &dummy);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     item_reader->current_item_state = STATE_STARTSEQUENCE;
@@ -151,7 +151,7 @@ int dicm_reader_next_event(const struct dicm_reader *self_) {
     dicm_next = dicm_item_reader_next_event(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
   } else if (current_state == kStartPixelData) {
-    struct dicm_item_reader dummy = {};
+    struct dicm_item_reader dummy;  //  = {};
     array_push_back(&self->item_readers, &dummy);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     item_reader->current_item_state = STATE_STARTFRAGMENTS;
@@ -169,13 +169,13 @@ int dicm_reader_next_event(const struct dicm_reader *self_) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     assert(item_reader->current_item_state == STATE_FRAGMENT);
     dicm_next = dicm_fragment_reader_next_event(item_reader, self->reader.src);
-    assert(dicm_next == kValue);
+    assert(dicm_next == EVENT_VALUE);
     next = dicm2ml(dicm_next);
   } else if (current_state == kEndFragment) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     assert(item_reader->current_item_state == STATE_VALUE);
     dicm_next = dicm_fragment_reader_next_event(item_reader, self->reader.src);
-    assert(dicm_next == kFragment || dicm_next == kEndFragments);
+    assert(dicm_next == EVENT_FRAGMENT || dicm_next == EVENT_ENDFRAGMENTS);
     next = dicm2ml(dicm_next);
   } else if (current_state == kBytes) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
@@ -259,7 +259,8 @@ int _dicm_utf8_reader_read_value(void *self_, void *b, size_t s) {
       max_length < (size_t)value_length ? (uint32_t)max_length : value_length;
 
   struct dicm_io *src = self->reader.src;
-  int err = dicm_io_read(src, b, to_read);
+  io_ssize err = dicm_io_read(src, b, to_read);
+  (void)err;
   item_reader->value_length_pos += to_read;
   assert(item_reader->value_length_pos <= item_reader->da.vl);
 
@@ -283,6 +284,7 @@ int _dicm_utf8_reader_get_item(void *self_, int *item_num) {
 
 int _dicm_utf8_reader_get_sequence(void *self_, struct dicm_attribute *da) {
   assert(0);
+  return 1;
 }
 
 int _dicm_utf8_reader_get_encoding(void *self_, char *c, size_t s) {

@@ -97,15 +97,15 @@ int _dicm_write_start_attribute_impl(struct _dicm *self,
   struct dicm_io *dst = self->writer.dst;
   union _ude ude;
   const bool is_vr16 = _ude_init(&ude, da);
-  int err = dicm_io_write(dst, &ude, is_vr16 ? 8 : 12);
-  assert(err == 0);
+  const size_t len = is_vr16 ? 8u : 12u;
+  io_ssize err = dicm_io_write(dst, &ude, len);
+  assert(err == (io_ssize)len);
   return 0;
 }
 
 /* writer */
 int _dicm_write_start_attribute(void *self_, const struct dicm_attribute *da) {
   return _dicm_write_start_attribute_impl(self_, da);
-  return 0;
 }
 
 int _dicm_write_end_attribute(void *self_) { return 0; }
@@ -113,8 +113,8 @@ int _dicm_write_end_attribute(void *self_) { return 0; }
 int _dicm_write_value(void *self_, const void *buf, size_t s) {
   struct _dicm *self = (struct _dicm *)self_;
   struct dicm_io *dst = self->writer.dst;
-  int err = dicm_io_write(dst, buf, s);
-  assert(err == 0);
+  io_ssize err = dicm_io_write(dst, buf, s);
+  assert(err == (io_ssize)s);
 
   return 0;
 }
@@ -124,8 +124,8 @@ int _dicm_write_start_fragment(void *self_, int frag_num) {
   union _ude ude;
   _ide_set_tag(&ude, TAG_STARTITEM);
   _ide_set_vl(&ude, VL_UNDEFINED);
-  int err = dicm_io_write(dst, &ude.ide, 8);
-  assert(err == 0);
+  io_ssize err = dicm_io_write(dst, &ude.ide, 8);
+  assert(err == 8);
 
   return 0;
 }
@@ -136,8 +136,8 @@ int _dicm_write_start_item(void *self_, int item_num) {
   union _ude ude;
   _ide_set_tag(&ude, TAG_STARTITEM);
   _ide_set_vl(&ude, VL_UNDEFINED);
-  int err = dicm_io_write(dst, &ude.ide, 8);
-  assert(err == 0);
+  io_ssize err = dicm_io_write(dst, &ude.ide, 8);
+  assert(err == 8);
 
   return 0;
 }
@@ -148,8 +148,8 @@ int _dicm_write_end_item(void *self_) {
   _ide_set_tag(&ude, TAG_ENDITEM);
   _ide_set_vl(&ude, 0);
 
-  int err = dicm_io_write(dst, &ude.ide, 8);
-  assert(err == 0);
+  io_ssize err = dicm_io_write(dst, &ude.ide, 8);
+  assert(err == 8);
 
   return 0;
 }
@@ -162,8 +162,8 @@ int _dicm_write_end_sequence(void *self_) {
   union _ude ude;
   _ide_set_tag(&ude, TAG_ENDSQITEM);
   _ide_set_vl(&ude, 0);
-  int err = dicm_io_write(dst, &ude.ide, 8);
-  assert(err == 0);
+  io_ssize err = dicm_io_write(dst, &ude.ide, 8);
+  assert(err == 8);
 
   return 0;
 }
