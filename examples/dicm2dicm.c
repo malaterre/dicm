@@ -25,7 +25,7 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
   assert(len3 <= sizeof buf && len3 % 3 == 0);
 
   while (dicm_reader_hasnext(reader)) {
-    int next = dicm_reader_next(reader);
+    int next = dicm_reader_next_event(reader);
     switch (next) {
       case kStartAttribute:
         dicm_reader_get_attribute(reader, &da);

@@ -3,6 +3,7 @@ add_library(
   dicm-default STATIC
   # log4c.c
   dlog.c file.c # copy.c
+  # fd.c
 )
 target_compile_definitions(
   dicm-default PRIVATE $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>)

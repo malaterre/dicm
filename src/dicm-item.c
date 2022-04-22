@@ -30,16 +30,54 @@
 
 bool dicm_vr_is_16(dicm_vr_t vr) { return _is_vr16(vr); }
 
-static enum dicm_state _item_reader_next_impl(struct dicm_item_reader *self,
+static inline bool _tag_is_valid(const dicm_tag_t tag) {
+  // The following cases have been handled by design:
+  assert(tag != TAG_STARTITEM && tag != TAG_ENDITEM && tag != TAG_ENDSQITEM);
+  return dicm_tag_get_group(tag) >= 0x0008;
+}
+
+static inline bool _tag_is_creator(const dicm_tag_t tag) {
+  const uint_fast16_t group = dicm_tag_get_group(tag);
+  const uint_fast16_t element = dicm_tag_get_element(tag);
+  return group % 2 == 1 && element == 0x0;
+}
+
+static inline bool _vr_is_valid(const dicm_vr_t vr) {
+  const char *str = dicm_vr_get_string(vr);
+  return str[0] >= 'A' && str[0] <= 'Z' && str[1] >= 'A' && str[1] <= 'Z';
+}
+
+static inline bool _vl_is_valid(const dicm_vl_t vl) {
+  return dicm_vl_is_undefined(vl) || vl % 2 == 0;
+}
+
+static inline bool _attribute_is_valid(const struct dicm_attribute *da) {
+  // 1. check triplet separately:
+  const bool valid =
+      _tag_is_valid(da->tag) && _vr_is_valid(da->vr) && _vl_is_valid(da->vl);
+  if (!valid) return false;
+  // 2. handle finer cases here:
+  if (dicm_vl_is_undefined(da->vl) && da->vr != VR_SQ) {
+    if (!dicm_attribute_is_encapsulated_pixel_data(da)) {
+      return false;
+    }
+  }
+  if (_tag_is_creator(da->tag)) {
+    if (da->vr != VR_LO) return false;
+  }
+  return true;
+}
+
+static enum dicm_event _item_reader_next_impl(struct dicm_item_reader *self,
                                               struct dicm_io *src) {
   union _ude ude;
   _Static_assert(16 == sizeof(ude), "16 bytes");
   _Static_assert(12 == sizeof(struct _ede32), "12 bytes");
   _Static_assert(8 == sizeof(struct _ede16), "8 bytes");
   _Static_assert(8 == sizeof(struct _ide), "8 bytes");
-  int err = dicm_io_read(src, ude.bytes, 8);
-  if (err) {
-    return -1;
+  io_ssize ssize = dicm_io_read(src, ude.bytes, 8);
+  if (ssize != 8) {
+    return ssize == 0 ? kEOF : kINVALID_DATA;
   }
 
   const dicm_tag_t tag = _ide_get_tag(&ude);
@@ -48,14 +86,17 @@ static enum dicm_state _item_reader_next_impl(struct dicm_item_reader *self,
     case TAG_STARTITEM:
       self->da.vr = VR_NONE;
       self->da.vl = ude.ide.vl;
+      assert(_vl_is_valid(ude.ide.vl));
       return kStartItem;
     case TAG_ENDITEM:
       self->da.vr = VR_NONE;
       self->da.vl = ude.ide.vl;
+      assert(ude.ide.vl == 0);
       return kEndItem;
     case TAG_ENDSQITEM:
       self->da.vr = VR_NONE;
       self->da.vl = ude.ide.vl;
+      assert(ude.ide.vl == 0);
       return kEndSequence;
   }
 
@@ -65,18 +106,24 @@ static enum dicm_state _item_reader_next_impl(struct dicm_item_reader *self,
     const dicm_vl_t vl = _ede16_get_vl(&ude);
     self->da.vl = vl;
   } else {
-    assert(ude.ede16.vl16 == 0);
-    err = dicm_io_read(src, &ude.ede32.vl, 4);
-    assert(err == 0);
+    if (ude.ede16.vl16 != 0) return kINVALID_DATA;
+
+    ssize = dicm_io_read(src, &ude.ede32.vl, 4);
+    if (ssize != 4) return kINVALID_DATA;
 
     const dicm_vl_t vl = _ede32_get_vl(&ude);
     self->da.vl = vl;
   }
 
+  if (!_attribute_is_valid(&self->da)) {
+    assert(0);
+    return kINVALID_DATA2;
+  }
+
   return kAttribute;
 }
 
-static inline enum dicm_state _item_reader_next_impl2(
+static inline enum dicm_event _item_reader_next_impl2(
     struct dicm_item_reader *self) {
   const dicm_vr_t vr = self->da.vr;
   if (dicm_attribute_is_encapsulated_pixel_data(&self->da)) {
@@ -90,32 +137,69 @@ static inline enum dicm_state _item_reader_next_impl2(
   }
 }
 
-int dicm_item_reader_next(struct dicm_item_reader *self, struct dicm_io *src) {
+int dicm_item_reader_next_event(struct dicm_item_reader *self,
+                                struct dicm_io *src) {
   const enum dicm_state current_state = self->current_item_state;
-  enum dicm_state next;
-  if (current_state == kAttribute) {
-    next = _item_reader_next_impl2(self);
-  } else if (current_state == kValue) {
-    // TODO: check user has consumed everything
-    assert(self->da.vl == self->value_length_pos);
-    next = _item_reader_next_impl(self, src);
-  } else if (current_state == kStartSequence) {
-    next = _item_reader_next_impl(self, src);
-    assert(next == kStartItem);
-  } else if (current_state == kEndSequence) {
-    next = _item_reader_next_impl(self, src);
-  } else if (current_state == kStartItem) {
-    next = _item_reader_next_impl(self, src);
-  } else if (current_state == kEndItem) {
-    next = _item_reader_next_impl(self, src);
-  } else {
-    assert(0);
+  enum dicm_event next;
+  switch (current_state) {
+    case STATE_STARTSEQUENCE:
+      next = _item_reader_next_impl(self, src);
+      assert(next == kStartItem);
+      self->current_item_state =
+          next == kStartItem ? STATE_STARTITEM : STATE_INVALID;
+      break;
+    case STATE_STARTITEM:
+      next = _item_reader_next_impl(self, src);
+      assert(next == kAttribute);
+      self->current_item_state =
+          next == kAttribute ? STATE_ATTRIBUTE : STATE_INVALID;
+      break;
+    case STATE_ATTRIBUTE:
+      next = _item_reader_next_impl2(self);
+      assert(next == kValue || next == kStartSequence ||
+             next == kStartFragments);
+      self->current_item_state =
+          next == kValue ? STATE_VALUE
+                         : (next == kStartSequence ? STATE_STARTSEQUENCE
+                                                   : (next == kStartFragments
+                                                          ? STATE_STARTFRAGMENTS
+                                                          : STATE_INVALID));
+      break;
+    case STATE_VALUE:
+      // TODO: check user has consumed everything
+      assert(self->da.vl == self->value_length_pos);
+      next = _item_reader_next_impl(self, src);
+      if (next == kEOF) {
+        self->current_item_state = STATE_DONE;
+      } else {
+        assert(next == kAttribute || next == kEndItem);
+        self->current_item_state =
+            next == kAttribute
+                ? STATE_ATTRIBUTE
+                : (next == kEndItem ? STATE_ENDITEM : STATE_INVALID);
+      }
+      break;
+    case STATE_ENDITEM:
+      next = _item_reader_next_impl(self, src);
+      assert(next == kStartItem || next == kEndSequence);
+      self->current_item_state =
+          next == kStartItem
+              ? STATE_STARTITEM
+              : (next == kEndSequence ? STATE_ENDSEQUENCE : STATE_INVALID);
+      break;
+    case STATE_ENDSEQUENCE:
+      next = _item_reader_next_impl(self, src);
+      assert(next == kAttribute);
+      self->current_item_state =
+          next == kAttribute ? STATE_ATTRIBUTE : STATE_INVALID;
+      break;
+    default:
+      assert(0);
   }
-  self->current_item_state = next;
   return next;
 }
 
-static inline enum dicm_state _item_reader_next_impl3(
+static inline enum dicm_event _fragment_reader_next_impl2(
     struct dicm_item_reader *self) {
   const dicm_vr_t vr = self->da.vr;
   assert(vr == VR_NONE);
@@ -124,31 +208,58 @@ static inline enum dicm_state _item_reader_next_impl3(
   return kValue;
 }
 
-int dicm_fragment_reader_next(struct dicm_item_reader *self,
-                              struct dicm_io *src) {
-  const enum dicm_state current_state = self->current_item_state;
-  enum dicm_state next;
-  if (current_state == kStartFragments) {
-    next = _item_reader_next_impl(self, src);
-    assert(next == kStartItem);
-    next = kFragment;
-  } else if (current_state == kEndFragments) {
-    next = _item_reader_next_impl(self, src);
-  } else if (current_state == kValue) {
-    // TODO: check user has consumed everything
-    assert(self->da.vl == self->value_length_pos);
-    next = _item_reader_next_impl(self, src);
-    if (next == kStartItem) {
-      next = kFragment;
-    } else {
-      assert(next == kEndSequence);
-      next = kEndFragments;
-    }
-  } else if (current_state == kFragment) {
-    next = _item_reader_next_impl3(self);
-  } else {
-    assert(0);
+static enum dicm_event _fragment_reader_next_impl(struct dicm_item_reader *self,
+                                                  struct dicm_io *src) {
+  const enum dicm_event next = _item_reader_next_impl(self, src);
+  switch (next) {
+    case kStartItem:
+      return kFragment;
+    case kEndSequence:
+      return kEndFragments;
   }
-  self->current_item_state = next;
+  assert(0);
+  return kINVALID_DATA;
+}
+
+int dicm_fragment_reader_next_event(struct dicm_item_reader *self,
+                                    struct dicm_io *src) {
+  const enum dicm_state current_state = self->current_item_state;
+  enum dicm_event next;
+  switch (current_state) {
+    case STATE_STARTFRAGMENTS:
+      next = _fragment_reader_next_impl(self, src);
+      assert(next == kFragment);
+      self->current_item_state =
+          next == kFragment ? STATE_FRAGMENT : STATE_INVALID;
+      break;
+    case STATE_FRAGMENT:
+      next = _fragment_reader_next_impl2(self);
+      assert(next == kValue);
+      self->current_item_state = next == kValue ? STATE_VALUE : STATE_INVALID;
+      break;
+    case STATE_VALUE:
+      // TODO: check user has consumed everything
+      assert(self->da.vl == self->value_length_pos);
+      next = _fragment_reader_next_impl(self, src);
+      assert(next == kFragment || next == kEndFragments);
+      self->current_item_state =
+          next == kFragment
+              ? STATE_FRAGMENT
+              : (next == kEndFragments ? STATE_ENDFRAGMENTS : STATE_INVALID);
+      break;
+    case STATE_ENDFRAGMENTS:
+      // end of fragments read, go back to normal item reading:
+      next = _item_reader_next_impl(self, src);
+      if (next == kEOF) {
+        self->current_item_state = STATE_DONE;
+      } else {
+        assert(next == kAttribute);
+        self->current_item_state =
+            next == kAttribute ? STATE_ATTRIBUTE : STATE_INVALID;
+      }
+      break;
+    default:
+      assert(0);
+  }
   return next;
 }

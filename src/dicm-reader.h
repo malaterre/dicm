@@ -58,8 +58,11 @@ struct dicm_reader {
 #define dicm_reader_get_encoding(t, e, s) \
   ((t)->vtable->reader.fp_get_encoding((t), (e), (s)))
 
+/* return true only if there is a next event, false otherwise */
 DICM_EXPORT bool dicm_reader_hasnext(const struct dicm_reader *);
-DICM_EXPORT int dicm_reader_next(const struct dicm_reader *);
+
+/* return the next event */
+DICM_EXPORT int dicm_reader_next_event(const struct dicm_reader *);
 
 DICM_EXPORT int dicm_reader_create(struct dicm_reader **pself,
                                    struct dicm_io *src, const char *encoding);

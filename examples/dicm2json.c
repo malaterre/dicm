@@ -20,12 +20,12 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
   int item = 45;
   char encoding[64];
 
-  /* let's be lazy with base64 */
+  /* FIXME: let's be lazy with base64 */
   const size_t len3 = (sizeof buf / 3u) * 3u;
   assert(len3 <= sizeof buf && len3 % 3 == 0);
 
   while (dicm_reader_hasnext(reader)) {
-    int next = dicm_reader_next(reader);
+    int next = dicm_reader_next_event(reader);
     switch (next) {
       case kStartAttribute:
         dicm_reader_get_attribute(reader, &da);
@@ -121,17 +121,6 @@ int main(int argc, char *argv[]) {
 
   struct dicm_reader *reader;
   dicm_reader_utf8_create(&reader, src);
-
-#if 0
-  if (strcmp(options, "fme") == 0) {
-    dicm_sreader_stream_filemetaelements(sreader, true);
-  } else if (strcmp(options, "gl") == 0) {
-    dicm_sreader_group_length(sreader, true);
-  } else if (strcmp(options, "all") == 0) {
-    dicm_sreader_stream_filemetaelements(sreader, true);
-    dicm_sreader_group_length(sreader, true);
-  }
-#endif
 
   struct dicm_writer *writer;
   dicm_json_writer_create(&writer);

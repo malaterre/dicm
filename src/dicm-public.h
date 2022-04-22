@@ -28,6 +28,25 @@ enum ml_state {
 };
 
 enum dicm_state {
+  STATE_DONE = 198,
+  STATE_INVALID = 199,
+  STATE_ATTRIBUTE = 200,
+  STATE_VALUE,
+  /* fragment */
+  STATE_FRAGMENT,
+  STATE_STARTFRAGMENTS,
+  STATE_ENDFRAGMENTS,
+  /* item */
+  STATE_STARTITEM,
+  STATE_ENDITEM,
+  STATE_STARTSEQUENCE,
+  STATE_ENDSEQUENCE,
+};
+
+enum dicm_event {
+  kINVALID_DATA2 = 97,
+  kINVALID_DATA = 98,
+  kEOF = 99,
   /* attribute */
   kAttribute = 100,
   kValue,

@@ -18,9 +18,6 @@
  *  <http://www.gnu.org/licenses/>.
  *
  */
-#define _LARGEFILE_SOURCE
-#define _FILE_OFFSET_BITS 64
-
 #include "dicm-io.h"
 
 #include "dicm-log.h"
@@ -51,19 +48,23 @@ static bool is_stream_seekable(FILE* stream) {
 #endif
 
 static DICM_CHECK_RETURN int _file_destroy(void *self_) DICM_NONNULL;
-static DICM_CHECK_RETURN io_ssize _file_read(void *self_, void *buf,
-                                             size_t size) DICM_NONNULL;
-static DICM_CHECK_RETURN io_offset _file_skip(void *self_,
-                                              io_offset off) DICM_NONNULL;
-static DICM_CHECK_RETURN io_ssize _file_write(void *self_, void const *buf,
-                                              size_t size) DICM_NONNULL;
+static DICM_CHECK_RETURN int _file_read(void *self_, void *buf,
+                                        size_t size) DICM_NONNULL;
+static DICM_CHECK_RETURN int _file_seek(void *self_,
+                                        io_offset off) DICM_NONNULL;
+static DICM_CHECK_RETURN int _file_tell(void *self_,
+                                        io_offset *off) DICM_NONNULL;
+static DICM_CHECK_RETURN int _file_write(void *self_, void const *buf,
+                                         size_t size) DICM_NONNULL;
 
 static struct io_vtable const g_vtable = {
     /* object interface */
     .object = {.fp_destroy = _file_destroy},
     /* io interface */
-    .io = {
-        .fp_read = _file_read, .fp_skip = _file_skip, .fp_write = _file_write}};
+    .io = {.fp_read = _file_read,
+           .fp_seek = _file_seek,
+           .fp_tell = _file_tell,
+           .fp_write = _file_write}};
 
 int dicm_io_file_create(struct dicm_io **pself, const char *filename,
                         int mode) {
@@ -122,26 +123,25 @@ int _file_destroy(void *const self_) {
   return errsv;
 }
 
-io_ssize _file_read(void *const self_, void *buf, size_t size) {
+int _file_read(void *const self_, void *buf, size_t size) {
   struct _file *self = (struct _file *)self_;
   const size_t read = fread(buf, 1, size, self->stream);
   /* fread() does not distinguish between end-of-file and error, and callers
    * must use feof(3) and ferror(3) to determine which occurred. */
   if (read != size) {
-    const int eof = feof(self->stream);
-    const int error = ferror(self->stream);
-    if (error) return -1;
-    assert(eof && read == 0);
+    // TODO
+    return 1;
   }
-  return read;
+  return 0;
 }
 
-io_offset _file_skip(void *const self_, io_offset off) {
-  assert(0);
+int _file_seek(void *const self_, io_offset off) { return 1; }
+int _file_tell(void *const self_, io_offset *off) {
+  *off = 0;
   return 1;
 }
 
-io_ssize _file_write(void *const self_, void const *buf, size_t size) {
+int _file_write(void *const self_, void const *buf, size_t size) {
   struct _file *self = (struct _file *)self_;
   const size_t write = fwrite(buf, 1, size, self->stream);
   if (write != size) {

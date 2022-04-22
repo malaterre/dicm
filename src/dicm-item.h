@@ -26,10 +26,11 @@ struct dicm_item_reader {
   } index;
 };
 
-int dicm_item_reader_next(struct dicm_item_reader *self, struct dicm_io *src);
+int dicm_item_reader_next_event(struct dicm_item_reader *self,
+                                struct dicm_io *src);
 
-int dicm_fragment_reader_next(struct dicm_item_reader *self,
-                              struct dicm_io *src);
+int dicm_fragment_reader_next_event(struct dicm_item_reader *self,
+                                    struct dicm_io *src);
 
 struct array {
   size_t size;
