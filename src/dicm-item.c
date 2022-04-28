@@ -306,8 +306,7 @@ int dicm_fragments_reader_next_event(struct dicm_item_reader *self,
       self->current_item_state =
           next == TOKEN_STARTITEM
               ? STATE_FRAGMENT
-              : (next == TOKEN_ENDSQITEM ? STATE_ENDFRAGMENTS
-                                           : STATE_INVALID);
+              : (next == TOKEN_ENDSQITEM ? STATE_ENDFRAGMENTS : STATE_INVALID);
       break;
     case STATE_ENDFRAGMENTS:
       // this is the exit state do not enter

@@ -26,9 +26,9 @@ enum ml_event {
 };
 
 enum dicm_state {
-  STATE_INVALID = -2,
-  STATE_INIT = -1,  // just before "START_DATASET"
-  STATE_ATTRIBUTE = 200,
+  STATE_INVALID = -1,
+  STATE_INIT = 0,  // just before "START_DATASET"
+  STATE_ATTRIBUTE,
   STATE_VALUE,
   /* fragment */
   STATE_FRAGMENT,
@@ -45,18 +45,24 @@ enum dicm_state {
 };
 
 enum dicm_token {
-  TOKEN_INVALID_DATA = 98,
-  TOKEN_EOF = 99,
   /* attribute */
-  TOKEN_ATTRIBUTE = 100,
+  TOKEN_ATTRIBUTE = 0,
+  /* data value, only when not undefined length */
   TOKEN_VALUE,
-  /* fragment */
+  /* fragments (encapsulated pixel data) */
   TOKEN_STARTFRAGMENTS,
-  /* item */
+  /* item start */
   TOKEN_STARTITEM,
+  /* item end */
   TOKEN_ENDITEM,
+  /* defined or undefined length sequence */
   TOKEN_STARTSEQUENCE,
+  /* sq or fragments end */
   TOKEN_ENDSQITEM,
+  /* end of file */
+  TOKEN_EOF,
+  /* invalid token */
+  TOKEN_INVALID_DATA
 };
 
 /* attribute */
