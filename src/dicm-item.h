@@ -24,13 +24,19 @@ struct dicm_item_reader {
     /* Sequence of Items: item number */
     uint32_t item_num;
   } index;
+
+  DICM_CHECK_RETURN int (*fp_next_event)(struct dicm_item_reader *self,
+                                         struct dicm_io *src);
 };
+
+int dicm_ds_reader_next_event(struct dicm_item_reader *self,
+                              struct dicm_io *src);
 
 int dicm_item_reader_next_event(struct dicm_item_reader *self,
                                 struct dicm_io *src);
 
-int dicm_fragment_reader_next_event(struct dicm_item_reader *self,
-                                    struct dicm_io *src);
+int dicm_fragments_reader_next_event(struct dicm_item_reader *self,
+                                     struct dicm_io *src);
 
 struct array {
   size_t size;
@@ -52,10 +58,10 @@ static inline struct array *array_create(struct array *arr, size_t size) {
 
 static inline void array_free(struct array *arr) { free(arr->data); }
 
-static inline struct dicm_item_reader *array_get(struct array *arr,
-                                                 size_t index) {
-  assert(index < arr->size);
-  return &arr->data[index];
+static inline struct dicm_item_reader *array_at(struct array *arr,
+                                                const size_t index) {
+  if (index < arr->size) return &arr->data[index];
+  return NULL;
 }
 
 static inline void array_push_back(struct array *arr,

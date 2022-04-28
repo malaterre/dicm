@@ -40,7 +40,6 @@ static DICM_CHECK_RETURN int _dicm_destroy(void *self_) DICM_NONNULL;
 /* writer */
 static DICM_CHECK_RETURN int _dicm_write_start_attribute(
     void *self, const struct dicm_attribute *da) DICM_NONNULL;
-static DICM_CHECK_RETURN int _dicm_write_end_attribute(void *self) DICM_NONNULL;
 static DICM_CHECK_RETURN int _dicm_write_value(void *self, const void *buf,
                                                size_t s) DICM_NONNULL;
 static DICM_CHECK_RETURN int _dicm_write_start_fragment(
@@ -62,7 +61,6 @@ static struct writer_vtable const g_vtable =
      /* writer interface */
      .writer = {
          .fp_write_start_attribute = _dicm_write_start_attribute,
-         .fp_write_end_attribute = _dicm_write_end_attribute,
          .fp_write_value = _dicm_write_value,
          .fp_write_start_fragment = _dicm_write_start_fragment,
          .fp_write_end_fragment = _dicm_write_end_fragment,
@@ -92,8 +90,9 @@ int _dicm_destroy(void *self_) {
   return 0;
 }
 
-int _dicm_write_start_attribute_impl(struct _dicm *self,
-                                     const struct dicm_attribute *da) {
+/* writer */
+int _dicm_write_start_attribute(void *self_, const struct dicm_attribute *da) {
+  struct _dicm *self = (struct _dicm *)self_;
   struct dicm_io *dst = self->writer.dst;
   union _ude ude;
   const bool is_vr16 = _ude_init(&ude, da);
@@ -103,18 +102,11 @@ int _dicm_write_start_attribute_impl(struct _dicm *self,
   return 0;
 }
 
-/* writer */
-int _dicm_write_start_attribute(void *self_, const struct dicm_attribute *da) {
-  return _dicm_write_start_attribute_impl(self_, da);
-}
-
-int _dicm_write_end_attribute(void *self_) { return 0; }
-
 int _dicm_write_value(void *self_, const void *buf, size_t s) {
   struct _dicm *self = (struct _dicm *)self_;
   struct dicm_io *dst = self->writer.dst;
   io_ssize err = dicm_io_write(dst, buf, s);
-  assert(err == (io_ssize)s);
+  if (err != (io_ssize)s) return 1;
 
   return 0;
 }
@@ -123,9 +115,9 @@ int _dicm_write_start_fragment(void *self_, int frag_num) {
   struct dicm_io *dst = self->writer.dst;
   union _ude ude;
   _ide_set_tag(&ude, TAG_STARTITEM);
-  _ide_set_vl(&ude, VL_UNDEFINED);
+  _ide_set_vl(&ude, 10);
   io_ssize err = dicm_io_write(dst, &ude.ide, 8);
-  assert(err == 8);
+  if (err != 8) return 1;
 
   return 0;
 }
@@ -137,7 +129,7 @@ int _dicm_write_start_item(void *self_, int item_num) {
   _ide_set_tag(&ude, TAG_STARTITEM);
   _ide_set_vl(&ude, VL_UNDEFINED);
   io_ssize err = dicm_io_write(dst, &ude.ide, 8);
-  assert(err == 8);
+  if (err != 8) return 1;
 
   return 0;
 }
@@ -147,14 +139,13 @@ int _dicm_write_end_item(void *self_) {
   union _ude ude;
   _ide_set_tag(&ude, TAG_ENDITEM);
   _ide_set_vl(&ude, 0);
-
   io_ssize err = dicm_io_write(dst, &ude.ide, 8);
-  assert(err == 8);
+  if (err != 8) return 1;
 
   return 0;
 }
 int _dicm_write_start_sequence(void *self_, const struct dicm_attribute *da) {
-  return _dicm_write_start_attribute_impl(self_, da);
+  return 0;
 }
 int _dicm_write_end_sequence(void *self_) {
   struct _dicm *self = (struct _dicm *)self_;
@@ -163,7 +154,7 @@ int _dicm_write_end_sequence(void *self_) {
   _ide_set_tag(&ude, TAG_ENDSQITEM);
   _ide_set_vl(&ude, 0);
   io_ssize err = dicm_io_write(dst, &ude.ide, 8);
-  assert(err == 8);
+  if (err != 8) return 1;
 
   return 0;
 }

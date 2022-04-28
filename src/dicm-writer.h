@@ -29,7 +29,6 @@
 struct writer_prv_vtable {
   /* kAttribute */
   int (*fp_write_start_attribute)(void *const, const struct dicm_attribute *);
-  int (*fp_write_end_attribute)(void *const);
 
   /* kValue: valid for both attribute and fragment */
   int (*fp_write_value)(void *const, const void *, size_t);
@@ -66,8 +65,6 @@ struct dicm_writer {
 /* common writer interface */
 #define dicm_writer_write_start_attribute(t, da) \
   ((t)->vtable->writer.fp_write_start_attribute((t), (da)))
-#define dicm_writer_write_end_attribute(t) \
-  ((t)->vtable->writer.fp_write_end_attribute((t)))
 #define dicm_writer_write_value(t, b, s) \
   ((t)->vtable->writer.fp_write_value((t), (b), (s)))
 #define dicm_writer_write_start_fragment(t, f) \

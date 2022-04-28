@@ -24,7 +24,6 @@
 #include "dicm-reader.h"
 
 #include <assert.h>
-//#include <byteswap.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +35,7 @@ struct _dicm_utf8_reader {
 
   /* data */
   /* the current state */
-  enum ml_state current_state;
+  enum dicm_state current_state;
 
   /* item readers */
   struct array item_readers;
@@ -78,42 +77,35 @@ static struct reader_vtable const g_vtable = {
 bool dicm_reader_hasnext(const struct dicm_reader *self_) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
   const int current_state = self->current_state;
-  return current_state != kEndModel;
+  return current_state != STATE_ENDDATASET;
 }
 
-static inline enum ml_state dicm2ml(enum dicm_event dicm_next) {
-  enum ml_state next;
+static inline enum ml_event dicm2ml(enum dicm_event dicm_next) {
+  enum ml_event next;
   switch (dicm_next) {
     case EVENT_ATTRIBUTE:
-      next = kStartAttribute;
+      next = START_ATTRIBUTE;
       break;
     case EVENT_VALUE:
-      next = kBytes;
-      break;
-    case EVENT_FRAGMENT:
-      next = kStartFragment;
+      next = BYTES;
       break;
     case EVENT_STARTSEQUENCE:
-      next = kStartArray;
+      next = START_ARRAY;
       break;
     case EVENT_ENDSEQUENCE:
-      next = kEndArray;
+      next = END_ARRAY;
       break;
     case EVENT_STARTFRAGMENTS:
-      next = kStartPixelData;
-      break;
-    case EVENT_ENDFRAGMENTS:
-      next = kEndPixelData;
+      next = START_PIXELDATA;
       break;
     case EVENT_STARTITEM:
-      next = kStartObject;
+      next = START_OBJECT;
       break;
     case EVENT_ENDITEM:
-      next = kEndObject;
+      next = END_OBJECT;
       break;
     case EVENT_EOF:
-    case -1:
-      next = kEndModel;
+      next = END_MODEL;
       break;
     default:
       assert(0);
@@ -121,84 +113,166 @@ static inline enum ml_state dicm2ml(enum dicm_event dicm_next) {
   return next;
 }
 
+static inline bool is_root_dataset(const struct _dicm_utf8_reader *self) {
+  return self->item_readers.size == 1;
+}
+
 int dicm_reader_next_event(const struct dicm_reader *self_) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
-  const enum ml_state current_state = self->current_state;
-  enum ml_state next;
+  const enum dicm_state current_state = self->current_state;
+  enum ml_event next;
   enum dicm_event dicm_next;
-  if (current_state == -1) {
-    next = kStartModel;
-  } else if (current_state == kStartModel) {
+  if (current_state == STATE_INIT) {
+    next = START_MODEL;
+    self->current_state = STATE_STARTDATASET;
+  } else if (current_state == STATE_STARTDATASET) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    assert(self->item_readers.size == 1);
-    item_reader->current_item_state = STATE_STARTITEM;
-    item_reader->da.vl = VL_UNDEFINED;
-    dicm_next = dicm_item_reader_next_event(item_reader, self->reader.src);
+    assert(item_reader->current_item_state == current_state);
+    assert(is_root_dataset(self));
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
-  } else if (current_state == kStartArray) {
-    struct dicm_item_reader dummy; // = {};
+    assert(dicm_next == EVENT_ATTRIBUTE);
+    self->current_state = STATE_ATTRIBUTE;
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_ATTRIBUTE) {
+    struct dicm_item_reader *item_reader = array_back(&self->item_readers);
+    assert(item_reader->current_item_state == current_state);
+    const bool is_root = is_root_dataset(self);
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
+    next = dicm2ml(dicm_next);
+    assert(dicm_next == EVENT_VALUE || dicm_next == EVENT_STARTSEQUENCE ||
+           dicm_next == EVENT_STARTFRAGMENTS);
+    self->current_state =
+        dicm_next == EVENT_VALUE
+            ? STATE_VALUE
+            : (dicm_next == EVENT_STARTSEQUENCE ? STATE_STARTSEQUENCE
+                                                : STATE_STARTFRAGMENTS);
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_VALUE) {
+    struct dicm_item_reader *item_reader = array_back(&self->item_readers);
+    assert(item_reader->current_item_state == current_state);
+    const uint32_t value_length = item_reader->da.vl;
+    const uint32_t value_length_pos = item_reader->value_length_pos;
+    assert(value_length == value_length_pos);
+    const bool is_root = is_root_dataset(self);
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
+    next = dicm2ml(dicm_next);
+    assert(dicm_next == EVENT_ATTRIBUTE ||
+           (dicm_next == EVENT_ENDITEM && !is_root) ||
+           (dicm_next == EVENT_STARTITEM && !is_root) ||
+           (dicm_next == EVENT_ENDSEQUENCE && !is_root) ||
+           (dicm_next == EVENT_EOF && is_root));
+    self->current_state =
+        dicm_next == EVENT_ENDSEQUENCE
+            ? STATE_ENDFRAGMENTS
+            : (dicm_next == EVENT_STARTITEM
+                   ? STATE_FRAGMENT
+                   : (dicm_next == EVENT_ATTRIBUTE
+                          ? STATE_ATTRIBUTE
+                          : (dicm_next == EVENT_ENDITEM
+                                 ? STATE_ENDITEM
+                                 : (is_root ? STATE_ENDDATASET
+                                            : STATE_INVALID))));
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_STARTSEQUENCE) {
+    struct dicm_item_reader *item_reader0 = array_back(&self->item_readers);
+    assert(item_reader0->current_item_state == current_state);
+    struct dicm_item_reader dummy;
     array_push_back(&self->item_readers, &dummy);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     item_reader->current_item_state = STATE_STARTSEQUENCE;
     item_reader->index.item_num = 1;
-    dicm_next = dicm_item_reader_next_event(item_reader, self->reader.src);
+    item_reader->fp_next_event = dicm_item_reader_next_event;
+    assert(!is_root_dataset(self));
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
-    assert(next == kStartObject);
-  } else if (current_state == kEndArray) {
+    assert(dicm_next == EVENT_STARTITEM || dicm_next == EVENT_ENDSEQUENCE);
+    self->current_state =
+        dicm_next == EVENT_STARTITEM ? STATE_STARTITEM : STATE_ENDSEQUENCE;
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_STARTITEM) {
+    struct dicm_item_reader *item_reader = array_back(&self->item_readers);
+    assert(item_reader->current_item_state == current_state);
+    assert(!is_root_dataset(self));
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
+    next = dicm2ml(dicm_next);
+    assert(dicm_next == EVENT_ATTRIBUTE || dicm_next == EVENT_ENDITEM);
+    self->current_state =
+        dicm_next == EVENT_ATTRIBUTE ? STATE_ATTRIBUTE : STATE_ENDITEM;
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_ENDITEM) {
+    struct dicm_item_reader *item_reader = array_back(&self->item_readers);
+    assert(item_reader->current_item_state == current_state);
+    assert(!is_root_dataset(self));
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
+    next = dicm2ml(dicm_next);
+    assert(dicm_next == EVENT_STARTITEM || dicm_next == EVENT_ENDSEQUENCE);
+    self->current_state =
+        dicm_next == EVENT_STARTITEM ? STATE_STARTITEM : STATE_ENDSEQUENCE;
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_ENDSEQUENCE) {
+    struct dicm_item_reader *item_reader0 = array_back(&self->item_readers);
+    assert(item_reader0->current_item_state == current_state);
     array_pop_back(&self->item_readers);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    item_reader->current_item_state = STATE_ENDSEQUENCE;
-    dicm_next = dicm_item_reader_next_event(item_reader, self->reader.src);
+    assert(item_reader->current_item_state == STATE_STARTSEQUENCE);
+    item_reader->current_item_state = STATE_VALUE;  // re-initialize
+    const bool is_root = is_root_dataset(self);
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
-  } else if (current_state == kStartPixelData) {
-    struct dicm_item_reader dummy;  //  = {};
+    assert((is_root && dicm_next == EVENT_EOF) ||
+           dicm_next == EVENT_ATTRIBUTE ||
+           (!is_root && dicm_next == EVENT_ENDITEM));
+    self->current_state =
+        dicm_next == EVENT_EOF
+            ? STATE_ENDDATASET
+            : (dicm_next == EVENT_ATTRIBUTE ? STATE_ATTRIBUTE : STATE_ENDITEM);
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_STARTFRAGMENTS) {
+    struct dicm_item_reader *item_reader0 = array_back(&self->item_readers);
+    assert(item_reader0->current_item_state == current_state);
+    struct dicm_item_reader dummy;
     array_push_back(&self->item_readers, &dummy);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
     item_reader->current_item_state = STATE_STARTFRAGMENTS;
     item_reader->index.frag_num = 0;
-    dicm_next = dicm_fragment_reader_next_event(item_reader, self->reader.src);
-    next = dicm2ml(dicm_next);
-    assert(next == kStartFragment);
-  } else if (current_state == kEndPixelData) {
+    item_reader->fp_next_event = dicm_fragments_reader_next_event;
+    assert(!is_root_dataset(self));
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
+    next = START_PIXELDATA;
+    assert(dicm_next == EVENT_STARTITEM);
+    self->current_state = STATE_FRAGMENT;
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_ENDFRAGMENTS) {
+    struct dicm_item_reader *item_reader0 = array_back(&self->item_readers);
+    assert(item_reader0->current_item_state == current_state);
     array_pop_back(&self->item_readers);
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    item_reader->current_item_state = STATE_ENDFRAGMENTS;
-    dicm_next = dicm_fragment_reader_next_event(item_reader, self->reader.src);
+    assert(item_reader->current_item_state == STATE_STARTFRAGMENTS);
+    const bool is_root = is_root_dataset(self);
+    item_reader->current_item_state = STATE_VALUE;  // re-initialize
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
     next = dicm2ml(dicm_next);
-  } else if (current_state == kStartFragment) {
+    assert(dicm_next == EVENT_ATTRIBUTE ||
+           (!is_root && dicm_next == EVENT_ENDITEM) ||
+           (is_root && dicm_next == EVENT_EOF));
+    self->current_state =
+        dicm_next == EVENT_ATTRIBUTE
+            ? STATE_ATTRIBUTE
+            : (dicm_next == EVENT_ENDITEM ? STATE_ENDITEM : STATE_ENDDATASET);
+    assert(item_reader->current_item_state == self->current_state);
+  } else if (current_state == STATE_FRAGMENT) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    assert(item_reader->current_item_state == STATE_FRAGMENT);
-    dicm_next = dicm_fragment_reader_next_event(item_reader, self->reader.src);
+    assert(item_reader->current_item_state == current_state);
+    assert(!is_root_dataset(self));
+    dicm_next = item_reader->fp_next_event(item_reader, self->reader.src);
+    next = dicm2ml(dicm_next);
     assert(dicm_next == EVENT_VALUE);
-    next = dicm2ml(dicm_next);
-  } else if (current_state == kEndFragment) {
-    struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    assert(item_reader->current_item_state == STATE_VALUE);
-    dicm_next = dicm_fragment_reader_next_event(item_reader, self->reader.src);
-    assert(dicm_next == EVENT_FRAGMENT || dicm_next == EVENT_ENDFRAGMENTS);
-    next = dicm2ml(dicm_next);
-  } else if (current_state == kBytes) {
-    struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    const bool is_fragment = item_reader->da.tag == TAG_STARTITEM;
-    const uint32_t value_length = item_reader->da.vl;
-    const uint32_t value_length_pos = item_reader->value_length_pos;
-    if (value_length == value_length_pos) {
-      next = is_fragment ? kEndFragment : kEndAttribute;
-    } else {
-      assert(0);
-      assert(is_fragment == false);
-      dicm_next = dicm_item_reader_next_event(item_reader, self->reader.src);
-      next = dicm2ml(dicm_next);
-    }
+    self->current_state = STATE_VALUE;
+    assert(item_reader->current_item_state == self->current_state);
   } else {
-    assert(current_state == kStartAttribute || current_state == kEndAttribute ||
-           current_state == kStartObject || current_state == kEndObject);
-    struct dicm_item_reader *item_reader = array_back(&self->item_readers);
-    dicm_next = dicm_item_reader_next_event(item_reader, self->reader.src);
-    next = dicm2ml(dicm_next);
+    assert(0);
   }
-  assert(next < 100);
-  self->current_state = next;
   return next;
 }
 
@@ -218,11 +292,17 @@ int dicm_reader_utf8_create(struct dicm_reader **pself, struct dicm_io *src) {
     *pself = &self->reader;
     self->reader.vtable = &g_vtable;
     self->reader.src = src;
-    self->current_state = -1;
+    self->current_state = STATE_INIT;
     array_create(&self->item_readers, 1);  // TODO: is it a good default ?
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);
+#if 0
     item_reader->index.item_num = 0;  // item number start at 1, 0 means invalid
     item_reader->index.frag_num = -1;  // frag 0 is bot
+#else
+    item_reader->index.item_num = 0;
+#endif
+    item_reader->current_item_state = STATE_STARTDATASET;
+    item_reader->fp_next_event = dicm_ds_reader_next_event;
 
     return 0;
   }

@@ -8,28 +8,26 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-enum ml_state {
-  kStartModel = 0,
-  kEndModel,
+enum ml_event {
+  START_MODEL = 0,
+  END_MODEL,
   /* attribute */
-  kStartAttribute,
-  kEndAttribute,
-  kBytes, /* kValue */
+  START_ATTRIBUTE,
+  BYTES, /* kValue */
   /* fragment */
-  kStartFragment,
-  kEndFragment,
-  kStartPixelData, /* kStartFragments */
-  kEndPixelData,   /* kEndFragments */
+  START_FRAGMENT,
+  START_PIXELDATA, /* kStartFragments */
+  END_PIXELDATA,   /* kEndFragments */
   /* item */
-  kStartObject, /* kStartItem */
-  kEndObject,   /* kEndItem */
-  kStartArray,  /* kStartSequence */
-  kEndArray,    /* kEndSequence */
+  START_OBJECT, /* kStartItem */
+  END_OBJECT,   /* kEndItem */
+  START_ARRAY,  /* kStartSequence */
+  END_ARRAY,    /* kEndSequence */
 };
 
 enum dicm_state {
-  STATE_DONE = 198,
-  STATE_INVALID = 199,
+  STATE_INVALID = -2,
+  STATE_INIT = -1,  // just before "START_DATASET"
   STATE_ATTRIBUTE = 200,
   STATE_VALUE,
   /* fragment */
@@ -41,19 +39,19 @@ enum dicm_state {
   STATE_ENDITEM,
   STATE_STARTSEQUENCE,
   STATE_ENDSEQUENCE,
+  /* dataset */
+  STATE_STARTDATASET,
+  STATE_ENDDATASET,
 };
 
 enum dicm_event {
-  EVENT_INVALID_DATA2 = 97,
   EVENT_INVALID_DATA = 98,
   EVENT_EOF = 99,
   /* attribute */
   EVENT_ATTRIBUTE = 100,
   EVENT_VALUE,
   /* fragment */
-  EVENT_FRAGMENT,
   EVENT_STARTFRAGMENTS,
-  EVENT_ENDFRAGMENTS,
   /* item */
   EVENT_STARTITEM,
   EVENT_ENDITEM,
@@ -76,23 +74,23 @@ struct dicm_attribute {
 /* tag */
 
 /* Retrieve the group part from a tag */
-static inline uint_fast16_t dicm_tag_get_group(dicm_tag_t tag) {
-  return (uint16_t)(tag >> 16);
+static inline uint_fast16_t dicm_tag_get_group(const dicm_tag_t tag) {
+  return (uint16_t)(tag >> 16u);
 }
 /* Retrieve the element part from a tag */
-static inline uint_fast16_t dicm_tag_get_element(dicm_tag_t tag) {
+static inline uint_fast16_t dicm_tag_get_element(const dicm_tag_t tag) {
   return (uint16_t)(tag & 0x0000ffff);
 }
 
 #define MAKE_TAG(group, element) (uint32_t)(group << 16u | element)
 
-static inline dicm_tag_t dicm_tag_set_group(dicm_tag_t tag,
-                                            uint_fast16_t group) {
+static inline dicm_tag_t dicm_tag_set_group(const dicm_tag_t tag,
+                                            const uint_fast16_t group) {
   const uint_fast16_t element = dicm_tag_get_element(tag);
   return MAKE_TAG(group, element);
 }
-static inline dicm_tag_t dicm_tag_set_element(dicm_tag_t tag,
-                                              uint_fast16_t element) {
+static inline dicm_tag_t dicm_tag_set_element(const dicm_tag_t tag,
+                                              const uint_fast16_t element) {
   const uint_fast16_t group = dicm_tag_get_group(tag);
   return MAKE_TAG(group, element);
 }
@@ -169,7 +167,7 @@ bool dicm_vr_is_16(dicm_vr_t vr);
 /* vl */
 enum VALUE_LENGTHS { VL_UNDEFINED = 0xffffffff };
 
-static inline bool dicm_vl_is_undefined(dicm_vl_t vl) {
+static inline bool dicm_vl_is_undefined(const dicm_vl_t vl) {
   return vl == VL_UNDEFINED;
 }
 

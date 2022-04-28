@@ -20,23 +20,17 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
   int item = 45;
   char encoding[64];
 
-  /* let's be lazy with base64 */
-  const size_t len3 = (sizeof buf / 3u) * 3u;
-  assert(len3 <= sizeof buf && len3 % 3 == 0);
+  const size_t len3 = sizeof buf;
 
   while (dicm_reader_hasnext(reader)) {
     int next = dicm_reader_next_event(reader);
     switch (next) {
-      case kStartAttribute:
+      case START_ATTRIBUTE:
         dicm_reader_get_attribute(reader, &da);
         dicm_writer_write_start_attribute(writer, &da);
         break;
 
-      case kEndAttribute:
-        dicm_writer_write_end_attribute(writer);
-        break;
-
-      case EVENT_VALUE:
+      case BYTES:
         if (true /*fragment == -1*/) {
           dicm_reader_get_value_length(reader, &size);
           /* do/while loop trigger at least one event (even in the case where
@@ -50,52 +44,43 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         }
         break;
 
-      case kStartFragment:
+      case START_FRAGMENT:
         dicm_reader_get_fragment(reader, &fragment);
         dicm_writer_write_start_fragment(writer, fragment);
         break;
 
-      case kEndFragment:
-        dicm_writer_write_end_fragment(writer);
-        break;
-
-      case EVENT_STARTITEM:
+      case START_OBJECT:
         dicm_reader_get_item(reader, &item);
         dicm_writer_write_start_item(writer, item);
         break;
 
-      case EVENT_ENDITEM:
+      case END_OBJECT:
         dicm_writer_write_end_item(writer);
         break;
 
-      case EVENT_STARTFRAGMENTS:
-        fragment = -1;
-        dicm_reader_get_attribute(reader, &da);
-        dicm_writer_write_start_attribute(writer, &da);
+      case START_PIXELDATA:
         break;
 
-      case EVENT_ENDFRAGMENTS:
-        fragment = -1;
-        dicm_writer_write_end_attribute(writer);
+      case END_PIXELDATA:
         break;
 
-      case EVENT_STARTSEQUENCE:
+      case START_ARRAY:
         item = 0;
         dicm_reader_get_attribute(reader, &sq);
         dicm_writer_write_start_sequence(writer, &sq);
         break;
 
-      case EVENT_ENDSEQUENCE:
+      case END_ARRAY:
         item = 0;
         dicm_writer_write_end_sequence(writer);
         break;
 
-      case kStartModel:
+      case START_MODEL:
         dicm_reader_get_encoding(reader, encoding, sizeof encoding);
         dicm_writer_write_start_model(writer, encoding);
         break;
 
-      case kEndModel:
+      case END_MODEL:
         dicm_writer_write_end_model(writer);
         break;
 

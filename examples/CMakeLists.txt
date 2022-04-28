@@ -20,6 +20,9 @@ add_executable(
 )
 target_link_libraries(dicm2json dicm dicm-default)
 
+add_executable(dicm2xml dicm2xml.c xml.c)
+target_link_libraries(dicm2xml dicm dicm-default)
+
 add_executable(dicm2dicm dicm2dicm.c)
 target_link_libraries(dicm2dicm dicm dicm-default)
 

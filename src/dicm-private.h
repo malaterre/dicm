@@ -13,16 +13,6 @@
 //#define ftell _DICM_POISON(ftello)
 #define strtod _DICM_POISON(_dicm_parse_double)
 
-#if 0
-typedef char byte_t;
-// Fast access to Tag (group, element)
-typedef uint32_t tag_t;
-// A value representation (upper case ASCII)
-typedef byte_t(vr_t)[2];
-// A value length (-1 means undefined)
-typedef uint32_t vl_t;
-#endif
-
 static inline bool _is_vr16(const uint32_t vr) {
   switch (vr) {
     case VR_AE:
@@ -98,6 +88,9 @@ static inline void _ide_set_tag(union _ude *ude, const uint32_t tag) {
   } u;
   u.t = tag;
   ude->ide.tag = (uint32_t)(u.a[0] << 16u | u.a[1]);
+}
+static inline uint32_t _ide_get_vl(const union _ude *ude) {
+  return ude->ide.vl;
 }
 static inline void _ide_set_vl(union _ude *ude, const uint32_t vl) {
   ude->ide.vl = vl;

@@ -61,9 +61,6 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         break;
 
       case START_PIXELDATA:
-        fragment = -1;
-        dicm_reader_get_attribute(reader, &da);
-        dicm_writer_write_start_attribute(writer, &da);
         break;
 
       case END_PIXELDATA:
@@ -107,13 +104,13 @@ int main(int argc, char *argv[]) {
   struct dicm_io *src;
   struct dicm_io *dst;
   dicm_io_file_create(&src, filename, DICM_IO_READ);
-  dicm_io_file_create(&dst, "output.dcm", DICM_IO_WRITE);
+  dicm_io_file_create(&dst, "output.xml", DICM_IO_WRITE);
 
   struct dicm_reader *reader;
   dicm_reader_utf8_create(&reader, src);
 
   struct dicm_writer *writer;
-  dicm_json_writer_create(&writer);
+  dicm_xml_writer_create(&writer, dst);
   process_writer(reader, writer);
 
   /* cleanup */

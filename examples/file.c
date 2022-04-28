@@ -146,7 +146,7 @@ io_ssize _file_write(void *const self_, void const *buf, size_t size) {
   const size_t write = fwrite(buf, 1, size, self->stream);
   if (write != size) {
     // TODO
-    return 1;
+    return -1;
   }
-  return 0;
+  return write;
 }

@@ -44,7 +44,6 @@ static DICM_CHECK_RETURN int _json_destroy(void *self_) DICM_NONNULL;
 /* writer */
 static DICM_CHECK_RETURN int _json_write_start_attribute(
     void *self, const struct dicm_attribute *da) DICM_NONNULL;
-static DICM_CHECK_RETURN int _json_write_end_attribute(void *self) DICM_NONNULL;
 static DICM_CHECK_RETURN int _json_write_value(void *self, const void *buf,
                                                size_t s) DICM_NONNULL;
 static DICM_CHECK_RETURN int _json_write_start_fragment(
@@ -66,7 +65,6 @@ static struct writer_vtable const g_vtable =
      /* writer interface */
      .writer = {
          .fp_write_start_attribute = _json_write_start_attribute,
-         .fp_write_end_attribute = _json_write_end_attribute,
          .fp_write_value = _json_write_value,
          .fp_write_start_fragment = _json_write_start_fragment,
          .fp_write_end_fragment = _json_write_end_fragment,
@@ -337,6 +335,8 @@ static void print_double(struct _json *self, const void *buf, size_t len) {
   }
 }
 
+static void print_at(struct _json *self, const void *buf, size_t len) {}
+
 static inline size_t base64_encoded_size(size_t inlen) {
   // inlen is uint32_t anyway:
   const size_t outlen = (inlen + 2) / 3;
@@ -399,6 +399,7 @@ int _json_write_start_attribute(void *self_, const struct dicm_attribute *da) {
   return 0;
 }
 
+#if 0
 int _json_write_end_attribute(void *self_) {
   struct _json *self = (struct _json *)self_;
   print_post_value(self);
@@ -407,6 +408,7 @@ int _json_write_end_attribute(void *self_) {
   printf("}");
   return 0;
 }
+#endif
 
 int _json_write_value(void *self_, const void *buf, size_t s) {
   struct _json *self = (struct _json *)self_;
@@ -490,7 +492,7 @@ int _json_write_value(void *self_, const void *buf, size_t s) {
       break;
     case VR_AT:
       assert(!is_undefined_length);
-      assert(0);
+      print_at(self, buf, s);
       break;
     case VR_UN:
       assert(!is_undefined_length);
@@ -498,6 +500,10 @@ int _json_write_value(void *self_, const void *buf, size_t s) {
       break;
     case VR_SQ:
       assert(0);
+      break;
+    case VR_NONE:
+      // FIXME: should only happen for Fragment ?
+      print_inline_binary(self, buf, s, is_undefined_length);
       break;
     default:
       assert(0);
@@ -529,16 +535,21 @@ int _json_write_end_item(void *self_) {
 }
 int _json_write_start_sequence(void *self_, const struct dicm_attribute *da) {
   struct _json *self = (struct _json *)self_;
-  _json_write_start_attribute(self_, da);
-  // self->indent_level++;
   self->separator = NULL;
 
   return 0;
 }
 int _json_write_end_sequence(void *self_) {
   struct _json *self = (struct _json *)self_;
-  _json_write_end_attribute(self_);
-  // self->indent_level--;
+  //_json_write_end_attribute(self_);
+  self->indent_level--;
+  print_eol(self);
+  print_indent(self);
+  printf("]");
+  print_eol(self);
+  self->indent_level--;
+  print_indent(self);
+  printf("}");
 
   return 0;
 }
