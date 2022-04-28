@@ -79,7 +79,7 @@ static inline bool _attribute_is_valid(const struct dicm_attribute *da) {
   return true;
 }
 
-static enum dicm_event _item_reader_next_impl(struct dicm_item_reader *self,
+static enum dicm_token _item_reader_next_impl(struct dicm_item_reader *self,
                                               struct dicm_io *src) {
   union _ude ude;
   _Static_assert(16 == sizeof(ude), "16 bytes");
@@ -88,7 +88,7 @@ static enum dicm_event _item_reader_next_impl(struct dicm_item_reader *self,
   _Static_assert(8 == sizeof(struct _ide), "8 bytes");
   io_ssize ssize = dicm_io_read(src, ude.bytes, 8);
   if (ssize != 8) {
-    return ssize == 0 ? EVENT_EOF : EVENT_INVALID_DATA;
+    return ssize == 0 ? TOKEN_EOF : TOKEN_INVALID_DATA;
   }
 
   {
@@ -100,17 +100,17 @@ static enum dicm_event _item_reader_next_impl(struct dicm_item_reader *self,
         self->da.vr = VR_NONE;
         self->da.vl = ide_vl;
         assert(_vl_is_valid(ide_vl));
-        return _vl_is_valid(ide_vl) ? EVENT_STARTITEM : EVENT_INVALID_DATA;
+        return _vl_is_valid(ide_vl) ? TOKEN_STARTITEM : TOKEN_INVALID_DATA;
       case TAG_ENDITEM:
         self->da.vr = VR_NONE;
         self->da.vl = ide_vl;
         assert(ide_vl == 0);
-        return ide_vl == 0 ? EVENT_ENDITEM : EVENT_INVALID_DATA;
+        return ide_vl == 0 ? TOKEN_ENDITEM : TOKEN_INVALID_DATA;
       case TAG_ENDSQITEM:
         self->da.vr = VR_NONE;
         self->da.vl = ide_vl;
         assert(ide_vl == 0);
-        return ide_vl == 0 ? EVENT_ENDSEQUENCE : EVENT_INVALID_DATA;
+        return ide_vl == 0 ? TOKEN_ENDSQITEM : TOKEN_INVALID_DATA;
     }
   }
 
@@ -122,10 +122,10 @@ static enum dicm_event _item_reader_next_impl(struct dicm_item_reader *self,
   } else {
     // FIXME: this statement checks if VR is actually valid (0 padded), which is
     // redundant with `_attribute_is_valid`:
-    if (ude.ede16.vl16 != 0) return EVENT_INVALID_DATA;
+    if (ude.ede16.vl16 != 0) return TOKEN_INVALID_DATA;
 
     ssize = dicm_io_read(src, &ude.ede32.vl, 4);
-    if (ssize != 4) return EVENT_INVALID_DATA;
+    if (ssize != 4) return TOKEN_INVALID_DATA;
 
     const dicm_vl_t vl = _ede32_get_vl(&ude);
     self->da.vl = vl;
@@ -133,47 +133,47 @@ static enum dicm_event _item_reader_next_impl(struct dicm_item_reader *self,
 
   if (!_attribute_is_valid(&self->da)) {
     assert(0);
-    return EVENT_INVALID_DATA;
+    return TOKEN_INVALID_DATA;
   }
 
-  return EVENT_ATTRIBUTE;
+  return TOKEN_ATTRIBUTE;
 }
 
-static inline enum dicm_event _item_reader_next_impl2(
+static inline enum dicm_token _item_reader_next_impl2(
     struct dicm_item_reader *self) {
   const dicm_vr_t vr = self->da.vr;
   if (dicm_attribute_is_encapsulated_pixel_data(&self->da)) {
-    return EVENT_STARTFRAGMENTS;
+    return TOKEN_STARTFRAGMENTS;
   } else if (vr == VR_SQ) {
-    return EVENT_STARTSEQUENCE;
+    return TOKEN_STARTSEQUENCE;
   } else {
     self->value_length_pos = 0;
 
-    return EVENT_VALUE;
+    return TOKEN_VALUE;
   }
 }
 
 int dicm_ds_reader_next_event(struct dicm_item_reader *self,
                               struct dicm_io *src) {
   const enum dicm_state current_state = self->current_item_state;
-  enum dicm_event next;
+  enum dicm_token next;
   switch (current_state) {
     case STATE_STARTDATASET:
       next = _item_reader_next_impl(self, src);
-      assert(next == EVENT_ATTRIBUTE);
+      assert(next == TOKEN_ATTRIBUTE);
       self->current_item_state =
-          next == EVENT_ATTRIBUTE ? STATE_ATTRIBUTE : STATE_INVALID;
+          next == TOKEN_ATTRIBUTE ? STATE_ATTRIBUTE : STATE_INVALID;
       break;
     case STATE_ATTRIBUTE:
       next = _item_reader_next_impl2(self);
-      assert(next == EVENT_VALUE || next == EVENT_STARTSEQUENCE ||
-             next == EVENT_STARTFRAGMENTS);
+      assert(next == TOKEN_VALUE || next == TOKEN_STARTSEQUENCE ||
+             next == TOKEN_STARTFRAGMENTS);
       self->current_item_state =
-          next == EVENT_VALUE
+          next == TOKEN_VALUE
               ? STATE_VALUE
-              : (next == EVENT_STARTSEQUENCE
+              : (next == TOKEN_STARTSEQUENCE
                      ? STATE_STARTSEQUENCE
-                     : (next == EVENT_STARTFRAGMENTS ? STATE_STARTFRAGMENTS
+                     : (next == TOKEN_STARTFRAGMENTS ? STATE_STARTFRAGMENTS
                                                      : STATE_INVALID));
       break;
     case STATE_VALUE:
@@ -181,12 +181,12 @@ int dicm_ds_reader_next_event(struct dicm_item_reader *self,
       assert(dicm_vl_is_undefined(self->da.vl) ||
              self->da.vl == self->value_length_pos);
       next = _item_reader_next_impl(self, src);
-      if (next == EVENT_EOF) {
+      if (next == TOKEN_EOF) {
         self->current_item_state = STATE_ENDDATASET;
       } else {
-        assert(next == EVENT_ATTRIBUTE);
+        assert(next == TOKEN_ATTRIBUTE);
         self->current_item_state =
-            next == EVENT_ATTRIBUTE ? STATE_ATTRIBUTE : STATE_INVALID;
+            next == TOKEN_ATTRIBUTE ? STATE_ATTRIBUTE : STATE_INVALID;
       }
       break;
     case STATE_ENDDATASET:
@@ -202,34 +202,34 @@ int dicm_ds_reader_next_event(struct dicm_item_reader *self,
 int dicm_item_reader_next_event(struct dicm_item_reader *self,
                                 struct dicm_io *src) {
   const enum dicm_state current_state = self->current_item_state;
-  enum dicm_event next;
+  enum dicm_token next;
   switch (current_state) {
     case STATE_STARTSEQUENCE:
       next = _item_reader_next_impl(self, src);
-      assert(next == EVENT_STARTITEM || next == EVENT_ENDSEQUENCE);
+      assert(next == TOKEN_STARTITEM || next == TOKEN_ENDSQITEM);
       self->current_item_state =
-          next == EVENT_STARTITEM
+          next == TOKEN_STARTITEM
               ? STATE_STARTITEM
-              : (next == EVENT_ENDSEQUENCE ? STATE_ENDSEQUENCE : STATE_INVALID);
+              : (next == TOKEN_ENDSQITEM ? STATE_ENDSEQUENCE : STATE_INVALID);
       break;
     case STATE_STARTITEM:
       next = _item_reader_next_impl(self, src);
-      assert(next == EVENT_ATTRIBUTE || next == EVENT_ENDITEM);
+      assert(next == TOKEN_ATTRIBUTE || next == TOKEN_ENDITEM);
       self->current_item_state =
-          next == EVENT_ATTRIBUTE
+          next == TOKEN_ATTRIBUTE
               ? STATE_ATTRIBUTE
-              : (next == EVENT_ENDITEM ? STATE_ENDITEM : STATE_INVALID);
+              : (next == TOKEN_ENDITEM ? STATE_ENDITEM : STATE_INVALID);
       break;
     case STATE_ATTRIBUTE:
       next = _item_reader_next_impl2(self);
-      assert(next == EVENT_VALUE || next == EVENT_STARTSEQUENCE ||
-             next == EVENT_STARTFRAGMENTS);
+      assert(next == TOKEN_VALUE || next == TOKEN_STARTSEQUENCE ||
+             next == TOKEN_STARTFRAGMENTS);
       self->current_item_state =
-          next == EVENT_VALUE
+          next == TOKEN_VALUE
               ? STATE_VALUE
-              : (next == EVENT_STARTSEQUENCE
+              : (next == TOKEN_STARTSEQUENCE
                      ? STATE_STARTSEQUENCE
-                     : (next == EVENT_STARTFRAGMENTS ? STATE_STARTFRAGMENTS
+                     : (next == TOKEN_STARTFRAGMENTS ? STATE_STARTFRAGMENTS
                                                      : STATE_INVALID));
       break;
     case STATE_VALUE:
@@ -237,19 +237,19 @@ int dicm_item_reader_next_event(struct dicm_item_reader *self,
       assert(dicm_vl_is_undefined(self->da.vl) ||
              self->da.vl == self->value_length_pos);
       next = _item_reader_next_impl(self, src);
-      assert(next == EVENT_ATTRIBUTE || next == EVENT_ENDITEM);
+      assert(next == TOKEN_ATTRIBUTE || next == TOKEN_ENDITEM);
       self->current_item_state =
-          next == EVENT_ATTRIBUTE
+          next == TOKEN_ATTRIBUTE
               ? STATE_ATTRIBUTE
-              : (next == EVENT_ENDITEM ? STATE_ENDITEM : STATE_INVALID);
+              : (next == TOKEN_ENDITEM ? STATE_ENDITEM : STATE_INVALID);
       break;
     case STATE_ENDITEM:
       next = _item_reader_next_impl(self, src);
-      assert(next == EVENT_STARTITEM || next == EVENT_ENDSEQUENCE);
+      assert(next == TOKEN_STARTITEM || next == TOKEN_ENDSQITEM);
       self->current_item_state =
-          next == EVENT_STARTITEM
+          next == TOKEN_STARTITEM
               ? STATE_STARTITEM
-              : (next == EVENT_ENDSEQUENCE ? STATE_ENDSEQUENCE : STATE_INVALID);
+              : (next == TOKEN_ENDSQITEM ? STATE_ENDSEQUENCE : STATE_INVALID);
       break;
     case STATE_ENDSEQUENCE:
       // this is the exit state do not enter
@@ -261,16 +261,16 @@ int dicm_item_reader_next_event(struct dicm_item_reader *self,
   return next;
 }
 
-static inline enum dicm_event _fragments_reader_next_impl2(
+static inline enum dicm_token _fragments_reader_next_impl2(
     struct dicm_item_reader *self) {
   const dicm_vr_t vr = self->da.vr;
   assert(vr == VR_NONE);
   self->value_length_pos = 0;
 
-  return EVENT_VALUE;
+  return TOKEN_VALUE;
 }
 
-static enum dicm_event _fragments_reader_next_impl(
+static enum dicm_token _fragments_reader_next_impl(
     struct dicm_item_reader *self, struct dicm_io *src) {
   return _item_reader_next_impl(self, src);
 }
@@ -284,29 +284,29 @@ static enum dicm_event _fragments_reader_next_impl(
 int dicm_fragments_reader_next_event(struct dicm_item_reader *self,
                                      struct dicm_io *src) {
   const enum dicm_state current_state = self->current_item_state;
-  enum dicm_event next;
+  enum dicm_token next;
   switch (current_state) {
     case STATE_STARTFRAGMENTS:
       next = _fragments_reader_next_impl(self, src);
-      assert(next == EVENT_STARTITEM);
+      assert(next == TOKEN_STARTITEM);
       self->current_item_state =
-          next == EVENT_STARTITEM ? STATE_FRAGMENT : STATE_INVALID;
+          next == TOKEN_STARTITEM ? STATE_FRAGMENT : STATE_INVALID;
       break;
     case STATE_FRAGMENT:
       next = _fragments_reader_next_impl2(self);
-      assert(next == EVENT_VALUE);
+      assert(next == TOKEN_VALUE);
       self->current_item_state =
-          next == EVENT_VALUE ? STATE_VALUE : STATE_INVALID;
+          next == TOKEN_VALUE ? STATE_VALUE : STATE_INVALID;
       break;
     case STATE_VALUE:
       // TODO: check user has consumed everything
       assert(self->da.vl == self->value_length_pos);
       next = _fragments_reader_next_impl(self, src);
-      assert(next == EVENT_STARTITEM || next == EVENT_ENDSEQUENCE);
+      assert(next == TOKEN_STARTITEM || next == TOKEN_ENDSQITEM);
       self->current_item_state =
-          next == EVENT_STARTITEM
+          next == TOKEN_STARTITEM
               ? STATE_FRAGMENT
-              : (next == EVENT_ENDSEQUENCE ? STATE_ENDFRAGMENTS
+              : (next == TOKEN_ENDSQITEM ? STATE_ENDFRAGMENTS
                                            : STATE_INVALID);
       break;
     case STATE_ENDFRAGMENTS:
