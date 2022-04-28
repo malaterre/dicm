@@ -8,21 +8,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-enum ml_event {
-  START_MODEL = 0,
-  END_MODEL,
+enum dicm_event {
+  EVENT_START_DATASET = 0,
+  EVENT_END_DATASET,
   /* attribute */
-  START_ATTRIBUTE,
-  BYTES, /* kValue */
+  EVENT_ATTRIBUTE,
+  EVENT_VALUE, /* kValue */
   /* fragment */
-  START_FRAGMENT,
-  START_PIXELDATA, /* kStartFragments */
-  END_PIXELDATA,   /* kEndFragments */
+  EVENT_FRAGMENT,
+  START_PIXELDATA, /* FIXME kStartFragments */
+  END_PIXELDATA,   /* FIXME kEndFragments */
   /* item */
-  START_OBJECT, /* kStartItem */
-  END_OBJECT,   /* kEndItem */
-  START_ARRAY,  /* kStartSequence */
-  END_ARRAY,    /* kEndSequence */
+  EVENT_START_ITEM, /* kStartItem */
+  EVENT_END_ITEM,   /* kEndItem */
+  EVENT_START_SEQUENCE,  /* kStartSequence */
+  EVENT_END_SEQUENCE,    /* kEndSequence */
 };
 
 enum dicm_state {

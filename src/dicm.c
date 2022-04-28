@@ -80,32 +80,32 @@ bool dicm_reader_hasnext(const struct dicm_reader *self_) {
   return current_state != STATE_ENDDATASET;
 }
 
-static inline enum ml_event dicm2ml(enum dicm_token dicm_next) {
-  enum ml_event next;
+static inline enum dicm_event dicm2ml(enum dicm_token dicm_next) {
+  enum dicm_event next;
   switch (dicm_next) {
     case TOKEN_ATTRIBUTE:
-      next = START_ATTRIBUTE;
+      next = EVENT_ATTRIBUTE;
       break;
     case TOKEN_VALUE:
-      next = BYTES;
+      next = EVENT_VALUE;
       break;
     case TOKEN_STARTSEQUENCE:
-      next = START_ARRAY;
+      next = EVENT_START_SEQUENCE;
       break;
     case TOKEN_ENDSQITEM:
-      next = END_ARRAY;
+      next = EVENT_END_SEQUENCE;
       break;
     case TOKEN_STARTFRAGMENTS:
       next = START_PIXELDATA;
       break;
     case TOKEN_STARTITEM:
-      next = START_OBJECT;
+      next = EVENT_START_ITEM;
       break;
     case TOKEN_ENDITEM:
-      next = END_OBJECT;
+      next = EVENT_END_ITEM;
       break;
     case TOKEN_EOF:
-      next = END_MODEL;
+      next = EVENT_END_DATASET;
       break;
     default:
       assert(0);
@@ -120,10 +120,10 @@ static inline bool is_root_dataset(const struct _dicm_utf8_reader *self) {
 int dicm_reader_next_event(const struct dicm_reader *self_) {
   struct _dicm_utf8_reader *self = (struct _dicm_utf8_reader *)self_;
   const enum dicm_state current_state = self->current_state;
-  enum ml_event next;
+  enum dicm_event next;
   enum dicm_token dicm_next;
   if (current_state == STATE_INIT) {
-    next = START_MODEL;
+    next = EVENT_START_DATASET;
     self->current_state = STATE_STARTDATASET;
   } else if (current_state == STATE_STARTDATASET) {
     struct dicm_item_reader *item_reader = array_back(&self->item_readers);

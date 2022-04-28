@@ -27,12 +27,12 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
   while (dicm_reader_hasnext(reader)) {
     int next = dicm_reader_next_event(reader);
     switch (next) {
-      case START_ATTRIBUTE:
+      case EVENT_ATTRIBUTE:
         dicm_reader_get_attribute(reader, &da);
         dicm_writer_write_start_attribute(writer, &da);
         break;
 
-      case BYTES:
+      case EVENT_VALUE:
         if (true /*fragment == -1*/) {
           dicm_reader_get_value_length(reader, &size);
           /* do/while loop trigger at least one event (even in the case where
@@ -46,17 +46,17 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
         }
         break;
 
-      case START_FRAGMENT:
+      case EVENT_FRAGMENT:
         dicm_reader_get_fragment(reader, &fragment);
         dicm_writer_write_start_fragment(writer, fragment);
         break;
 
-      case START_OBJECT:
+      case EVENT_START_ITEM:
         dicm_reader_get_item(reader, &item);
         dicm_writer_write_start_item(writer, item);
         break;
 
-      case END_OBJECT:
+      case EVENT_END_ITEM:
         dicm_writer_write_end_item(writer);
         break;
 
@@ -69,23 +69,23 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
       case END_PIXELDATA:
         break;
 
-      case START_ARRAY:
+      case EVENT_START_SEQUENCE:
         item = 0;
         dicm_reader_get_attribute(reader, &sq);
         dicm_writer_write_start_sequence(writer, &sq);
         break;
 
-      case END_ARRAY:
+      case EVENT_END_SEQUENCE:
         item = 0;
         dicm_writer_write_end_sequence(writer);
         break;
 
-      case START_MODEL:
+      case EVENT_START_DATASET:
         dicm_reader_get_encoding(reader, encoding, sizeof encoding);
         dicm_writer_write_start_model(writer, encoding);
         break;
 
-      case END_MODEL:
+      case EVENT_END_DATASET:
         dicm_writer_write_end_model(writer);
         break;
 
