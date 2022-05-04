@@ -18,6 +18,7 @@
  *  <http://www.gnu.org/licenses/>.
  *
  */
+#define _XOPEN_SOURCE 700
 #include "dicm-public.h"
 
 #include "dicm-io.h"
@@ -25,6 +26,7 @@
 
 #include <assert.h>
 #include <float.h>
+#include <locale.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,7 +35,9 @@
 struct _xml {
   struct dicm_writer writer;
   /* data */
-  const char *separator;
+  locale_t c_locale;
+  bool first_attribute;
+  int item_num;
   bool pretty;
   int indent_level;
   dicm_vr_t vr;
@@ -44,38 +48,36 @@ struct _xml {
 static DICM_CHECK_RETURN int _xml_destroy(void *self_) DICM_NONNULL;
 
 /* writer */
-static DICM_CHECK_RETURN int _xml_write_start_attribute(
+static DICM_CHECK_RETURN int _xml_write_attribute(
     void *self, const struct dicm_attribute *da) DICM_NONNULL;
+static DICM_CHECK_RETURN int _xml_write_value_length(void *self,
+                                                     size_t s) DICM_NONNULL;
 static DICM_CHECK_RETURN int _xml_write_value(void *self, const void *buf,
                                               size_t s) DICM_NONNULL;
-static DICM_CHECK_RETURN int _xml_write_start_fragment(void *self, int frag_num)
-    DICM_NONNULL;
-static DICM_CHECK_RETURN int _xml_write_end_fragment(void *self) DICM_NONNULL;
-static DICM_CHECK_RETURN int _xml_write_start_item(void *self,
-                                                   int item_num) DICM_NONNULL;
+static DICM_CHECK_RETURN int _xml_write_fragment(void *self) DICM_NONNULL;
+static DICM_CHECK_RETURN int _xml_write_start_item(void *self) DICM_NONNULL;
 static DICM_CHECK_RETURN int _xml_write_end_item(void *self) DICM_NONNULL;
-static DICM_CHECK_RETURN int _xml_write_start_sequence(
-    void *self, const struct dicm_attribute *da) DICM_NONNULL;
+static DICM_CHECK_RETURN int _xml_write_start_sequence(void *self) DICM_NONNULL;
 static DICM_CHECK_RETURN int _xml_write_end_sequence(void *self) DICM_NONNULL;
-static DICM_CHECK_RETURN int _xml_write_start_model(
+static DICM_CHECK_RETURN int _xml_write_start_dataset(
     void *self, const char *encoding) DICM_NONNULL;
-static DICM_CHECK_RETURN int _xml_write_end_model(void *self) DICM_NONNULL;
+static DICM_CHECK_RETURN int _xml_write_end_dataset(void *self) DICM_NONNULL;
 
 static struct writer_vtable const g_vtable =
     {/* object interface */
      .object = {.fp_destroy = _xml_destroy},
      /* writer interface */
      .writer = {
-         .fp_write_start_attribute = _xml_write_start_attribute,
+         .fp_write_attribute = _xml_write_attribute,
          .fp_write_value = _xml_write_value,
-         .fp_write_start_fragment = _xml_write_start_fragment,
-         .fp_write_end_fragment = _xml_write_end_fragment,
+         .fp_write_value_length = _xml_write_value_length,
+         .fp_write_fragment = _xml_write_fragment,
          .fp_write_start_item = _xml_write_start_item,
          .fp_write_end_item = _xml_write_end_item,
          .fp_write_start_sequence = _xml_write_start_sequence,
          .fp_write_end_sequence = _xml_write_end_sequence,
-         .fp_write_start_model = _xml_write_start_model,
-         .fp_write_end_model = _xml_write_end_model,
+         .fp_write_start_dataset = _xml_write_start_dataset,
+         .fp_write_end_dataset = _xml_write_end_dataset,
      }};
 
 int dicm_xml_writer_create(struct dicm_writer **pself, struct dicm_io *dst) {
@@ -84,7 +86,9 @@ int dicm_xml_writer_create(struct dicm_writer **pself, struct dicm_io *dst) {
     *pself = &self->writer;
     self->writer.vtable = &g_vtable;
     self->writer.dst = dst;
-    self->separator = NULL;
+    self->c_locale = newlocale(LC_NUMERIC, "C", NULL);
+    self->first_attribute = true;
+    self->item_num = 0;
     self->pretty = true;
     self->indent_level = 0;
     self->vr = VR_NONE;
@@ -96,57 +100,45 @@ int dicm_xml_writer_create(struct dicm_writer **pself, struct dicm_io *dst) {
 /* object */
 int _xml_destroy(void *self_) {
   struct _xml *self = (struct _xml *)self_;
+  freelocale(self->c_locale);
   free(self);
   return 0;
 }
 
-static void print_with_indent(int indent, const char *string) {
-  printf("%*s%s", indent, "", string);
-}
-
-static void print_indent(struct _xml *self) {
-  if (self->pretty) {
-    const int level = 2 * self->indent_level;
-    print_with_indent(level, "");
-  }
-}
-static void print_eol(struct _xml *self) {
+static int print_eol(struct _xml *self) {
   struct dicm_io *dst = self->writer.dst;
   if (self->pretty) {
     const char eol[] = "\n";
-    io_ssize err = dicm_io_write(dst, eol, strlen(eol));
-    assert(err == 1);
+    io_ssize err = dicm_io_write(dst, eol, 1);
+    if (err != 1) return 1;
   }
-}
-
-static int _xml_write_line(struct _xml *self, const char *line) {
-  struct dicm_io *dst = self->writer.dst;
-  io_ssize err = dicm_io_write(dst, line, strlen(line));
-  if (err != (io_ssize)strlen(line)) return 1;
-  print_eol(self);
   return 0;
 }
 
-static void print_separator(struct _xml *self) {
-  assert(0);
-  if (self->separator) {
-    if (self->pretty) printf(self->separator);
-  }
+static int _xml_write_buffer(struct _xml *self, const char *line,
+                             const size_t count) {
+  struct dicm_io *dst = self->writer.dst;
+  const io_ssize err = dicm_io_write(dst, line, count);
+  if (err != (io_ssize)count) return 1;
+  if (print_eol(self)) return 1;
+  return 0;
 }
 
-static void print_simple(struct _xml *self, const char *str, size_t len) {
-  assert(0);
-  assert(len);
-  printf("\"%.*s\"", len, str);
+static int _xml_write_line(struct _xml *self, const char *line) {
+  return _xml_write_buffer(self, line, strlen(line));
 }
 
-static void print_no_whitespace(struct _xml *self, const char *str,
-                                size_t len) {
-  _xml_write_line(self, "TODO2");
+static int print_no_whitespace(struct _xml *self, const char *str, size_t len) {
+  char buffer[512];
+  const int index = 1;
+  snprintf(buffer, sizeof buffer, "<Value number=\"%d\">%.*s</Value>", index,
+           len, str);
+  _xml_write_line(self, buffer);
+  return 0;
 }
 
-static void print_with_separator(struct _xml *self, const char *str, size_t len,
-                                 bool quotes) {
+static int print_with_separator(struct _xml *self, const char *str, size_t len,
+                                bool quotes) {
   assert(len);
 
   if (str[len - 1] == 0x0) len--;
@@ -178,10 +170,24 @@ static void print_with_separator(struct _xml *self, const char *str, size_t len,
              buffer);
     _xml_write_line(self, buffer0);
   }
+  return 0;
 }
 
-static void print_person_name(struct _xml *self, const char *str, size_t len) {
-  _xml_write_line(self, "TODO1");
+static int print_person_name(struct _xml *self, const char *str, size_t len) {
+  const char header[] = "<PersonName number=\"1\">";
+  const char trailer[] = "</PersonName>";
+  const char line1[] = "<Alphabetic>";
+  const char line2[] = "</Alphabetic>";
+
+  const char family_name[] = "<FamilyName>NFAO</FamilyName>";
+
+  _xml_write_line(self, header);
+  _xml_write_line(self, line1);
+  _xml_write_line(self, family_name);
+
+  _xml_write_line(self, line2);
+  _xml_write_line(self, trailer);
+  return 0;
 }
 
 static void print_signed_short(struct _xml *self, const void *buf, size_t len) {
@@ -255,46 +261,46 @@ static void print_unsigned_very_long(struct _xml *self, const void *buf,
 }
 
 // https://stackoverflow.com/questions/16839658/printf-width-specifier-to-maintain-precision-of-floating-point-value
-static void print_float(struct _xml *self, const void *buf, size_t len) {
+static void print_float(struct _xml *self, const void *buf, const size_t len) {
   const float *values = buf;
   const size_t nvalues = len / sizeof(float);
   char buffer[512];
+  locale_t old_locale = uselocale(self->c_locale);
   for (size_t n = 0; n < nvalues; ++n) {
-    //    printf("%.*g", FLT_DECIMAL_DIG, values[n]);
     snprintf(buffer, sizeof buffer, "<Value number=\"%u\">%.*g</Value>", n + 1,
              FLT_DECIMAL_DIG, values[n]);
     _xml_write_line(self, buffer);
   }
+  /* Switch back to original locale. */
+  uselocale(old_locale);
 }
 
-static void print_double(struct _xml *self, const void *buf, size_t len) {
+static void print_double(struct _xml *self, const void *buf, const size_t len) {
   const double *values = buf;
   const size_t nvalues = len / sizeof(double);
   char buffer[512];
+  locale_t old_locale = uselocale(self->c_locale);
   for (size_t n = 0; n < nvalues; ++n) {
-    //    printf("%.*g", DBL_DECIMAL_DIG, values[n]);
     snprintf(buffer, sizeof buffer, "<Value number=\"%u\">%.*g</Value>", n + 1,
              DBL_DECIMAL_DIG, values[n]);
     _xml_write_line(self, buffer);
   }
+  /* Switch back to original locale. */
+  uselocale(old_locale);
 }
 
 static void print_at(struct _xml *self, const void *buf, size_t len) {}
-
-static inline size_t base64_encoded_size(size_t inlen) {
-  // inlen is uint32_t anyway:
-  const size_t outlen = (inlen + 2) / 3;
-  return outlen * 4;
-}
 
 static const char base64_chars[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     "abcdefghijklmnopqrstuvwxyz"
     "0123456789+/";
 
-static void base64_print(const unsigned char *in, size_t len) {
+static void base64_print(struct _xml *self, const unsigned char *in,
+                         size_t len) {
   assert(len);
   unsigned char out[4];
+  char buffer[512];
   for (size_t i = 0, j = 0; i < len; i += 3, j += 4) {
     size_t v = in[i];
     v = i + 1 < len ? v << 8 | in[i + 1] : v << 8;
@@ -305,7 +311,10 @@ static void base64_print(const unsigned char *in, size_t len) {
     out[2] = i + 1 < len ? base64_chars[(v >> 6) & 0x3F] : '=';
     out[3] = i + 2 < len ? base64_chars[v & 0x3F] : '=';
 
-    printf("%.*s", sizeof out, out);
+    //    printf("%.*s", sizeof out, out);
+    snprintf(buffer, sizeof buffer, "%.*s", sizeof out, out);
+
+    _xml_write_line(self, buffer);
   }
 }
 
@@ -314,44 +323,51 @@ static void print_inline_binary(struct _xml *self, const void *buf, size_t len,
   if (!is_undefined_length) {
     const unsigned char *values = buf;
     const size_t nvalues = len / sizeof(unsigned char);
-    base64_print(values, nvalues);
+    base64_print(self, values, nvalues);
   }
 }
 
+static int _xml_write_end_attribute(struct _xml *self) {
+  if (!self->first_attribute) {
+    const char end_att[] = "</DicomAttribute>";
+    if (_xml_write_line(self, end_att)) return 1;
+  }
+  return 0;
+}
+
 /* writer */
-int _xml_write_start_attribute(void *self_, const struct dicm_attribute *da) {
+int _xml_write_attribute(void *self_, const struct dicm_attribute *da) {
   struct _xml *self = (struct _xml *)self_;
   struct dicm_io *dst = self->writer.dst;
+  if (_xml_write_end_attribute(self)) return 1;
 
+  const dicm_tag_t tag = da->tag;
   const dicm_vr_t vr = da->vr;
   const dicm_vl_t vl = da->vl;
 
+  const unsigned int group = dicm_tag_get_group(da->tag);
+  unsigned int element = dicm_tag_get_element(da->tag);
+
+  const char *privateCreator = "";
+  if (dicm_tag_is_private(tag)) {
+    privateCreator = " privateCreator=\"libdicm\"";
+    element = element & 0x00ff;
+  }
   char buffer[512];
-  snprintf(buffer, sizeof buffer,
-           "<DicomAttribute tag=\"%04X%04X\" vr=\"%.2s\" keyword=\"\">",
-           (unsigned int)dicm_tag_get_group(da->tag),
-           (unsigned int)dicm_tag_get_element(da->tag),
-           dicm_vr_get_string(da->vr));
+  int count =
+      snprintf(buffer, sizeof buffer,
+               "<DicomAttribute tag=\"%04X%04X\" vr=\"%.2s\" keyword=\"\"%s>",
+               group, element, dicm_vr_get_string(da->vr), privateCreator);
   if (_xml_write_line(self, buffer)) return 1;
-  self->separator = ",\n";
-  // store vr/vl so that we know what to do in end_attribute call
+  // store vr/vl so that we know what to do in write_value call
   self->vr = vr;
   self->vl = vl;
+  self->first_attribute = false;
 
   return 0;
 }
 
-#if 0
-int _xml_write_end_attribute(void *self_) {
-  struct _xml *self = (struct _xml *)self_;
-  const char line[] = "</DicomAttribute>";
-  if (_xml_write_line(self, line)) return 1;
-  self->indent_level--;
-  return 0;
-}
-#endif
-
-int _xml_write_value(void *self_, const void *buf, size_t s) {
+int _xml_write_value(void *self_, const void *buf, const size_t s) {
   struct _xml *self = (struct _xml *)self_;
   if (!s) {
     return 0;
@@ -451,31 +467,47 @@ int _xml_write_value(void *self_, const void *buf, size_t s) {
 
   return 0;
 }
-int _xml_write_start_fragment(void *self, int frag_num) { return 0; }
-int _xml_write_end_fragment(void *self) { return 0; }
-int _xml_write_start_item(void *self_, int item_num) {
+int _xml_write_value_length(void *self_, size_t s) { return 0; }
+int _xml_write_fragment(void *self) {
+  const char buffer[] = "fragment";
+  if (_xml_write_line(self, buffer)) return 1;
+  return 0;
+}
+int _xml_write_start_item(void *self_) {
   struct _xml *self = (struct _xml *)self_;
+  self->item_num++;
+  self->first_attribute = true;
 
   const char item[] = "<Item number=\"%d\">";
   char buffer[512];
-  snprintf(buffer, sizeof buffer, item, item_num);
+  snprintf(buffer, sizeof buffer, item, self->item_num);
   if (_xml_write_line(self, buffer)) return 1;
 
   return 0;
 }
 int _xml_write_end_item(void *self_) {
   struct _xml *self = (struct _xml *)self_;
+  if (_xml_write_end_attribute(self)) return 1;
 
   const char item[] = "</Item>";
   if (_xml_write_line(self, item)) return 1;
 
   return 0;
 }
-int _xml_write_start_sequence(void *self_, const struct dicm_attribute *da) {
+int _xml_write_start_sequence(void *self_) {
+  struct _xml *self = (struct _xml *)self_;
+  self->item_num = 0;
   return 0;
 }
-int _xml_write_end_sequence(void *self_) { return 0; }
-int _xml_write_start_model(void *self_, const char *encoding) {
+int _xml_write_end_sequence(void *self_) {
+  struct _xml *self = (struct _xml *)self_;
+  //  assert (self->first_attribute == false) ;
+  if (_xml_write_end_attribute(self)) return 1;
+  self->item_num = 0;
+  self->first_attribute = true;
+  return 0;
+}
+int _xml_write_start_dataset(void *self_, const char *encoding) {
   struct _xml *self = (struct _xml *)self_;
   struct dicm_io *dst = self->writer.dst;
   const char header[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
@@ -486,7 +518,7 @@ int _xml_write_start_model(void *self_, const char *encoding) {
 
   return 0;
 }
-int _xml_write_end_model(void *self_) {
+int _xml_write_end_dataset(void *self_) {
   struct _xml *self = (struct _xml *)self_;
   const char line[] = "</NativeDicomModel>";
   if (_xml_write_line(self, line)) return 1;

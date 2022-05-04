@@ -16,15 +16,6 @@ struct reader_prv_vtable {
   int (*fp_read_value)(void *const, void *, size_t);
   int (*fp_skip_value)(void *const, size_t);
 
-  /* kFragment */
-  int (*fp_get_fragment)(void *const, int *frag_num);
-
-  /* kItem */
-  int (*fp_get_item)(void *const, int *item_num);
-
-  /* kSequence: valid for SQ and Pixel Data,OB,u/l */
-  int (*fp_get_sequence)(void *const, struct dicm_attribute *);
-
   /* We need a start model to implement easy conversion to XML */
   int (*fp_get_encoding)(void *const, char *, size_t);
 };
@@ -50,11 +41,6 @@ struct dicm_reader {
   ((t)->vtable->reader.fp_read_value((t), (b), (s)))
 #define dicm_reader_skip_value(t, s) \
   ((t)->vtable->reader.fp_skip_value((t), (s)))
-#define dicm_reader_get_fragment(t, f) \
-  ((t)->vtable->reader.fp_get_fragment((t), (f)))
-#define dicm_reader_get_item(t, i) ((t)->vtable->reader.fp_get_item((t), (i)))
-#define dicm_reader_get_sequence(t, sq) \
-  ((t)->vtable->reader.fp_get_sequence((t), (sq)))
 #define dicm_reader_get_encoding(t, e, s) \
   ((t)->vtable->reader.fp_get_encoding((t), (e), (s)))
 
@@ -62,7 +48,7 @@ struct dicm_reader {
 DICM_EXPORT bool dicm_reader_hasnext(const struct dicm_reader *);
 
 /* return the next event */
-DICM_EXPORT int dicm_reader_next_event(const struct dicm_reader *);
+DICM_EXPORT int dicm_reader_next_event(struct dicm_reader *);
 
 DICM_EXPORT int dicm_reader_create(struct dicm_reader **pself,
                                    struct dicm_io *src, const char *encoding);

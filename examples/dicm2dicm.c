@@ -12,76 +12,79 @@
 #include <stdlib.h> /* EXIT_SUCCESS */
 
 void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
+  /* attribute */
+  struct dicm_attribute da;
+  /* value */
   char buf[4096];
   size_t size;
-  struct dicm_attribute da;
-  struct dicm_attribute sq;
-  int fragment = -1;
-  int item = 45;
+  /* specific charactet set */
   char encoding[64];
+  int res;
 
-  const size_t len3 = sizeof buf;
+  const size_t buflen = sizeof buf;
 
   while (dicm_reader_hasnext(reader)) {
     int next = dicm_reader_next_event(reader);
     switch (next) {
       case EVENT_ATTRIBUTE:
-        dicm_reader_get_attribute(reader, &da);
-        dicm_writer_write_start_attribute(writer, &da);
+        res = dicm_reader_get_attribute(reader, &da);
+        assert(res == 0);
+        res = dicm_writer_write_attribute(writer, &da);
+        assert(res == 0);
         break;
 
       case EVENT_VALUE:
-        if (true /*fragment == -1*/) {
-          dicm_reader_get_value_length(reader, &size);
-          /* do/while loop trigger at least one event (even in the case where
-           * value_length is exactly 0) */
-          do {
-            const size_t len = size < len3 ? size : len3;
-            dicm_reader_read_value(reader, buf, len);
-            dicm_writer_write_value(writer, buf, len);
-            size -= len;
-          } while (size != 0);
-        }
+        res = dicm_reader_get_value_length(reader, &size);
+        assert(res == 0);
+        res = dicm_writer_write_value_length(writer, size);
+        assert(res == 0);
+        /* do/while loop trigger at least one event (even in the case where
+         * value_length is exactly 0) */
+        do {
+          const size_t len = size < buflen ? size : buflen;
+          res = dicm_reader_read_value(reader, buf, len);
+          assert(res == 0);
+          res = dicm_writer_write_value(writer, buf, len);
+          assert(res == 0);
+          size -= len;
+        } while (size != 0);
         break;
 
       case EVENT_FRAGMENT:
-        dicm_reader_get_fragment(reader, &fragment);
-        dicm_writer_write_start_fragment(writer, fragment);
+        res = dicm_writer_write_fragment(writer);
+        assert(res == 0);
         break;
 
       case EVENT_START_ITEM:
-        dicm_reader_get_item(reader, &item);
-        dicm_writer_write_start_item(writer, item);
+        res = dicm_writer_write_start_item(writer);
+        assert(res == 0);
         break;
 
       case EVENT_END_ITEM:
-        dicm_writer_write_end_item(writer);
-        break;
-
-      case START_PIXELDATA:
-        break;
-
-      case END_PIXELDATA:
+        res = dicm_writer_write_end_item(writer);
+        assert(res == 0);
         break;
 
       case EVENT_START_SEQUENCE:
-        item = 0;
-        dicm_reader_get_attribute(reader, &sq);
-        dicm_writer_write_start_sequence(writer, &sq);
+        res = dicm_writer_write_start_sequence(writer);
+        assert(res == 0);
         break;
 
       case EVENT_END_SEQUENCE:
-        item = 0;
-        dicm_writer_write_end_sequence(writer);
+        res = dicm_writer_write_end_sequence(writer);
+        assert(res == 0);
         break;
 
       case EVENT_START_DATASET:
-        dicm_reader_get_encoding(reader, encoding, sizeof encoding);
-        dicm_writer_write_start_model(writer, encoding);
+        res = dicm_reader_get_encoding(reader, encoding, sizeof encoding);
+        assert(res == 0);
+        res = dicm_writer_write_start_dataset(writer, encoding);
+        assert(res == 0);
         break;
 
       case EVENT_END_DATASET:
-        dicm_writer_write_end_model(writer);
+        res = dicm_writer_write_end_dataset(writer);
+        assert(res == 0);
         break;
 
       default:

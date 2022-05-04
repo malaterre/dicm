@@ -17,14 +17,6 @@ struct dicm_item_reader {
   /* current pos in value_length */
   uint32_t value_length_pos;
 
-  union {
-    /* Sequence of Fragments: frag number */
-    int32_t frag_num;
-
-    /* Sequence of Items: item number */
-    uint32_t item_num;
-  } index;
-
   DICM_CHECK_RETURN int (*fp_next_event)(struct dicm_item_reader *self,
                                          struct dicm_io *src);
 };

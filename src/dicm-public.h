@@ -13,35 +13,40 @@ enum dicm_event {
   EVENT_END_DATASET,
   /* attribute */
   EVENT_ATTRIBUTE,
-  EVENT_VALUE, /* kValue */
   /* fragment */
   EVENT_FRAGMENT,
-  START_PIXELDATA, /* FIXME kStartFragments */
-  END_PIXELDATA,   /* FIXME kEndFragments */
+  /* could be either data element value or fragment item value */
+  EVENT_VALUE,
   /* item */
-  EVENT_START_ITEM, /* kStartItem */
-  EVENT_END_ITEM,   /* kEndItem */
-  EVENT_START_SEQUENCE,  /* kStartSequence */
-  EVENT_END_SEQUENCE,    /* kEndSequence */
+  EVENT_START_ITEM,
+  EVENT_END_ITEM,
+  /* sequence or encapsulated pixel data (u/l) */
+  EVENT_START_SEQUENCE,
+  EVENT_END_SEQUENCE,
+  EVENT_NUMBERS
 };
 
 enum dicm_state {
   STATE_INVALID = -1,
   STATE_INIT = 0,  // just before "START_DATASET"
-  STATE_ATTRIBUTE,
-  STATE_VALUE,
-  /* fragment */
-  STATE_FRAGMENT,
-  STATE_STARTFRAGMENTS,
-  STATE_ENDFRAGMENTS,
-  /* item */
-  STATE_STARTITEM,
-  STATE_ENDITEM,
-  STATE_STARTSEQUENCE,
-  STATE_ENDSEQUENCE,
   /* dataset */
   STATE_STARTDATASET,
   STATE_ENDDATASET,
+  /* attribute */
+  STATE_ATTRIBUTE,
+  /* fragment */
+  STATE_FRAGMENT,
+  /* fake state to simplify implementation */
+  STATE_STARTFRAGMENTS,
+  /* */
+  STATE_VALUE,
+  /* item */
+  STATE_STARTITEM,
+  STATE_ENDITEM,
+  /* sequence */
+  STATE_STARTSEQUENCE,
+  STATE_ENDSEQUENCE,
+  STATE_NUMBERS
 };
 
 enum dicm_token {
@@ -49,6 +54,7 @@ enum dicm_token {
   TOKEN_ATTRIBUTE = 0,
   /* data value, only when not undefined length */
   TOKEN_VALUE,
+  TOKEN_FRAGMENT,
   /* fragments (encapsulated pixel data) */
   TOKEN_STARTFRAGMENTS,
   /* item start */
@@ -62,7 +68,8 @@ enum dicm_token {
   /* end of file */
   TOKEN_EOF,
   /* invalid token */
-  TOKEN_INVALID_DATA
+  TOKEN_INVALID_DATA,
+  TOKEN_NUMBERS
 };
 
 /* attribute */
@@ -116,6 +123,14 @@ static inline bool dicm_tag_is_end_item(const dicm_tag_t tag) {
 }
 static inline bool dicm_tag_is_end_sq_item(const dicm_tag_t tag) {
   return tag == TAG_ENDSQITEM;
+}
+static inline bool dicm_tag_is_private(const dicm_tag_t tag) {
+  const uint_fast16_t group = dicm_tag_get_group(tag);
+  return group % 2 == 1;
+}
+static inline bool dicm_tag_is_group_length(const dicm_tag_t tag) {
+  const uint_fast16_t element = dicm_tag_get_element(tag);
+  return element == 0x0;
 }
 
 /* vr */

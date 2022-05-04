@@ -12,12 +12,12 @@
 #include <stdlib.h> /* EXIT_SUCCESS */
 
 void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
+  /* attribute */
+  struct dicm_attribute da;
+  /* value */
   char buf[4096];
   size_t size;
-  struct dicm_attribute da;
-  struct dicm_attribute sq;
-  int fragment = -1;
-  int item = 45;
+  /* specific charactet set */
   char encoding[64];
 
   /* FIXME: let's be lazy with base64 */
@@ -29,64 +29,49 @@ void process_writer(struct dicm_reader *reader, struct dicm_writer *writer) {
     switch (next) {
       case EVENT_ATTRIBUTE:
         dicm_reader_get_attribute(reader, &da);
-        dicm_writer_write_start_attribute(writer, &da);
+        dicm_writer_write_attribute(writer, &da);
         break;
 
       case EVENT_VALUE:
-        if (true /*fragment == -1*/) {
-          dicm_reader_get_value_length(reader, &size);
-          /* do/while loop trigger at least one event (even in the case where
-           * value_length is exactly 0) */
-          do {
-            const size_t len = size < len3 ? size : len3;
-            dicm_reader_read_value(reader, buf, len);
-            dicm_writer_write_value(writer, buf, len);
-            size -= len;
-          } while (size != 0);
-        }
+        dicm_reader_get_value_length(reader, &size);
+        dicm_writer_write_value_length(writer, size);
+        /* do/while loop trigger at least one event (even in the case where
+         * value_length is exactly 0) */
+        do {
+          const size_t len = size < len3 ? size : len3;
+          dicm_reader_read_value(reader, buf, len);
+          dicm_writer_write_value(writer, buf, len);
+          size -= len;
+        } while (size != 0);
         break;
 
       case EVENT_FRAGMENT:
-        dicm_reader_get_fragment(reader, &fragment);
-        dicm_writer_write_start_fragment(writer, fragment);
+        dicm_writer_write_fragment(writer);
         break;
 
       case EVENT_START_ITEM:
-        dicm_reader_get_item(reader, &item);
-        dicm_writer_write_start_item(writer, item);
+        dicm_writer_write_start_item(writer);
         break;
 
       case EVENT_END_ITEM:
         dicm_writer_write_end_item(writer);
         break;
 
-      case START_PIXELDATA:
-        fragment = -1;
-        dicm_reader_get_attribute(reader, &da);
-        dicm_writer_write_start_attribute(writer, &da);
-        break;
-
-      case END_PIXELDATA:
-        break;
-
       case EVENT_START_SEQUENCE:
-        item = 0;
-        dicm_reader_get_attribute(reader, &sq);
-        dicm_writer_write_start_sequence(writer, &sq);
+        dicm_writer_write_start_sequence(writer);
         break;
 
       case EVENT_END_SEQUENCE:
-        item = 0;
         dicm_writer_write_end_sequence(writer);
         break;
 
       case EVENT_START_DATASET:
         dicm_reader_get_encoding(reader, encoding, sizeof encoding);
-        dicm_writer_write_start_model(writer, encoding);
+        dicm_writer_write_start_dataset(writer, encoding);
         break;
 
       case EVENT_END_DATASET:
-        dicm_writer_write_end_model(writer);
+        dicm_writer_write_end_dataset(writer);
         break;
 
       default:
@@ -107,13 +92,13 @@ int main(int argc, char *argv[]) {
   struct dicm_io *src;
   struct dicm_io *dst;
   dicm_io_file_create(&src, filename, DICM_IO_READ);
-  dicm_io_file_create(&dst, "output.dcm", DICM_IO_WRITE);
+  dicm_io_file_create(&dst, "output.json", DICM_IO_WRITE);
 
   struct dicm_reader *reader;
   dicm_reader_utf8_create(&reader, src);
 
   struct dicm_writer *writer;
-  dicm_json_writer_create(&writer);
+  dicm_json_writer_create(&writer, dst);
   process_writer(reader, writer);
 
   /* cleanup */
